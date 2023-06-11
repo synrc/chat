@@ -32,10 +32,7 @@ Erlang/OTP 19 [erts-8.3] [source] [64-bit] [smp:4:4]
 
 Eshell V8.3  (abort with ^G)
 starting emqttd on node 'nonode@nohost'
-Names: [emq_dashboard,n2o]
 dashboard:http listen on 0.0.0.0:18083 with 4 acceptors.
-Async Start Attempt {handler,"timer",n2o,system,n2o,[],[]}
-Proc Init: init
 mqtt:ws listen on 0.0.0.0:8083 with 4 acceptors.
 mqtt:tcp listen on 0.0.0.0:1883 with 4 acceptors.
 emqttd 2.1.1 is running now
