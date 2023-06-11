@@ -1,5 +1,5 @@
-CHAT PROTOCOL SPECIFICATION
-============================
+CHAT PROTOCOL
+=============
 
 Version 1.0 Maxim Sokhatsky
 
