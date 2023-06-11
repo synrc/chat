@@ -1,0 +1,22 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>{% block title %}{% endblock %}</title>
+      <link href="assets/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+      <link href="assets/css/bootstrap-select.css" rel="stylesheet" type="text/css"/>
+      <link href="assets/css/style.css" rel="stylesheet" type="text/css"/>
+      <script src="assets/js/jquery.min.js"></script>
+      <script src="assets/js/bootstrap.min.js"></script>
+      <script src="assets/js/utils.js"></script>
+      <script src="assets/js/bootstrap-select.js"></script>
+    <link href="assets/css/base.css"  rel="stylesheet"  type="text/css"/>
+    <link rel="shortcut icon" href="assets/img/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="assets/img/favicon.ico" type="image/x-icon">
+  </head>
+  <body>
+    {% block js %}{% endblock %}
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+  </body>
+</html>

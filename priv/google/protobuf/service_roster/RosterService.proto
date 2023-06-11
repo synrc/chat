@@ -1,0 +1,14 @@
+syntax = "proto3";
+package service_roster;
+
+option java_generic_services = true;
+option java_multiple_files = true;
+option java_package = "RosterService.grpc";
+option java_outer_classname = "RosterServiceCls";
+import public "Roster.proto";
+import public "Contact.proto";
+
+service RosterService {
+    rpc update(Roster) returns (Roster);
+    rpc updateNick(Roster) returns (Roster);
+}

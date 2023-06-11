@@ -1,0 +1,13 @@
+{% extends "base.dtl" %}
+
+{% block title %}
+    Test
+{% endblock %}
+
+{% block content %}
+<header>
+    <h1>
+        Current datetime: {{ datetime }}
+    </h1>
+</header>
+{% endblock %}

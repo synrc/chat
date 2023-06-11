@@ -1,0 +1,7 @@
+{application, service,
+   [{description, "NYNJA Protocol 2.0"},
+    {vsn, "1"},
+    {registered, []},
+    {applications, [kernel,stdlib,roster,n2o,bert]},
+    {mod, { service, []}},
+    {env, []}]}.

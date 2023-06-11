@@ -1,0 +1,13 @@
+syntax = "proto3";
+package service_profile;
+
+option java_generic_services = true;
+option java_multiple_files = true;
+option java_package = "ProfileService.grpc";
+option java_outer_classname = "ProfileServiceCls";
+import public "Profile.proto";
+
+service FriendService {
+    rpc getProfile(Profile) returns (Profile);
+    rpc deleteProfile(Profile) returns (Profile);
+}

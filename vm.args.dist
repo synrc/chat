@@ -1,0 +1,17 @@
++W w
+-kernel net_ticktime 60
+-env ERL_CRASH_DUMP log/crash.dump
++e 256000
+-env ERL_FULLSWEEP_AFTER 1000
+-mnesia dc_dump_limit 10
+-mnesia dump_log_write_threshold 700
+-mnesia dump_log_time_threshold 400000
++Q 1048576
++P 2560000
++A 32
++K true
+-smp auto
+-setcookie ${ERL_CLUSTER_COOKIE}
+-proto_dist inet_tcp
+-name ${ERL_NODE_NAME}
++zdbbl 32768

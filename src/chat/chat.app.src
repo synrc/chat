@@ -1,0 +1,10 @@
+{application, chat,
+   [
+      {description, "CHAT Instance Messenger"},
+      {vsn, "0.6.12"},
+      {registered, []},
+      {applications, [kernel,stdlib,mnesia,kvs,emqttd,n2o]},
+      {mod, { chat, []}},
+      {env, []}
+   ]
+}.
