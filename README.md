@@ -17,7 +17,7 @@ SYNRC CHAT protocol
 
 * [BERT/MQTT SPEC](priv/design/protocol/)
 
-SYNRC MQTT Server
+SYNRC MQTT server
 -----------------
 
 ```erlang
@@ -40,7 +40,7 @@ emqttd 2.1.1 is running now
 Open http://127.0.0.1:18083/#/websocket with `admin:public` credentials,
 Press Connect, Subscribe, Sned and observe statistics http://127.0.0.1:18083/#/overview.
 
-SYNRC MQTT Client
+SYNRC MQTT client
 -----------------
 
 ```
