@@ -15,7 +15,7 @@ Features
 SYNRC CHAT protocol
 -------------------
 
-* [BERT/MQTT SPEC](priv/design/protocol/)
+* [BERT/MQTT CHAT PROTO SPEC](priv/design/protocol/)
 
 SYNRC MQTT server
 -----------------
