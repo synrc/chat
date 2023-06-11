@@ -1,6 +1,8 @@
 SYNRC CHAT
 ==========
 
+![image](https://github.com/erpuno/chat/assets/144776/b7e0b60b-4b61-4ff6-a8c9-e27f2e4c4e7c)
+
 Features
 --------
 
