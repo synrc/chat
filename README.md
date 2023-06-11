@@ -1,6 +1,8 @@
 SYNRC CHAT
 ==========
 
+![image](https://github.com/erpuno/chat/assets/144776/b7e0b60b-4b61-4ff6-a8c9-e27f2e4c4e7c)
+
 Features
 --------
 
@@ -12,13 +14,13 @@ Features
 * CA Server for X.509 certificate enrollment
 * CHAT Application
 
-SYNRC 5HT Open Protocol
------------------------
+CHAT protocol
+-------------
 
-* [BERT/MQTT SPEC](priv/design/protocol/)
+* [BERT/MQTT CHAT PROTO SPEC](priv/design/protocol/)
 
-SYNRC MQTT Server
------------------
+MQTT server
+-----------
 
 ```erlang
 Applications:  [kernel,stdlib,gproc,lager_syslog,pbkdf2,asn1,fs,ranch,mnesia,
@@ -40,8 +42,8 @@ emqttd 2.1.1 is running now
 Open http://127.0.0.1:18083/#/websocket with `admin:public` credentials,
 Press Connect, Subscribe, Sned and observe statistics http://127.0.0.1:18083/#/overview.
 
-SYNRC MQTT Client
------------------
+MQTT client
+-----------
 
 ```
 $ mad com
