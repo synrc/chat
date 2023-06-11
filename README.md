@@ -8,7 +8,7 @@ Features
 * X.509 OpenSSL, LiberSSL security
 * MQTT server for CHAT application
 * LDAP server for ERP/1 integration
-* MAIL message delivery system over buil-in queue
+* SYN/MAIL message delivery system over buil-in queue
 * CA Server for X.509 certificate enrollment
 * CHAT Application
 
