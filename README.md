@@ -1,5 +1,5 @@
-SYNRC CHAT APPLICATION
-======================
+SYNRC CHAT
+==========
 
 Features
 --------
