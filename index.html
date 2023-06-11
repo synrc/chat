@@ -21,6 +21,7 @@
                  <ul><li>MQTT for publish-subscribe message queue;</li>
                      <li>N2O for protocols;</li>
                      <li>KVS for data storage;</li>
+                     <li>SYN/MAIL delivery system;</li>
                      <li>LDAP for user directory;</li>
                      <li>NS for domain name security;</li>
                      <li>CA for X.509 client certificate enrollment.</li></ul></div>
@@ -45,7 +46,7 @@
                      <li><a href="man/chat_search.htm">SEARCH</a></li>
             <br />
             <div>
-                APR 2023 © <a href="https://github.com/5HT">5HT</a> DHARMA <br /> VER 0.6.12
+                APR 2023 © 5HT <a href="https://5ht.co/license/">DHARMA</a> <br /> VER 0.6.12
             </div>
         </section>
         <section>
@@ -54,12 +55,16 @@
 </aside><main>
     <section>
 
-    <h3>MAIL PROTO</h3>
-    <p>The CHAT includes MAIL, the message delivery system.
-       The implementation of TXT chat protocol is trying to be informative but
-       not excessive, it should take care of run-time edge
-       cases but not too stable. TXT protocol is dedicated
-       for demo purposes and doesn't support file upload and voice calls.
+    <h3>SYNRC CHAT</h3>
+
+    <figure><img src="https://chat.n2o.dev/synrc-chat-3.png" width=900></figure>
+
+    <h3>TEXT MODE</h3>
+    <p>The CHAT includes MAIL delivery system base on SYN buil-in Erlang/OTP message broker along with MQTT.
+       The implementation of MAIL text chat protocol is trying to be informative but
+       not excessive, it should take care of run-time edge  cases but not too stable.
+       MAIL text protocol is dedicated for demo purposes and really short message
+       when you don't have access to mobile clients, it doesn't support file upload and voice calls.
      </p>
     <figure><code>
  $ wscat --no-check -c wss://chat-2.erp.uno:8042/ws
@@ -101,7 +106,7 @@
     </code></figure>
     </section>
     <section>
-       <h3>APP SPEC</h3>
+       <h3>GUI SPEC</h3>
         <p><table cellspacing="10" valign="center"><tbody><tr><td>
         <img src="https://n2o.dev/img/pdf.jpg" width="35" style="margin-bottom:-12px;margin-right:10px;" />
         <a href="https://chat.erp.uno/priv/design/GUI.pdf">GUI.PDF</a></td></tr></tbody></table>
