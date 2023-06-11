@@ -12,8 +12,8 @@ Features
 * CA Server for X.509 certificate enrollment
 * CHAT Application
 
-SYNRC 5HT Open Protocol
------------------------
+SYNRC CHAT protocol
+-------------------
 
 * [BERT/MQTT SPEC](priv/design/protocol/)
 
