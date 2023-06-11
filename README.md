@@ -17,7 +17,7 @@ Features
 CHAT protocol
 -------------
 
-* [CHAT N2O PROTO SPEC (BERT/MQTT)](priv/design/protocol/)
+* [CHAT N2O PROTO SPEC](priv/design/protocol/) Erlang Term Format ETF/BERT over MQTT/QUIC
 
 MQTT server
 -----------
