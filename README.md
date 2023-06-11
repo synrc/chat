@@ -4,10 +4,11 @@ SYNRC CHAT APPLICATION
 Features
 --------
 
-* Open-Source
+* Open-Source 5HT protocol
 * X.509 OpenSSL, LiberSSL security
-* MQTT Server for CHAT application
-* LDAP Server for ERP/1 integration
+* MQTT server for CHAT application
+* LDAP server for ERP/1 integration
+* MAIL message delivery system over buil-in queue
 * CA Server for X.509 certificate enrollment
 * CHAT Application
 
@@ -16,10 +17,10 @@ SYNRC 5HT Open Protocol
 
 Open
 
-* [DOC](priv/doc/protocol/)
+* [DOC](priv/design/protocol/)
 
-SYNRC MQTT Erlang Server
-------------------------
+SYNRC MQTT Server
+-----------------
 
 
 ```erlang

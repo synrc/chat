@@ -14,20 +14,26 @@
     <article>
         <section>
             <h3>SYNOPSIS</h3>
-            <div>CHAT is a simple chatbox delivery system consists of:</div>
+            <div>CHAT is a simple instant messaging server consists of:</div>
             <div>
-                 <ul><li>SYN for publish-subscribe message queue;
-                 </li><li>N2O for protocols;</li><li>KVX for data storage;</li><li>and COWBOY for the web server.</li></ul></div>
-                <div>
-             CHAT uses WebSocket server and BER/BERT/TXT channel formatters.</div><br/>
+                 <ul><li>MQTT for publish-subscribe message queue;
+                 </li><li>N2O for protocols;</li><li>KVX for data storage;</li><li>LDAP for user directory and CA for X.509 certificate enrollment for new users.</li></ul></div>
+            <div>
+            CHAT uses WebSocket server and BER/BERT/TXT channel formatters.</div><br/>
 
         <figure>
         <code> $ wscat -c wss://chat.erp.uno</code>
         </figure>
         </section>
         <section>
-            <h3><a href="https://n2o.dev">MODULES</a></h3>
-            <div><ul><li><a href="man/chat_txt.htm">TXT</a></li><li><a href="man/chat_ber.htm">BER</a></li><li><a href="man/chat.htm">chat</a></li><li><a href="man/chat_server.htm">SERVER</a></li><li><a href="man/csr.htm">CSR</a></li></ul></div>
+            <h3><a href="chat">MODULES</a></h3>
+            <div><ul><li><a href="man/chat_file.htm">FILE</a></li>
+                     <li><a href="man/chat_history.htm">HISTORY</a></li>
+                     <li><a href="man/chat.link">LINK</a></li>
+                     <li><a href="man/chat_message.htm">MESSAGE</a>
+                     <li><a href="man/chat.link">LINK</a></li>
+                     <li><a href="man/chat.link">LINK</a></li>
+                     <li><a href="man/csr.htm">CSR</a></li></ul></div>
             <br />
             <div>
                 APR 2019 © <a href="https://github.com/5HT">5HT</a> DHARMA <br /> VER 0.6.12
@@ -39,8 +45,9 @@
 </aside><main>
     <section>
 
-    <h3>TXT PROTO</h3>
-    <p>The implementation of TXT chat protocol is trying to be informative but
+    <h3>MAIL PROTO</h3>
+    <p>The CHAT includes MAIL, the message delivery system.
+       The implementation of TXT chat protocol is trying to be informative but
        not excessive, it should take care of run-time edge
        cases but not too stable. TXT protocol is dedicated
        for demo purposes and doesn't support file upload and voice calls.
