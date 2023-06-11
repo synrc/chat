@@ -12,12 +12,12 @@ Features
 * LDAP server for ERP/1 integration
 * SYN/MAIL message delivery system
 * CA Server for X.509 certificate enrollment
-* CHAT Application
+* CHAT server base on N2O
 
 CHAT protocol
 -------------
 
-* [BERT/MQTT CHAT PROTO SPEC](priv/design/protocol/)
+* [CHAT N2O PROTO SPEC (BERT/MQTT)](priv/design/protocol/)
 
 MQTT server
 -----------
