@@ -4,75 +4,25 @@ SYNRC CHAT APPLICATION
 Features
 --------
 
-* EMQ Version 2.1.1 MQTT Protocol 5
-* SYNRC CHAT Application
+* Open-Source
+* X.509 OpenSSL, LiberSSL security
+* MQTT Server for CHAT application
+* LDAP Server for ERP/1 integration
+* CA Server for X.509 certificate enrollment
+* CHAT Application
 
-Open Specification for Client Development
------------------------------------------
+SYNRC 5HT Open Protocol
+-----------------------
 
-* [DOC](https://github.com/NYNJA-MC/server/tree/master/doc)
+Open
 
-SERVERS
--------
+* [DOC](priv/doc/protocol/)
 
-MQTT API Port: 1883
-REST API Port: 8888
+SYNRC MQTT Erlang Server
+------------------------
 
-Developers Setup
-----------------
 
-```
-$ curl -fsSL https://raw.github.com/synrc/mad/master/mad > mad \
-              && chmod +x mad \
-              && sudo cp /usr/local/bin
-$ mad dep com rep
-Configuration: [{n2o,
-                    [{port,8000},
-                     {app,review},
-                     {pickler,n2o_secret},
-                     {formatter,bert},
-                     {log_modules,config},
-                     {log_level,config}]},
-                {emq_dashboard,
-                    [{listeners_dash,
-                         [{http,18083,[{acceptors,4},{max_clients,512}]}]}]},
-                {emq_modules,
-                    [{modules,
-                         [{emq_mod_presence,[{qos,1}]},
-                          {emq_mod_subscription,[{<<"%u/%c/#">>,2}]},
-                          {emq_mod_rewrite,
-                              [{rewrite,"x/#","^x/y/(.+)$","z/y/$1"},
-                               {rewrite,"y/+/z/#","^y/(.+)/z/(.+)$",
-                                   "y/z/$2"}]}]}]},
-                {emqttd,
-                    [{listeners,
-                         [{http,8083,[{acceptors,4},{max_clients,512}]},
-                          {tcp,1883,[{acceptors,4},{max_clients,512}]}]},
-                     {sysmon,
-                         [{long_gc,false},
-                          {long_schedule,240},
-                          {large_heap,8000000},
-                          {busy_port,false},
-                          {busy_dist_port,true}]},
-                     {session,
-                         [{upgrade_qos,off},
-                          {max_inflight,32},
-                          {retry_interval,20},
-                          {max_awaiting_rel,100},
-                          {await_rel_timeout,20},
-                          {enable_stats,off}]},
-                     {queue,[]},
-                     {allow_anonymous,true},
-                     {protocol,
-                         [{max_clientid_len,1024},{max_packet_size,64000}]},
-                     {acl_file,"etc/acl.conf"},
-                     {plugins_etc_dir,"etc/plugins/"},
-                     {plugins_loaded_file,"etc/loaded_plugins"},
-                     {pubsub,
-                         [{pool_size,8},{by_clientid,true},{async,true}]}]},
-                {kvs,
-                    [{dba,store_mnesia},
-                     {schema,[kvs_user,kvs_acl,kvs_feed,kvs_subscription]}]}]
+```erlang
 Applications:  [kernel,stdlib,gproc,lager_syslog,pbkdf2,asn1,fs,ranch,mnesia,
                 compiler,inets,crypto,syntax_tools,xmerl,gen_logger,esockd,
                 cowlib,goldrush,public_key,lager,ssl,cowboy,mochiweb,emqttd,
@@ -82,12 +32,6 @@ Erlang/OTP 19 [erts-8.3] [source] [64-bit] [smp:4:4]
 
 Eshell V8.3  (abort with ^G)
 starting emqttd on node 'nonode@nohost'
-Nonexistent: []
-Plugins: [{mqtt_plugin,emq_auth_username,"2.1.1",
-                       "Authentication with Username/Password",false},
-          {mqtt_plugin,emq_dashboard,"2.1.1","EMQ Web Dashboard",false},
-          {mqtt_plugin,emq_modules,"2.1.1","EMQ Modules",false},
-          {mqtt_plugin,n2o,"4.5-mqtt","N2O Server",false}]
 Names: [emq_dashboard,n2o]
 dashboard:http listen on 0.0.0.0:18083 with 4 acceptors.
 Async Start Attempt {handler,"timer",n2o,system,n2o,[],[]}
@@ -99,66 +43,10 @@ emqttd 2.1.1 is running now
 ```
 
 Open http://127.0.0.1:18083/#/websocket with `admin:public` credentials,
-Press Connect, Subscribe, Sned and observe
-statistics http://127.0.0.1:18083/#/overview.
+Press Connect, Subscribe, Sned and observe statistics http://127.0.0.1:18083/#/overview.
 
-Production Setup
-----------------
-
-$ ps aux | grep beam
-$ killall -9 "beam.smp"
-$ git clone https://github.com/NYNJA-MC/server && cd server
-$ mad up
-$ mad dep com pla
-$ make start
-$ make attach ^D
-$ tail -f log/console.log
-
-Create Authorized User
-----------------------
-
-```
-> emq_auth_username:cli(["add","maxim","public"]).
-```
-
-Then enable `emq_auth_username` plugin in the dashboard http://127.0.0.1:18083/#/plugins
-Later you can connect specifying `User Name:` and `Password:` credentials
-at http://127.0.0.1:18083/#/websocket
-
-Creating Single File Bundle
----------------------------
-
-```
-$ mad release emqttd
-$ ./emqttd rep
-```
-
-User/Device Registration
-------------------------
-
-TODO:
-
-Control Panel
--------------
-
-```
-> emqttd_ctl:run(["plugins","list"]).
-Plugin(emq_auth_username, version=2.1.1, description=Authentication, active=false)
-Plugin(emq_dashboard, version=2.1.1, description=EMQ Web Dashboard, active=true)
-Plugin(emq_modules, version=2.1.1, description=EMQ Modules, active=true)
-Plugin(emq_persistence, version=1.1.2, description=Synrc KVS for MQTT, active=true)
-ok
-
-> emqttd_ctl:run(["clients","list"]).
-Client(C_1492632081463, clean_sess=true, username=5HT,
-       peername=127.0.0.1:58225, connected_at=1492632082)
-ok
-
-> emqttd_ctl:run(["help"]).
-```
-
-MQTT Erlang Client
-------------------
+SYNRC MQTT Client
+-----------------
 
 ```
 $ mad com
