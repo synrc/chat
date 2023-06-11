@@ -12,13 +12,13 @@ Features
 * CA Server for X.509 certificate enrollment
 * CHAT Application
 
-SYNRC CHAT protocol
--------------------
+CHAT protocol
+-------------
 
 * [BERT/MQTT CHAT PROTO SPEC](priv/design/protocol/)
 
-SYNRC MQTT server
------------------
+MQTT server
+-----------
 
 ```erlang
 Applications:  [kernel,stdlib,gproc,lager_syslog,pbkdf2,asn1,fs,ranch,mnesia,
@@ -40,8 +40,8 @@ emqttd 2.1.1 is running now
 Open http://127.0.0.1:18083/#/websocket with `admin:public` credentials,
 Press Connect, Subscribe, Sned and observe statistics http://127.0.0.1:18083/#/overview.
 
-SYNRC MQTT client
------------------
+MQTT client
+-----------
 
 ```
 $ mad com
