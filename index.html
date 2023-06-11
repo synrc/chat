@@ -76,18 +76,18 @@
  | CUT &lt;id&gt;.
  > AUTH maxim
  &lt; USER maxim
- > SEND vlad HELO
+ > SEND rocco HELO
  &lt; ERROR user doesn't exist.
- > AUTH vlad
- &lt; USER vlad
+ > AUTH rocco
+ &lt; USER rocco
  > SEND maxim OK
- &lt; NOTIFY vlad:maxim:1556151953113322286:OK
+ &lt; NOTIFY rocco:maxim:1556151953113322286:OK
  &lt; ACK "1556151953113322286"
  > AUTH maxim
  &lt; USER maxim
  > BOX
  &lt; LIST
- vlad:maxim:1556151953113322286:OK
+ rocco:maxim:1556151953113322286:OK
  > SEND maxim this is me
  &lt; NOTIFY maxim:maxim:1556152151055371152:this is me
  &lt; ACK "1556152151055371152"
@@ -96,7 +96,7 @@
  &lt; ACK "1556152157283311935"
  > BOX
  &lt; LIST
- vlad:maxim:1556151953113322286:OK
+ rocco:maxim:1556151953113322286:OK
  maxim:maxim:1556152151055371152:this is me
  maxim:maxim:1556152157283311935:back again
  > CUT 1556152157283311935
