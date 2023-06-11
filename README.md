@@ -18,9 +18,8 @@ Open
 
 * [DOC](priv/doc/protocol/)
 
-SYNRC MQTT Erlang Server
-------------------------
-
+SYNRC MQTT Server
+-----------------
 
 ```erlang
 Applications:  [kernel,stdlib,gproc,lager_syslog,pbkdf2,asn1,fs,ranch,mnesia,
