@@ -1,4 +1,4 @@
-SYNRC PROTOCOL SPECIFICATION
+CHAT PROTOCOL SPECIFICATION
 ============================
 
 Version 1.0 Maxim Sokhatsky
@@ -7,19 +7,19 @@ Overview
 --------
 
 To support the development of messaging apps and IOT infrastructure,
-SYNRC Protocol is designed from the ground up to be the most efficient,
-stable and scalable protocol available.  SYNRC itself is an open-source
+CHAT protocol is designed from the ground up to be the most efficient,
+stable and scalable protocol available.  CHAT itself is an open-source
 specification for Messaging and IOT applications and is a part of an
 open source family of N2O protocols. While it can be used with any
 transport we promote MQTT as an efficient binary protocol dedicated
 for applications over unreliable networks such as GSM, CDMA and other
 wireless networks.
 
-SYNRC Protocol enables all companies, regardless of size, to build
+CHAT protocol enables all companies, regardless of size, to build
 systems that can compete with the world’s most sophisticated
-communication platforms. SYNRC Protocol has been made open source
-for the benefit of the global community of developers. SYNRC Protocol
-powers the SYNRC Mobile Communicator.
+communication platforms. CHAT protocol has been made open source
+for the benefit of the global community of developers. CHAT protocol
+powers the SYNRC CHAT SIM (Secure Instand Messenger).
 
 Features
 --------
