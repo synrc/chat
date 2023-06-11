@@ -14,15 +14,21 @@
     <article>
         <section>
             <h3>SYNOPSIS</h3>
-            <div>CHAT is a simple instant messaging server consists of:</div>
+            <div>CHAT is a simple instant messaging server.
+                 It uses MQTT protocol and BERT encoder. CHAT consists of:</div><br/>
+
             <div>
-                 <ul><li>MQTT for publish-subscribe message queue;
-                 </li><li>N2O for protocols;</li><li>KVX for data storage;</li><li>LDAP for user directory and CA for X.509 certificate enrollment for new users.</li></ul></div>
+                 <ul><li>MQTT for publish-subscribe message queue;</li>
+                     <li>N2O for protocols;</li>
+                     <li>KVS for data storage;</li>
+                     <li>LDAP for user directory;</li>
+                     <li>NS for domain name security;</li>
+                     <li>CA for X.509 client certificate enrollment.</li></ul></div>
             <div>
-            CHAT uses WebSocket server and BER/BERT/TXT channel formatters.</div><br/>
+            <br>
 
         <figure>
-        <code> $ wscat -c wss://chat.erp.uno</code>
+        <code> $ wscat -c wss://chat.synrc.com</code>
         </figure>
         </section>
         <section>
@@ -31,9 +37,12 @@
                      <li><a href="man/chat_history.htm">HISTORY</a></li>
                      <li><a href="man/chat.link">LINK</a></li>
                      <li><a href="man/chat_message.htm">MESSAGE</a>
-                     <li><a href="man/chat.link">LINK</a></li>
-                     <li><a href="man/chat.link">LINK</a></li>
-                     <li><a href="man/csr.htm">CSR</a></li></ul></div>
+                     <li><a href="man/chat_presence.htm">PRESENCE</a></li>
+                     <li><a href="man/chat_profile.htm">PROFILE</a></li>
+                     <li><a href="man/chat_push.htm">PUSH</a></li>
+                     <li><a href="man/chat_room.htm">ROOM</a></li>
+                     <li><a href="man/chat_roster.htm">ROSTER</a></li>
+                     <li><a href="man/chat_search.htm">SEARCH</a></li>
             <br />
             <div>
                 APR 2019 © <a href="https://github.com/5HT">5HT</a> DHARMA <br /> VER 0.6.12
@@ -95,7 +104,7 @@
        <h3>APP SPEC</h3>
         <p><table cellspacing="10" valign="center"><tbody><tr><td>
         <img src="https://n2o.dev/img/pdf.jpg" width="35" style="margin-bottom:-12px;margin-right:10px;" />
-        <a href="https://chat.erp.uno/priv/doc/GUI.pdf">GUI.PDF</a></td></tr></tbody></table>
+        <a href="https://chat.erp.uno/priv/design/GUI.pdf">GUI.PDF</a></td></tr></tbody></table>
         <br />
        </p>
     </section>
