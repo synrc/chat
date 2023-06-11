@@ -74,31 +74,31 @@
  | SEND &lt;user&gt; &lt;msg&gt;
  | BOX
  | CUT &lt;id&gt;.
- > AUTH maxim
- &lt; USER maxim
+ > AUTH buddha
+ &lt; USER buddha
  > SEND rocco HELO
  &lt; ERROR user doesn't exist.
  > AUTH rocco
  &lt; USER rocco
- > SEND maxim OK
- &lt; NOTIFY rocco:maxim:1556151953113322286:OK
+ > SEND buddha OK
+ &lt; NOTIFY rocco:buddha:1556151953113322286:OK
  &lt; ACK "1556151953113322286"
- > AUTH maxim
- &lt; USER maxim
+ > AUTH buddha
+ &lt; USER buddha
  > BOX
  &lt; LIST
- rocco:maxim:1556151953113322286:OK
- > SEND maxim this is me
- &lt; NOTIFY maxim:maxim:1556152151055371152:this is me
+ rocco:buddha:1556151953113322286:OK
+ > SEND buddha this is me
+ &lt; NOTIFY buddha:buddha:1556152151055371152:this is me
  &lt; ACK "1556152151055371152"
- > SEND maxim back again
- &lt; NOTIFY maxim:maxim:1556152157283311935:back again
+ > SEND buddha back again
+ &lt; NOTIFY buddha:buddha:1556152157283311935:back again
  &lt; ACK "1556152157283311935"
  > BOX
  &lt; LIST
- rocco:maxim:1556151953113322286:OK
- maxim:maxim:1556152151055371152:this is me
- maxim:maxim:1556152157283311935:back again
+ rocco:buddha:1556151953113322286:OK
+ buddha:buddha:1556152151055371152:this is me
+ buddha:buddha:1556152157283311935:back again
  > CUT 1556152157283311935
  &lt; ERASED 3
  > BOX
