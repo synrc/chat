@@ -15,9 +15,7 @@ Features
 SYNRC 5HT Open Protocol
 -----------------------
 
-Open
-
-* [DOC](priv/design/protocol/)
+* [BERT/MQTT SPEC](priv/design/protocol/)
 
 SYNRC MQTT Server
 -----------------
