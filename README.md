@@ -22,7 +22,6 @@ Open
 SYNRC MQTT Server
 -----------------
 
-
 ```erlang
 Applications:  [kernel,stdlib,gproc,lager_syslog,pbkdf2,asn1,fs,ranch,mnesia,
                 compiler,inets,crypto,syntax_tools,xmerl,gen_logger,esockd,
