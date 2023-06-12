@@ -24,7 +24,7 @@ The CHAT protocols communicates with `actions/:vsn/:module/:client_id`, `events/
 
 The CHAT protocol is implemented in the set of sub-protocol modules:
 FILE, HISTORY, LINK, MESSAGE, PRESENSE, PROFILE, PUSH, ROOM, ROSTER, SEARCH, AUTH. For full specification follow `priv/design` folder.
-The CHAT server implementation  relies only on ISO/RFC connections such as LDAP, MQTT, QUIC, DNSSEC.
+The CHAT server implementation  relies only on ISO/RFC connections such as LDAP, MQTT, QUIC, DNSSEC, WebSocket.
 
 * [CHAT N2O PROTO SPEC](priv/proto) Erlang Term Format ETF/BERT over MQTT/QUIC
 
