@@ -10,7 +10,7 @@ defmodule CHAT.Mixfile do
   end
 
   def application do
-    [mod: {:mq, []}]
+    [mod: {:chat, []}]
   end
 
   defp package do
