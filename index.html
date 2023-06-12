@@ -3,7 +3,7 @@
 <meta name="author" content="Maxim Sokhatsky" /><title>CHAT</title>
     <link rel="stylesheet" href="https://n2o.dev/blank.css" />
     <link rel="stylesheet" href="https://n2o.dev/zima.css" />
-    <link rel="stylesheet" href="https://n2o.dev/pro/pro.css" />
+    <link rel="stylesheet" href="https://n2o.dev/pro/pro.css?v=1" />
 </head><body><nav>
     <a href="https://erp.uno/en/">ERP</a>
     <a href="https://chat.erp.uno" style="background:#ededed;">CHAT</a>
@@ -58,6 +58,23 @@
 
     <h3>SYNRC CHAT</h3>
 
+    <p>The CHAT protocol communicates with <b class=sel>actions/:vsn/:module/:client_id</b>,
+       <b class=sel>events/:vsn/:node/:module/:username/:client_id/:token</b>,
+       <b class=sel>devices/:phone</b>,
+       <b class=sel>contacts/:phone_roster</b>,
+       <b class=sel>private/:phone_roster/:phone_roster</b> MQTT topics, sending through them
+       <b>Index</b>, <b>Typing</b>, <b>Search</b>, <b>Feature</b>, <b>Service</b>, <b>Desc</b>,
+       <b>Whitelist</b>, <b>Presence, <b>Friend</b>, <b>Tag</b>, <b>Link</b>, <b>StickerPack</b>,
+       <b>Message</b>, Member</b>, <b>Room</b>, <b>Contact</b>, <b>Star</b>, <b>RoomStar</b>,
+       <b>Ack</b>, <b>Auth</b>, <b>Roster</b>, <b>Profile</b>, <b>History</b>, <b>push</b>,
+       <b>io</b> ETF-serialized messages.
+
+     <p>The CHAT protocol is implemented in the set of modules:
+        FILE, HISTORY, LINK, MESSAGE, PRESENSE, PROFILE, PUSH, ROOM, ROSTER, SEARCH, AUTH.
+        </p>.
+
+    <ul><li><a href="https://github.com/synrc/chat/tree/main/priv/design/protocol">SYNRC CHAT</a> — ETF/MQTT protocol.</li></ul>
+
     <figure><img src="https://mail.n2o.dev/synrc-chat-3.png" width=900></figure>
 
     <h3>SYNRC MAIL</h3>
@@ -66,7 +83,7 @@
        not excessive, it should take care of run-time edge  cases but not too stable.
        MAIL text protocol is dedicated for demo purposes and really short message
        when you don't have access to mobile clients, it doesn't support file upload and voice calls.
-       It is basically SMPT done right.
+       It is basically SMPT done right: HELP, BOX, CUT, AUTH, SEND, LIST.
      </p>
     <figure><code>
  $ wscat -c wss://chat.synrc.com
