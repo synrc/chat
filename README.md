@@ -6,7 +6,6 @@ SYNRC CHAT
 Features
 --------
 
-* Open-Source 5HT protocol
 * X.509 OpenSSL, LiberSSL security
 * MQTT server for CHAT application
 * LDAP server for ERP/1 integration
