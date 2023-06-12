@@ -3,7 +3,7 @@ defmodule CHAT.Mixfile do
 
   def project do
     [app: :chat,
-     version: "0.6.12",
+     version: "6.6.13",
      description: "CHAT Instant Messenger",
      package: package,
      deps: deps]
@@ -14,10 +14,10 @@ defmodule CHAT.Mixfile do
   end
 
   defp package do
-    [files: ["src", "LICENSE", "README.md", "rebar.config", "sys.config", "vm.args"],
+    [files: ["src", "etc", "priv", "include", "LICENSE", "README.md", "rebar.config", "sys.config", "vm.args"],
      licenses: ["DHARMA"],
      maintainers: [Namdak Tonpa"],
-     name: :mq,
+     name: :chat,
      links: %{"GitHub" => "https://github.com/synrc/chat"}]
   end
 
