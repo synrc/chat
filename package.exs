@@ -4,7 +4,7 @@ defmodule CHAT.Mixfile do
   def project do
     [app: :chat,
      version: "6.6.14",
-     description: "CHAT Instant Messenger",
+     description: "CHAT X.509 Instant Messenger",
      package: package,
      deps: deps]
   end
