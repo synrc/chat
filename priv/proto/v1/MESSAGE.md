@@ -8,8 +8,8 @@ Endpoints
 
 * `actions/1/api/:client` — MQTT
 * `events/1//api//` — MQTT
-* `ses/:phone` - MQTT
-* `p2p/:phone_id/:phone_id` — MQTT
+* `devices/:phone` - MQTT
+* `private/:phone_id/:phone_id` — MQTT
 * `room/:room` — MQTT
 
 
