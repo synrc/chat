@@ -21,7 +21,8 @@ The CHAT protocols communicates with `actions/:vsn/:module/:client_id`, `events/
 `Index`, `Typing`, `Search`, `Feature`, `Service`, `Desc`, `Whitelist`, `Presence`,  `Friend`, `Tag`,  `Link`, `StickerPack`,
 `Message`, `Member`, `Room`, `Contact`, `Star`, `RoomStar`, `Ack`, `Auth`, `Roster`, `Profile`, `History`, `push`, `io` ETF-serialized messages.
 
-The CHAT protocol is implemented in the set of modules: FILE, HISTORY, LINK, MESSAGE, PRESENSE, PROFILE, PUSH, ROOM, ROSTER, SEARCH, AUTH. For full specification follow `priv/design` folder:
+The CHAT protocol is implemented in the set of sub-protocol modules:
+FILE, HISTORY, LINK, MESSAGE, PRESENSE, PROFILE, PUSH, ROOM, ROSTER, SEARCH, AUTH. For full specification follow `priv/design` folder:
 
 * [CHAT N2O PROTO SPEC](priv/proto) Erlang Term Format ETF/BERT over MQTT/QUIC
 
