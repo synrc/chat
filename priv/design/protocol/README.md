@@ -49,7 +49,7 @@ The number of these topics are equal to the number of cores.
 Client sends API requesus to one of these topics and listen
 for answers on 'actions' topic.
 
-* `ses/:phone` — Devices Broadcast
+* `devices/:phone` — Devices Broadcast
 
 This topic is dedicated for accumulating all device sessions
 under the single topic indexed by the phone. If you send to
@@ -57,7 +57,7 @@ this topic, all devices of the given phone will receive the
 message. If you have no right to send to this phone nothing
 will happens. New devices should be subscribed to this topic on registration.
 
-* `ac/:phone_roster` — Friendship Broadcast
+* `contacts/:phone_roster` — Friendship Broadcast
 
 This topic is representing the subscription mesh, based on
 friendship logic. If you send to this topic, all devices of
@@ -66,7 +66,7 @@ strict you from sending to other topics than yours. New devices
 of friends should be subscribed to this topic on registration.
 On friendship all friend devices are added to this topic.
 
-* `p2p/:phone_roster/:phone_roster` — Private Chat
+* `private/:phone_roster/:phone_roster` — Private Chat
 
 This topic is representing the private chat between two users.
 The name of the topic is constructed from two sorted roster
