@@ -80,10 +80,11 @@
                          sms_code = [] :: [] | binary(), attempts = [] :: [] | integer(), services = [] :: list(term()), settings = [] :: [] | binary() | list(#'Feature'{}),
                          push = [] :: [] | binary(), os = [] :: [] | ios | android | web, created = [] :: [] | integer(), last_online = [] :: [] | integer() }).
 
--record('Roster',       {id = [] :: [] | binary() | integer(), names    = [] :: [] | binary(), surnames = [] :: [] | binary(), email = [] :: [] | binary(),
-                         nick = [] :: [] | binary(), serlist = [] :: list(#'Contact'{} | integer()), roomlist = [] :: list(#'Room'{}), favorite = [] :: list(#'Star'{}),
-                         tags = [] :: list(#'Tag'{}), hone = [] :: [] | binary(),  vatar = [] :: [] | binary(), update = 0  :: [] | integer(),
-                         status = [] :: [] | get | create | del | remove | nick | search | contact | add | update | list | patch | last_msg }).
+-record('Roster',       {id = [] :: [] | binary() | integer(), names = [] :: [] | binary(), surnames = [] :: [] | binary(),
+                         email = [] :: [] | binary(), nick = [] :: [] | binary(), userlist = [] :: list(#'Contact'{} | integer()),
+                         roomlist = [] :: list(#'Room'{}), favorite = [] :: list(#'Star'{}), tags = [] :: list(#'Tag'{}),
+                         phone = [] :: [] | binary(), avatar = [] :: [] | binary(), update = 0  :: [] | integer(),
+                         status = [] :: [] | get | create | del | remove | nick| search | contact | add | update | list | patch | last_msg }).
 
 -record('Profile',      {phone = [] :: [] | binary(), services = [] :: [] | list(#'Service'{}), rosters  = [] :: [] | list(#'Roster'{} | binary() | integer()),  update = [],
                          settings = [] :: [] | list(#'Feature'{}), date   = 0  :: integer(), balance  = 0  :: integer(), presence = [] :: [] | offline | online | binary(),

@@ -16,8 +16,8 @@ init([]) -> {ok, {{one_for_one, 5, 10}, []}}.
 stop(_) -> ok.
 start(_, _) -> 
     X = supervisor:start_link({local, chat}, chat, []),
-    emqttd_access_control:register_mod(auth, n2o_auth, [[]], 9997),
-    emqttd_access_control:register_mod(auth, roster_auth, [[]], 9998),
+%    emqttd_access_control:register_mod(auth, n2o_auth, [[]], 9997),
+%    emqttd_access_control:register_mod(auth, roster_auth, [[]], 9998),
     X.
 
 tables()  -> [ #table{name = writer, fields = record_info(fields, writer)},

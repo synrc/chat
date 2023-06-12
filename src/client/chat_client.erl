@@ -1,9 +1,26 @@
 -module(chat_client).
--export([start_client/1, start_cli_receive/3, receive_drop/0, filter/2, proc/2, start_connect/0]).
+-export([start_client/1, start_cli_receive/3, receive_drop/0, filter/2, proc/2,
+         start_connect/0, set_config/2, get_config/2, stop_vnodes/0, start_vnodes/0,
+         filter_friend/2, start_cli_receive/2, start_client/2,
+         gen_name_reg/2, gen_name_reg/1, stop_connect/0, stop_connect/1, stop_connect/2,
+         gen_name/1, gen_name/2, gen_name/3, gen_anylist/1, gen_anylist/2, rosters/1, rosters/2,
+         reg_fake_user/1,reg_fake_user/2,reg_fake_user/3,reg_fake_user/4,
+         client_ids/1, test_info/1, test_info/3,
+         receive_last/3, receive_last/4, send_last/2, send_last/5,
+         set_filer/2, start_connect/3, write_log/2,  wait_for_last_res/2
+       ]).
 -include_lib("n2o/include/n2o.hrl").
 -include_lib("chat/include/roster.hrl").
 
--record(mqttc, {client :: pid(), status :: connected, mqtt_opts = [], username = "root", receive_pid = []}).
+-record(mqttc, {client :: pid(),
+                status :: connected,
+                mqtt_opts = [],
+                filter = [],
+                last_res = [],
+                client_id = [],
+                mqttc = [],
+                username = "root",
+                receive_pid = []}).
 
 set_config(Key, Val) -> application:set_env(?MODULE, Key, Val).
 get_config(Key, Default) -> application:get_env(?MODULE, Key, Default).
@@ -39,8 +56,6 @@ stop_client(ClientId) ->
 					n2o:cache(system, {system, ClientId}, undefined), ok;
 				_ -> n2o_pi:stop(system, ClientId), ok end; _ -> ok end.
 
-receive_drop() -> receive _ -> receive_drop() after ?DROP_TIMEOUT -> skip end.
-
 filter(Term, _) ->
 	case Term of
 		{send_push, _, _, _} -> skip;
@@ -61,51 +76,51 @@ filter_friend(Term, State) ->
 		{_, Res} -> Res end.
 
 proc(#mqttc{}, #pi{} = H)	-> {reply, [], H};
-proc(init, #pi{name = "synrc_client", state = #state{receive_pid = Self} = State} = Async) ->
+proc(init, #pi{name = "synrc_client", state = #mqttc{receive_pid = Self} = State} = Async) ->
 	{ok, C} = application:get_env(rest, rest_pid),
 	Self ! init,
-	{ok, Async#pi{state = State#state{mqttc = C, client_id = synrc_client}}};
-proc(init, #pi{name = "synrc_bridge", state = #state{receive_pid = Self} = State} = Async) ->
-	{ok, C} = 'Exmqttc':start_link([{client_id, "synrc_bridge"}, {logger, {console, error}}, {reconnect, 5}]),
+	{ok, Async#pi{state = State#mqttc{mqttc = C, client_id = synrc_client}}};
+proc(init, #pi{name = "synrc_bridge", state = #mqttc{receive_pid = Self} = State} = Async) ->
+	{ok, C} = 'Exmqttc':start_link("synrc-bridge", [], [{host,"127.0.0.1"}], [{client_id, "synrc_bridge"}, {logger, {console, error}}, {reconnect, 5}]),
 	io:format( "MICRO BRIDGE SIMULATOR PROC started", []),
 	register(sys_bridge, C),
 	Self ! init,
-	{ok, Async#pi{state = State#state{mqttc = whereis(sys_bridge), client_id = "synrc_bridge"}}};
-proc(init, #pi{name = ClientId, state = #state{mqtt_opts = Opts, receive_pid = Self, username = Username} = State} = Async) ->
+	{ok, Async#pi{state = State#mqttc{mqttc = whereis(sys_bridge), client_id = "synrc_bridge"}}};
+proc(init, #pi{name = ClientId, state = #mqttc{mqtt_opts = Opts, receive_pid = Self, username = Username} = State} = Async) ->
 	io:format("ClientInit:~p\r", [ClientId]),
-	{ok, C} = 'Exmqttc':start_link([{client_id, ClientId}, {clean_sess, false}, {logger, {console, error}}, {username, Username}, {reconnect, 5}] ++ Opts),
+	{ok, C} = 'Exmqttc':start_link("synrc", [], [{host,"127.0.0.1"}],[{client_id, ClientId}, {clean_sess, false}, {logger, {console, error}}, {username, Username}, {reconnect, 5}] ++ Opts),
 	Self ! init,
-	{ok, Async#pi{state = State#state{mqttc = C, client_id = ClientId}}};
+	{ok, Async#pi{state = State#mqttc{mqttc = C, client_id = ClientId}}};
 
-proc({filter, Filter}, #pi{state = #state{receive_pid = Self} = State} = H) ->
+proc({filter, Filter}, #pi{state = #mqttc{receive_pid = Self} = State} = H) ->
 	Self ! ok,
-	{reply, [], H#pi{state = State#state{filter = Filter}}};
+	{reply, [], H#pi{state = State#mqttc{filter = Filter}}};
 
-proc(last_res, #pi{state = #state{receive_pid = Self, last_res = LastRes} = State} = H) ->
+proc(last_res, #pi{state = #mqttc{receive_pid = Self, last_res = LastRes} = State} = H) ->
 	Self ! lists:ukeysort(1, LastRes),
-	{reply, [], H#pi{state = State#state{last_res = []}}};
-proc(unsort_last_res, #pi{state = #state{receive_pid = Self, last_res = LastRes} = State} = H) ->
+	{reply, [], H#pi{state = State#mqttc{last_res = []}}};
+proc(unsort_last_res, #pi{state = #mqttc{receive_pid = Self, last_res = LastRes} = State} = H) ->
 	Self ! LastRes,
-	{reply, [], H#pi{state = State#state{last_res = []}}};
-proc({publish, _, BinTerm}, #pi{state = #state{receive_pid = Self, last_res = LastRes, filter = FilterFun} = State} = H) ->
+	{reply, [], H#pi{state = State#mqttc{last_res = []}}};
+proc({publish, _, BinTerm}, #pi{state = #mqttc{receive_pid = Self, last_res = LastRes, filter = FilterFun} = State} = H) ->
 	case ?MODULE:FilterFun(Term = binary_to_term(BinTerm), State) of
 		send ->
 			write_log([Term]),
 			Self ! Term; _ -> skip end,
-	{reply, [], H#pi{state = State#state{last_res = [Term | LastRes]}}};
-proc(_Term, #pi{state = #state{mqttc = {error, _} = Err}} = H) ->
+	{reply, [], H#pi{state = State#mqttc{last_res = [Term | LastRes]}}};
+proc(_Term, #pi{state = #mqttc{mqttc = {error, _} = Err}} = H) ->
 	roster:info("mqttc error: ~p", [Err]),
 	{reply, [], H};
 proc({callback, CallbackFun}, #pi{state = State} = H) ->
 	State2 = CallbackFun(State),
 	{reply, [], H#pi{state = State2}};
-proc(Term, #pi{state = #state{mqttc = C}} = H)	->
+proc(Term, #pi{state = #mqttc{mqttc = C}} = H)	->
 	roster:send_event(C, <<>>, <<>>, Term),
 	{reply, [], H}.
 
-stop_vnodes() when ?HOST == ?LOC -> roster:stop_vnodes(), timer:sleep(1000);
+%stop_vnodes() when ?HOST == ?LOC -> roster:stop_vnodes(), timer:sleep(1000);
 stop_vnodes() -> skip.
-start_vnodes() when ?HOST == ?LOC -> roster:start_vnodes(), timer:sleep(1000);
+%start_vnodes() when ?HOST == ?LOC -> roster:start_vnodes(), timer:sleep(1000);
 start_vnodes() -> skip.
 
 gen_name(Name) -> gen_name(Name, iolist_to_binary(["DevKey_", Name])).
@@ -153,7 +168,7 @@ test_info(#'History'{roster_id = Phone, feed = Feed, data = Data} = History) ->
 			data = [Msg#'Message'{feed_id = feed(MsgFeed), from = roster:phone_id(From), to = roster:phone_id(To)}
 				|| #'Message'{feed_id = MsgFeed, from = From, to = To} = Msg <- Data]}, Phone);
 
-test_info(#'Message'{from= From, to=To, feed_id = Feed, files = Data} = Message) ->
+test_info(#'Message'{from= From, to=_To, feed_id = _Feed, files = _Data} = Message) ->
 	test_info(roster_message,
 		Message#'Message'{},
 		From).
