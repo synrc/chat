@@ -23,7 +23,7 @@ The CHAT protocols communicates with `actions/:vsn/:module/:client_id`, `events/
 
 The CHAT protocol is implemented in the set of modules: FILE, HISTORY, LINK, MESSAGE, PRESENSE, PROFILE, PUSH, ROOM, ROSTER, SEARCH, AUTH. For full specification follow `priv/design` folder:
 
-* [CHAT N2O PROTO SPEC](priv/design/protocol/) Erlang Term Format ETF/BERT over MQTT/QUIC
+* [CHAT N2O PROTO SPEC](priv/proto) Erlang Term Format ETF/BERT over MQTT/QUIC
 
 MQTT server
 -----------
