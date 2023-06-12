@@ -12,7 +12,7 @@ Features
 * LDAP server for ERP/1 integration
 * SYN/MAIL message delivery system
 * CA Server for X.509 certificate enrollment
-* CHAT server base on N2O
+* N2O based CHAT protocol
 
 CHAT protocol
 -------------
