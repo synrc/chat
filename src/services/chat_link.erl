@@ -1,4 +1,4 @@
--module(roster_link).
+-module(chat_link).
 -include_lib("chat/include/roster.hrl").
 -include_lib("n2o/include/n2o.hrl").
 -export([info/3]).

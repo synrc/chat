@@ -1,4 +1,4 @@
--module(android).
+-module(chat_android).
 -include_lib("chat/include/roster.hrl").
 -export([description/0, notify/3, headers/0, test_push_notification/0]).
 

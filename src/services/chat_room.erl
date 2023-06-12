@@ -1,4 +1,4 @@
--module(roster_room).
+-module(chat_room).
 -include_lib("chat/include/roster.hrl").
 -include_lib("n2o/include/n2o.hrl").
 -export([start/0, info/3, proc/2]).

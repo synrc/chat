@@ -1,4 +1,4 @@
--module(roster_message).
+-module(chat_message).
 -include_lib("chat/include/roster.hrl").
 -include_lib("n2o/include/n2o.hrl").
 -include_lib("kvs/include/kvs.hrl").

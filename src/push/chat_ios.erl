@@ -1,4 +1,4 @@
--module(ios).
+-module(chat_ios).
 -include_lib("chat/include/roster.hrl").
 -include_lib("chat/include/push.hrl").
 
