@@ -15,10 +15,10 @@ defmodule CHAT.Mixfile do
 
   defp package do
     [files: ["src", "LICENSE", "README.md", "rebar.config", "sys.config", "vm.args"],
-     licenses: ["APACHE"],
-     maintainers: ["Andy Martemyanov", "Namdak Tonpa"],
+     licenses: ["DHARMA"],
+     maintainers: [Namdak Tonpa"],
      name: :mq,
-     links: %{"GitHub" => "https://github.com/voxoz/mq"}]
+     links: %{"GitHub" => "https://github.com/synrc/chat"}]
   end
 
   defp deps do
