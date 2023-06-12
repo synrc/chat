@@ -1,5 +1,5 @@
-CHAT PROTOCOL
-=============
+SYNRC CHAT PROTOCOL
+===================
 
 Version 1.0 Maxim Sokhatsky
 
@@ -39,23 +39,44 @@ Topics
 
 * `actions/:vsn/:module/:client_id` — Client Topic
 
-This topic is subscribed when connection established. This is done on server so client don't need to subscribe to this topic. All incoming mesages come to this topic.
+This topic is subscribed when connection established.
+This is done on server so client don't need to subscribe
+to this topic. All incoming mesages come to this topic.
 
 * `events/:vsn/:node/:module/:username/:client_id/:token` — Server Topic
 
-The number of these topics are equal to the number of cores. Client sends API requesus to one of these topics and listen for answers on 'actions' topic.
+The number of these topics are equal to the number of cores.
+Client sends API requesus to one of these topics and listen
+for answers on 'actions' topic.
 
 * `ses/:phone` — Devices Broadcast
 
-This topic is dedicated for accumulating all device sessions under the single topic indexed by the phone. If you send to this topic, all devices of the given phone will receive the message. If you have no right to send to this phone nothing will happens. New devices should be subscribed to this topic on registration.
+This topic is dedicated for accumulating all device sessions
+under the single topic indexed by the phone. If you send to
+this topic, all devices of the given phone will receive the
+message. If you have no right to send to this phone nothing
+will happens. New devices should be subscribed to this topic on registration.
 
 * `ac/:phone_roster` — Friendship Broadcast
 
-This topic is representing the subscription mesh, based on friendship logic. If you send to this topic, all devices of your friends will recieve this message. For sure server will strict you from sending to other topics than yours. New devices of friends should be subscribed to this topic on registration. On friendship all friend devices are added to this topic.
+This topic is representing the subscription mesh, based on
+friendship logic. If you send to this topic, all devices of
+your friends will recieve this message. For sure server will
+strict you from sending to other topics than yours. New devices
+of friends should be subscribed to this topic on registration.
+On friendship all friend devices are added to this topic.
 
 * `p2p/:phone_roster/:phone_roster` — Private Chat
 
-This topic is representing the private chat between two users. The name of the topic is constructed from two sorted roster identifiers, e.g. `380670001234_12525/380670002234_12334`, left phone is always less or equal then right. If you send to this topic, all devices of two counterparties will recieve the message. If you are not owner of one of these rosters, nothing will happen. New devices of counterparties should be subscribed to this topic on registration. On friendship all devices of each counterparty subscribe to this topic.
+This topic is representing the private chat between two users.
+The name of the topic is constructed from two sorted roster
+identifiers, e.g. `380670001234_12525/380670002234_12334`,
+left phone is always less or equal then right. If you send
+to this topic, all devices of two counterparties will recieve
+the message. If you are not owner of one of these rosters, nothing
+will happen. New devices of counterparties should be subscribed to
+this topic on registration. On friendship all devices of each
+counterparty subscribe to this topic.
 
 Message Formats
 ---------------
@@ -111,7 +132,6 @@ Client API RPC Specification
 * `Profile/set` — Profile raw set
 * `Profile/link` — Link email to Profile
 * `Profile/email` — Confirm email
-* `Profile/aws` — Get temporary AWS credentials
 * `Profile/remove` — Profile remove
 * `Profile/migrate` — Profile migration
 * `Profile/phone` — Confirm phone migration
