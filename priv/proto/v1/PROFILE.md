@@ -8,7 +8,7 @@ Endpoints
 
 * `actions/1/api/:client` — MQTT
 * `events/1//api/anon//`  — MQTT
-* `ses/:phone`            — MQTT
+* `devices/:phone`        — MQTT
 
 
 
