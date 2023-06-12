@@ -6,12 +6,13 @@ SYNRC CHAT
 Features
 --------
 
-* X.509 OpenSSL, LiberSSL security
-* MQTT server for CHAT application
-* LDAP server for ERP/1 integration
-* SYN/MAIL message delivery system
-* CA Server for X.509 certificate enrollment
-* N2O based CHAT protocol
+* X.509 OpenSSL, LiberSSL for security;
+* MQTT for CHAT application;
+* NS for DNSSEC domain security;
+* LDAP for user directory;
+* SYN/MAIL message delivery system;
+* CA for X.509 client certificate enrollment;
+* N2O based CHAT protocol.
 
 CHAT protocol
 -------------
@@ -22,7 +23,8 @@ The CHAT protocols communicates with `actions/:vsn/:module/:client_id`, `events/
 `Message`, `Member`, `Room`, `Contact`, `Star`, `RoomStar`, `Ack`, `Auth`, `Roster`, `Profile`, `History`, `push`, `io` ETF-serialized messages.
 
 The CHAT protocol is implemented in the set of sub-protocol modules:
-FILE, HISTORY, LINK, MESSAGE, PRESENSE, PROFILE, PUSH, ROOM, ROSTER, SEARCH, AUTH. For full specification follow `priv/design` folder:
+FILE, HISTORY, LINK, MESSAGE, PRESENSE, PROFILE, PUSH, ROOM, ROSTER, SEARCH, AUTH. For full specification follow `priv/design` folder.
+The CHAT server implementation  relies only on ISO/RFC connections such as LDAP, MQTT, QUIC, DNSSEC.
 
 * [CHAT N2O PROTO SPEC](priv/proto) Erlang Term Format ETF/BERT over MQTT/QUIC
 
