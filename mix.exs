@@ -16,12 +16,20 @@ defmodule CHAT.Mixfile do
   defp package do
     [files: ["src", "etc", "priv", "include", "LICENSE", "README.md", "rebar.config", "sys.config", "vm.args"],
      licenses: ["DHARMA"],
-     maintainers: [Namdak Tonpa"],
+     maintainers: ["Namdak Tonpa"],
      name: :chat,
      links: %{"GitHub" => "https://github.com/synrc/chat"}]
   end
 
   defp deps do
-     [{:ex_doc, ">= 0.0.0", only: :dev}]
+     [ {:ex_doc, ">= 0.0.0", only: :dev},
+       {:cowboy, "~> 2.5"},
+       {:rocksdb, "~> 1.6.0"},
+       {:syn, "~> 1.6.3"},
+       {:rpc, "~> 4.11.0"},
+       {:exmqttc, "~> 0.6.1"},
+       {:n2o, "~> 8.8.1"},
+       {:kvs, "~> 8.10.4"}
+     ]
   end
 end

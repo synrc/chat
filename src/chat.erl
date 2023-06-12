@@ -5,7 +5,6 @@
 -include_lib("chat/include/roster.hrl").
 -include_lib("n2o/include/n2o.hrl").
 -include_lib("kvs/include/metainfo.hrl").
--include_lib("emqttd/include/emqttd.hrl").
 -include_lib("mnesia/src/mnesia.hrl").
 
 -define(EMAIL_RE, <<"[a-zA-Z0-9\+\.\_\%\-\+]{1,256}\@[a-zA-Z0-9][a-zA-Z0-9\-]{0,64}(\.[a-zA-Z0-9][a-zA-Z0-9\-]{0,25})+">>).
@@ -30,9 +29,12 @@ tables()  -> [ #table{name = writer, fields = record_info(fields, writer)},
                #table{name = 'Room', fields = record_info(fields, 'Room')},
                #table{name = 'Link', fields = record_info(fields, 'Link'), keys = [room_id]},
                #table{name = 'Member', container = chain, fields = record_info(fields, 'Member')},
-               #table{name = 'Profile',  ields = record_info(fields, 'Profile')},
+               #table{name = 'Profile',  fields = record_info(fields, 'Profile')},
                #table{name = 'Index',  fields = record_info(fields, 'Index')},
                #table{name = 'Schedule', fields = record_info(fields, 'Schedule'), type = ordered_set},
                #table{name = 'Whitelist', fields = record_info(fields, 'Whitelist')},
-               #table{name = 'StickerPack', fields = record_info(fields, 'StickerPack')},].
+               #table{name = 'StickerPack', fields = record_info(fields, 'StickerPack')}
+             ].
 
+
+phone_id(Id) -> Id.

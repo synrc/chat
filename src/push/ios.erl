@@ -21,7 +21,6 @@ notify(A, C, T, DeviceId, SessionSettings) -> [Alert, Custom, Type] = [iolist_to
     FormattedDeviceId = list_to_integer(DeviceId, 16),
     Packet = <<0:8, 32:16/big, FormattedDeviceId:256/big, PayloadLength:16/big, Payload/binary>>,
     {_, {CertFile, KeyFile}} = get_bandle(SessionSettings),
-    chat:info(?MODULE, "CertFile: ~p", [CertFile]),
     Options = [{certfile, path_to_pem_file(CertFile)}, {keyfile, path_to_pem_file(KeyFile)}, {mode, binary}],
     [send_push(Addr, Packet, Options, 1) || {_, Addr} <- get_gateway(SessionSettings)],
     ok.
@@ -32,14 +31,14 @@ send_push(Addr, Payload, Options, Attempt) ->
     case Status of
         ok ->
             ssl:send(Socket, Payload),
-            ssl:close(Socket),
+            ssl:close(Socket);
         error ->
             if
                 Attempt > 10 ->
-                    chat:info(?MODULE, "Final error", []);
+                    io:format("Final error", []);
                 true ->
                     timer:sleep(Duration),
-                    chat:info(?MODULE, "Error with socket opening. Reason:~p", [Socket]),
+                    io:format("Error with socket opening. Reason:~p", [Socket]),
                     send_push(Addr, Payload, Options, Attempt + 1)
             end
     end.

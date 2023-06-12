@@ -2,7 +2,7 @@
 -include_lib("chat/include/roster.hrl").
 -include_lib("n2o/include/n2o.hrl").
 -include_lib("kernel/include/file.hrl").
--compile(export_all).
+-export([start/0,info/3, proc/2]).
 
 start() -> n2o_pi:start(#pi{module = ?MODULE, table = system, sup = roster, name = <<"File Service">>, state = []}).
 
