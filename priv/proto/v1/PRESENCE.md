@@ -7,7 +7,7 @@ Endpoints
 --------
 
 * `actions/1/api/:client` — MQTT
-* `ac/:phone_id` — MQTT
+* `contacts/:phone_id` — MQTT
 * `muc/:phone_id` — MQTT
 
 Tuples
