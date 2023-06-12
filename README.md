@@ -17,7 +17,7 @@ CHAT protocol
 -------------
 
 The CHAT protocols communicates with `actions/:vsn/:module/:client_id`, `events/:vsn/:node/:module/:username/:client_id/:token`,
-'devices/:phone', 'contacts/:phone_roster', 'private/:phone_roster/:phone_roster' MQTT topics, sending through them
+`devices/:phone`, `contacts/:phone_roster`, `private/:phone_roster/:phone_roster` MQTT topics, sending through them
 `Index`, `Typing`, `Search`, `Feature`, `Service`, `Desc`, `Whitelist`, `Presence`,  `Friend`, `Tag`,  `Link`, `StickerPack`,
 `Message`, `Member`, `Room`, `Contact`, `Star`, `RoomStar`, `Ack`, `Auth`, `Roster`, `Profile`, `History`, `push`, `io` messages
 implemented as set of modules: `file`, `history`, `link`, `message`, `presense`, `profile`, `push`, `room`, `roster`, `search`.
