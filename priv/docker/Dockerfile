@@ -13,12 +13,12 @@ RUN  chmod 600 ~/.ssh/id_rsa && \
 RUN eval $(ssh-agent) && ssh-add ~/.ssh/id_rsa & >/dev/null
 RUN ssh-keyscan github.com >> /home/maxim/.ssh/known_hosts
 WORKDIR /home/maxim
-RUN git clone -b cluster ssh://git@github.com/NYNJA-MC/server.git
-WORKDIR /home/maxim/server
+RUN git clone -b cluster ssh://git@github.com/synrc/chat.git
+WORKDIR /home/maxim/chat
 RUN rm -f vm.args etc/emq.conf
 RUN mad dep
 RUN mad cle comp pla
-CMD ["/home/maxim/server/k8s-start.sh"]
+CMD ["/home/maxim/chat/priv/google/kubernetes/kubernetes.sh"]
 # emqttd will occupy these port:
 # - 1883 MQTT(QUIC) # 8883 MQTT(TCP/TLS)
 # - 8083 WS/HTTP    # 8084 WSS/HTTPS
