@@ -31,7 +31,7 @@ The CHAT server implementation relies only on ISO/IETF connections such as DNSSE
 QUIC library
 ------------
 
-```
+```erlang
 $ sudo apt install liblttng-ust-dev lttng-tools
 $ git clone git@github.com:microsoft/msquic && cd msquic
 $ mkdir build && cd build
@@ -49,7 +49,6 @@ $ git submodule update --init --recursive
 $ mkdir build && cd build
 $ cmake -G Ninja -DNNG_ENABLE_QUIC=ON ..
 $ sudo ninja install
->
 ```
 
 CHAT server
@@ -73,7 +72,7 @@ iex(chat@TRISTELLAR)1>
 MQTT client
 -----------
 
-```
+```erlang
  1> {ok, Conn} = emqtt:start_link([
        {client_id, <<"5HT">>},
        {ssl, true},
@@ -102,7 +101,7 @@ MQTT client
 CHAT client
 -----------
 
-The CHAT comes with Elixir shell console client.
+The CHAT comes with Elixir shell console `chat_client`.
 
 Credits
 -------
