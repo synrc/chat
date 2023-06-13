@@ -50,6 +50,27 @@ $ mkdir build && cd build
 $ cmake -G Ninja -DNNG_ENABLE_QUIC=ON ..
 ```
 
+```
+$ ls -l
+total 10768
+5HT 5HT      14 06-13 libmsquic.so -> libmsquic.so.2
+5HT 5HT      18 06-13 libmsquic.so.2 -> libmsquic.so.2.3.0
+5HT 5HT 3439328 06-13 libmsquic.so.2.3.0
+5HT 5HT 3876176 06-13 nanomq
+5HT 5HT    1645 06-13 nanomq.conf
+5HT 5HT 3658304 06-13 nanomq_cli
+5HT 5HT   39547 06-13 nanomq_old.conf
+$ 
+```
+
+```
+$ nanomq start --old_conf nanomq_old.conf
+NanoMQ Broker is started successfully!
+$ ./nanomq start --old_conf nanomq_old.conf
+$ ./nanomq_cli sub --url mqtt+tcp://localhost:1883 -t topic
+$ ./nanomq_cli pub --url mqtt+tcp://localhost:1883 -t topic -m HELLO
+```
+
 CHAT server
 -----------
 
