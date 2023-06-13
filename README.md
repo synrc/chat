@@ -32,24 +32,41 @@ QUIC library
 ------------
 
 ```
-$ git clone git@github.com:microsoft/msquic
 $ sudo apt install liblttng-ust-dev lttng-tools
+$ git clone git@github.com:microsoft/msquic && cd msquic
 $ mkdir build && cd build
 $ cmake ..
 $ cmake --build .
 
 ```
 
-NanoMQ MQTT/QUIC server
------------------------
+MQTT server
+-----------
 
 ```erlang
-$ git clone git@github.com:emqx/nanomq
-$ cd nanomq 
+$ git clone git@github.com:emqx/nanomq && cd nanomq 
 $ git submodule update --init --recursive
 $ mkdir build && cd build
 $ cmake -G Ninja -DNNG_ENABLE_QUIC=ON ..
 $ sudo ninja install
+>
+```
+
+CHAT server
+-----------
+
+```erlang
+$ sudo apt install erlang elixir
+$ git clone git@github.com:synrc/mq && cd mq
+$ mix deps.get
+$ mix release
+$ _build/dev/rel/chat/bin/chat daemon
+$ _build/dev/rel/chat/bin/chat remote
+Erlang/OTP 24 [erts-12.2.1] [source] [64-bit] [smp:12:12] [ds:12:12:10] [async-threads:1] [jit]
+
+Interactive Elixir (1.12.2) - press Ctrl+C to exit (type h() ENTER for help)
+iex(chat@TRISTELLAR)1>
+^C^C
 >
 ```
 
@@ -79,11 +96,17 @@ MQTT client
                      properties => undefined,qos => 0,retain => false,
                      topic => <<"hello">>}}
  ok
+^C^C
 ```
+
+CHAT client
+-----------
+
+The CHAT comes with Elixir shell console client.
 
 Credits
 -------
 
-* Maxim Sokhatsky
+* Namdak Tonpa
 
 OM A HUM
