@@ -28,50 +28,57 @@ The CHAT server implementation relies only on ISO/IETF connections such as DNSSE
 
 * [CHAT N2O PROTO SPEC](priv/proto) Erlang Term Format ETF/BERT over MQTT/QUIC
 
-MQTT server
------------
+QUIC library
+------------
 
-```erlang
-Applications:  [kernel,stdlib,gproc,lager_syslog,pbkdf2,asn1,fs,ranch,mnesia,
-                compiler,inets,crypto,syntax_tools,xmerl,gen_logger,esockd,
-                cowlib,goldrush,public_key,lager,ssl,cowboy,mochiweb,emqttd,
-                erlydtl,kvs,mad,emqttc,nitro,rest,sh,syslog,review]
-Erlang/OTP 19 [erts-8.3] [source] [64-bit] [smp:4:4]
-              [async-threads:10] [hipe] [kernel-poll:false] [dtrace]
+```
+$ git clone git@github.com:microsoft/msquic
+$ sudo apt install liblttng-ust-dev lttng-tools
+$ mkdir build && cd build
+$ cmake ..
+$ cmake --build .
 
-Eshell V8.3  (abort with ^G)
-starting emqttd on node 'nonode@nohost'
-dashboard:http listen on 0.0.0.0:18083 with 4 acceptors.
-mqtt:ws listen on 0.0.0.0:8083 with 4 acceptors.
-mqtt:tcp listen on 0.0.0.0:1883 with 4 acceptors.
-emqttd 2.1.1 is running now
->
 ```
 
-Open http://127.0.0.1:18083/#/websocket with `admin:public` credentials,
-Press Connect, Subscribe, Sned and observe statistics http://127.0.0.1:18083/#/overview.
+NanoMQ MQTT/QUIC server
+-----------------------
+
+```erlang
+$ git clone git@github.com:emqx/nanomq
+$ cd nanomq 
+$ git submodule update --init --recursive
+$ mkdir build && cd build
+$ cmake -G Ninja -DNNG_ENABLE_QUIC=ON ..
+$ sudo ninja install
+>
+```
 
 MQTT client
 -----------
 
 ```
-$ mad com
-==> "/Users/maxim/depot/voxoz/emqttc/examples/gen_server"
-Compiling /src/gen_server_example.erl
-Writing /ebin/gen_server_example.app
-OK
-bash-3.2$ ./run
-Erlang/OTP 19 [erts-8.2] [source] [64-bit] [smp:4:4]
-              [async-threads:10] [hipe] [kernel-poll:false] [dtrace]
-
-Eshell V8.2  (abort with ^G)
-1> [info] [Client <0.58.0>]: connecting to 127.0.0.1:1883
-[info] [Client <0.58.0>] connected with 127.0.0.1:1883
-[info] [Client <0.58.0>] RECV: CONNACK_ACCEPT
-Client <0.58.0> is connected
-[warning] [simpleClient@127.0.0.1:64618] resubscribe [{<<"TopicA">>,1}]
-Message from TopicA: <<"hello...1">>
-Message from TopicB: <<"hello...1">>
+ 1> {ok, Conn} = emqtt:start_link([
+       {client_id, <<"5HT">>},
+       {ssl, true},
+       {port, 8883},
+       {ssl_opts, [
+           {verify,verify_peer},
+           {certfile,"cert/ecc/Max Socha.pem"},
+           {keyfile,"cert/ecc/Max Socha.key"},
+           {cacertfile,"cert/ecc/caroot.pem"}]}]).
+ {ok,<0.193.0>}
+ 2> emqtt:connect(Conn).
+ {ok,undefined}
+ 3> emqtt:subscribe(Conn, {<<"hello">>, 0}).
+ {ok,undefined,[0]}
+ 4> emqtt:publish(Conn, <<"hello">>, <<"Hello World!">>, 0).
+ ok
+ 5> flush().
+ Shell got {publish,#{client_pid => <0.193.0>,dup => false,
+                     packet_id => undefined,payload => <<"Hello World!">>,
+                     properties => undefined,qos => 0,retain => false,
+                     topic => <<"hello">>}}
+ ok
 ```
 
 Credits
