@@ -34,6 +34,7 @@ QUIC library
 ```erlang
 $ sudo apt install liblttng-ust-dev lttng-tools
 $ git clone git@github.com:microsoft/msquic && cd msquic
+$ git submodule update --init --recursive
 $ mkdir build && cd build
 $ cmake ..
 $ cmake --build .
