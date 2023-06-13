@@ -50,7 +50,7 @@ $ mkdir build && cd build
 $ cmake -G Ninja -DNNG_ENABLE_QUIC=ON ..
 ```
 
-```
+```erlang
 $ ls -l
 total 10768
 5HT 5HT      14 06-13 libmsquic.so -> libmsquic.so.2
@@ -63,7 +63,7 @@ total 10768
 $ 
 ```
 
-```
+```erlang
 $ nanomq start --old_conf nanomq_old.conf
 NanoMQ Broker is started successfully!
 $ ./nanomq start --old_conf nanomq_old.conf
