@@ -48,7 +48,6 @@ $ git clone git@github.com:emqx/nanomq && cd nanomq
 $ git submodule update --init --recursive
 $ mkdir build && cd build
 $ cmake -G Ninja -DNNG_ENABLE_QUIC=ON ..
-$ sudo ninja install
 ```
 
 CHAT server
