@@ -32,14 +32,10 @@ connect() ->
 sub(Conn) -> emqtt:subscribe(Conn, {<<"hello">>, 0}).
 pub(Conn) -> emqtt:publish(Conn, <<"hello">>, <<"Hello World!">>, 0).
 
-metainfo() ->  #schema{name = kvs, tables = tables()}.
-init([]) -> {ok, {{one_for_one, 5, 10}, []}}.
 stop(_) -> ok.
-start(_, _) -> 
-    X = supervisor:start_link({local, chat}, chat, []),
-%    emqttd_access_control:register_mod(auth, n2o_auth, [[]], 9997),
-%    emqttd_access_control:register_mod(auth, roster_auth, [[]], 9998),
-    X.
+init([]) -> {ok, {{one_for_one, 5, 10}, []}}.
+start(_, _) -> supervisor:start_link({local, chat}, chat, []).
+metainfo() ->  #schema{name = kvs, tables = tables()}.
 
 tables()  -> [ #table{name = writer, fields = record_info(fields, writer)},
                #table{name = reader, fields = record_info(fields, reader)},
@@ -52,8 +48,6 @@ tables()  -> [ #table{name = writer, fields = record_info(fields, writer)},
                #table{name = 'Member', container = chain, fields = record_info(fields, 'Member')},
                #table{name = 'Profile',  fields = record_info(fields, 'Profile')},
                #table{name = 'Index',  fields = record_info(fields, 'Index')},
-               #table{name = 'Schedule', fields = record_info(fields, 'Schedule'), type = ordered_set},
-               #table{name = 'Whitelist', fields = record_info(fields, 'Whitelist')},
                #table{name = 'StickerPack', fields = record_info(fields, 'StickerPack')}
              ].
 
