@@ -17,14 +17,18 @@ Features
 CHAT protocol
 -------------
 
-The CHAT protocols communicates with `actions/:vsn/:module/:client_id`, `events/:vsn/:node/:module/:username/:client_id/:token`,
-`devices/:phone`, `contacts/:phone_roster`, `private/:phone_roster/:phone_roster` MQTT topics, sending through them
-`Index`, `Typing`, `Search`, `Feature`, `Service`, `Desc`, `Whitelist`, `Presence`,  `Friend`, `Tag`,  `Link`, `StickerPack`,
-`Message`, `Member`, `Room`, `Contact`, `Star`, `RoomStar`, `Ack`, `Auth`, `Roster`, `Profile`, `History`, `push`, `io` ETF-serialized messages.
+The CHAT protocols communicates with `actions/:client`, `events/:client`, `devices/:phone`,
+`contacts/:roster`, `private/:roster/:roster` MQTT topics, sending through them
+`Index`, `Typing`, `Search`, `Feature`, `Service`, `Desc`, `Presence`,
+`Friend`, `Tag`,  `Link`, `StickerPack`, `Message`, `Member`, `Room`, `Contact`,
+`Star`, `RoomStar`, `Ack`, `Auth`, `Roster`, `Profile`, `History`, `push`, `io`
+ETF-serialized messages.
 
 The CHAT protocol is implemented in the set of sub-protocol modules:
-FILE, HISTORY, LINK, MESSAGE, PRESENSE, PROFILE, PUSH, ROOM, ROSTER, SEARCH, AUTH. For full specification follow `priv/design` folder.
-The CHAT server implementation relies only on ISO/IETF connections such as DNSSEC, X.509 SCR, LDAP, QUIC, WebSocket, MQTT.
+FILE, HISTORY, LINK, MESSAGE, PRESENSE, PROFILE, PUSH, ROOM, ROSTER,
+SEARCH, AUTH. For full specification follow `priv/design` folder.
+The CHAT server implementation relies only on ISO/IETF connections
+such as DNSSEC, X.509 SCR, LDAP, QUIC, WebSocket, MQTT.
 
 * [CHAT N2O PROTO SPEC](priv/proto) Erlang Term Format ETF/BERT over MQTT/QUIC
 
