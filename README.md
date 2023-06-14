@@ -46,8 +46,10 @@ MQTT server
 ```erlang
 $ sudo apt instal mosquitto mosquitto-clients
 $ mosquitto -c mosquitto.conf
-$ mosquitto_sub -p 8883 -t topic --cafile "caroot.pem" --cert "client.pem" --key "client.key"
-$ mosquitto_pub -p 8883 -t topic --cafile "caroot.pem" --cert "client.pem" --key "client.key" -m "HELLO"
+$ mosquitto_sub -p 8883 -t topic --cafile "caroot.pem" \
+                --cert "client.pem" --key "client.key"
+$ mosquitto_pub -p 8883 -t topic --cafile "caroot.pem" \
+                --cert "client.pem" --key "client.key" -m "HELLO"
 ```
 
 
