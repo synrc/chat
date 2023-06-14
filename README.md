@@ -64,7 +64,7 @@ $ mix release
 $ _build/dev/rel/chat/bin/chat daemon
 $ _build/dev/rel/chat/bin/chat remote
 Erlang/OTP 24 [erts-12.2.1] [source] [64-bit] [smp:12:12]
-   [ds:12:12:10] [async-threads:1] [jit]
+    [ds:12:12:10] [async-threads:1] [jit]
 
 Interactive Elixir (1.12.2) - press Ctrl+C to exit (type h() ENTER for help)
 iex(chat@TRISTELLAR)1>
@@ -77,7 +77,8 @@ MQTT client
 
 ```elixir
 $ iex -S mix
-Erlang/OTP 25 [erts-13.2.2] [source] [64-bit] [smp:4:4] [ds:4:4:10] [async-threads:1] [jit:ns] [dtrace]
+Erlang/OTP 25 [erts-13.2.2] [source] [64-bit] [smp:4:4]
+    [ds:4:4:10] [async-threads:1] [jit:ns] [dtrace]
 
 Interactive Elixir (1.14.5) - press Ctrl+C to exit (type h() ENTER for help)
 iex(1)> pid = :chat.connect
