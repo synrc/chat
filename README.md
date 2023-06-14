@@ -64,30 +64,30 @@ iex(chat@TRISTELLAR)1>
 MQTT client
 -----------
 
-```erlang
- 1> {ok, Conn} = emqtt:start_link([
-       {client_id, <<"5HT">>},
-       {ssl, true},
-       {port, 8883},
-       {ssl_opts, [
-           {verify,verify_peer},
-           {certfile,"cert/ecc/Max Socha.pem"},
-           {keyfile,"cert/ecc/Max Socha.key"},
-           {cacertfile,"cert/ecc/caroot.pem"}]}]).
- {ok,<0.193.0>}
- 2> emqtt:connect(Conn).
- {ok,undefined}
- 3> emqtt:subscribe(Conn, {<<"hello">>, 0}).
- {ok,undefined,[0]}
- 4> emqtt:publish(Conn, <<"hello">>, <<"Hello World!">>, 0).
- ok
- 5> flush().
- Shell got {publish,#{client_pid => <0.193.0>,dup => false,
-                     packet_id => undefined,payload => <<"Hello World!">>,
-                     properties => undefined,qos => 0,retain => false,
-                     topic => <<"hello">>}}
- ok
-^C^C
+```elixir
+$ iex -S mix
+Erlang/OTP 25 [erts-13.2.2] [source] [64-bit] [smp:4:4] [ds:4:4:10] [async-threads:1] [jit:ns] [dtrace]
+
+Interactive Elixir (1.14.5) - press Ctrl+C to exit (type h() ENTER for help)
+iex(1)> pid = :chat.connect
+MQTT Server Connection: <0.790.0>#PID<0.790.0>
+iex(2)> :chat.sub pid
+{:ok, :undefined, [0]}
+iex(3)> :chat.pub pid
+:ok
+iex(4)> flush
+{:publish,
+ %{
+   client_pid: #PID<0.790.0>,
+   dup: false,
+   packet_id: :undefined,
+   payload: "Hello World!",
+   properties: :undefined,
+   qos: 0,
+   retain: false,
+   topic: "hello"
+ }}
+:ok
 ```
 
 CHAT client
