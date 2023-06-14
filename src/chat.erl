@@ -1,7 +1,6 @@
 -module(chat).
 -behaviour(application).
--compile(export_all).
--export([start/2, stop/1, init/1]).
+-export([start/2, stop/1, init/1, connect/0, pub/1, sub/1, tables/0, metainfo/0, phone_id/1]).
 -include_lib("chat/include/roster.hrl").
 -include_lib("n2o/include/n2o.hrl").
 -include_lib("kvs/include/metainfo.hrl").
@@ -22,9 +21,9 @@ connect() ->
            {customize_hostname_check,
                [{match_fun, fun ({ip,{127,0,0,1}},{dNSName,"localhost"}) -> true;
                                 (_,_) -> false end}]},
-           {certfile,"cert/ecc/client.pem"},
-           {keyfile,"cert/ecc/client.key"},
-           {cacertfile,"cert/ecc/caroot.pem"}]}]),
+           {certfile,"priv/mosquitto/client.pem"},
+           {keyfile,"priv/mosquitto/client.key"},
+           {cacertfile,"priv/mosquitto/caroot.pem"}]}]),
    io:format("MQTT Server Connection: ~p", [Pid]),
    emqtt:connect(Pid),
    Pid.
