@@ -27,8 +27,9 @@ defmodule CHAT.Mixfile do
       {:rocksdb, "~> 1.6.0"},
       {:syn, "~> 1.6.3"},
       {:rpc, "~> 4.11.0"},
-      {:exmqttc, "~> 0.6.1"},
+      {:emqtt, "~> 1.2.1"},
       {:n2o, "~> 8.8.1"},
+      {:ssl_verify_fun, "~> 1.1.5"},
       {:kvs, "~> 8.10.4"}
     ]
   end

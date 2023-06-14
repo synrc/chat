@@ -11,6 +11,27 @@
 -define(PHONE_RE,<<"(?:\\+?(\\d{1})?-?\\(?(\\d{3})\\)?[\\s-\\.]?)?(\\d{3})[\\s-\\.]?(\\d{4})[\\s-\\.]?">>).
 -define(URL_RE, <<"(?:(?:https?|ftp|file|smtp):\/\/|www\.|ftp\.)(?:\([-A-Z0-9+&@#\/%=~_|$?!:,.]*\)|[-A-Za-z0-9+&@#\/%=~_|$?!:,.])*(?:\([-A-Za-z0-9+&@#\/%=~_|$?!:,.]*\)|[A-Za-z0-9+&@#\/%=~_|$])">>).
 
+connect() ->
+   {ok,Pid} = emqtt:start_link([
+       {client_id, <<"5HT">>},
+       {ssl, true},
+       {host, "ca.n2o.dev"},
+       {port, 8883},
+       {ssl_opts, [
+           {verify,verify_peer},
+           {customize_hostname_check,
+               [{match_fun, fun ({ip,{127,0,0,1}},{dNSName,"localhost"}) -> true;
+                                (_,_) -> false end}]},
+           {certfile,"cert/ecc/client.pem"},
+           {keyfile,"cert/ecc/client.key"},
+           {cacertfile,"cert/ecc/caroot.pem"}]}]),
+   io:format("MQTT Server Connection: ~p", [Pid]),
+   emqtt:connect(Pid),
+   Pid.
+
+sub(Conn) -> emqtt:subscribe(Conn, {<<"hello">>, 0}).
+pub(Conn) -> emqtt:publish(Conn, <<"hello">>, <<"Hello World!">>, 0).
+
 metainfo() ->  #schema{name = kvs, tables = tables()}.
 init([]) -> {ok, {{one_for_one, 5, 10}, []}}.
 stop(_) -> ok.
