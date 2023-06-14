@@ -26,11 +26,19 @@ ETF-serialized messages.
 
 The CHAT protocol is implemented in the set of sub-protocol modules:
 FILE, HISTORY, LINK, MESSAGE, PRESENSE, PROFILE, PUSH, ROOM, ROSTER,
-SEARCH, AUTH. For full specification follow `priv/design` folder.
+SEARCH, AUTH. For full specification follow `priv/design` folder. 
 The CHAT server implementation relies only on ISO/IETF connections
-such as DNSSEC, X.509 SCR, LDAP, QUIC, WebSocket, MQTT.
+such as DNSSEC, X.509 CSR, LDAP, QUIC, WebSocket, MQTT.
 
 * [CHAT N2O PROTO SPEC](priv/proto) Erlang Term Format ETF/BERT over MQTT/QUIC
+
+CHAT is a simple instant messaging server based on ISO standards.
+It uses MQTT protocol and ETF binary serialization from Erlang/OTP
+across applications: MQTT, N2O, KVS, MAIL, LDAP, NS, CA. Secure by default.
+The CHAT application has Sign/Verify, Encrypt/Decrypt feature enabled for
+every single message passed by. The delivered messages are being deleted
+from MQTT instance after recipient acknowledgment.
+This is Keybase, OTR, PGP (you name it) replacement for secure X.509 ASN.1 defined communications.
 
 MQTT server
 -----------
