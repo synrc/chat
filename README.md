@@ -63,6 +63,9 @@ $ mix deps.get
 $ mix release
 $ _build/dev/rel/chat/bin/chat daemon
 $ _build/dev/rel/chat/bin/chat remote
+```
+
+```erlang
 Erlang/OTP 24 [erts-12.2.1] [source] [64-bit] [smp:12:12]
     [ds:12:12:10] [async-threads:1] [jit]
 
