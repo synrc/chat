@@ -71,8 +71,6 @@ Erlang/OTP 24 [erts-12.2.1] [source] [64-bit] [smp:12:12]
 
 Interactive Elixir (1.12.2) - press Ctrl+C to exit (type h() ENTER for help)
 iex(1)>
-^C^C
->
 ```
 
 MQTT client
