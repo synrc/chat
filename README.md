@@ -70,7 +70,7 @@ Erlang/OTP 24 [erts-12.2.1] [source] [64-bit] [smp:12:12]
     [ds:12:12:10] [async-threads:1] [jit]
 
 Interactive Elixir (1.12.2) - press Ctrl+C to exit (type h() ENTER for help)
-iex(chat@TRISTELLAR)1>
+iex(1)>
 ^C^C
 >
 ```
@@ -79,18 +79,13 @@ MQTT client
 -----------
 
 ```erlang
-$ iex -S mix
-Erlang/OTP 25 [erts-13.2.2] [source] [64-bit] [smp:4:4]
-    [ds:4:4:10] [async-threads:1] [jit:ns] [dtrace]
-
-Interactive Elixir (1.14.5) - press Ctrl+C to exit (type h() ENTER for help)
-iex(1)> pid = :chat.connect
+iex(2)> pid = :chat.connect
 MQTT Server Connection: <0.790.0>#PID<0.790.0>
-iex(2)> :chat.sub pid
+iex(3)> :chat.sub pid
 {:ok, :undefined, [0]}
-iex(3)> :chat.pub pid
+iex(4)> :chat.pub pid
 :ok
-iex(4)> flush
+iex(5)> flush
 {:publish,
  %{
    client_pid: #PID<0.790.0>,
