@@ -44,7 +44,7 @@ MQTT server
 -----------
 
 ```sh
-$ sudo apt instal mosquitto mosquitto-clients
+$ sudo apt install mosquitto mosquitto-clients
 $ mosquitto -c mosquitto.conf
 $ mosquitto_sub -p 8883 -t topic --cafile "caroot.pem" \
                 --cert "client.pem" --key "client.key"
