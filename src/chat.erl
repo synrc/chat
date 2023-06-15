@@ -14,7 +14,7 @@ connect() ->
    {ok,Pid} = emqtt:start_link([
        {client_id, <<"5HT">>},
        {ssl, true},
-       {host, "ca.n2o.dev"},
+       {host, "localhost"},
        {port, 8883},
        {ssl_opts, [
            {verify,verify_peer},
