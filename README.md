@@ -78,7 +78,7 @@ iex(chat@TRISTELLAR)1>
 MQTT client
 -----------
 
-```elixir
+```erlang
 $ iex -S mix
 Erlang/OTP 25 [erts-13.2.2] [source] [64-bit] [smp:4:4]
     [ds:4:4:10] [async-threads:1] [jit:ns] [dtrace]
