@@ -70,7 +70,33 @@ Erlang/OTP 24 [erts-12.2.1] [source] [64-bit] [smp:12:12]
     [ds:12:12:10] [async-threads:1] [jit]
 
 Interactive Elixir (1.12.2) - press Ctrl+C to exit (type h() ENTER for help)
-iex(1)>
+iex(1)> :application.which_applications
+[
+  {:chat, 'CHAT X.509 Instant Messenger mqtt://chat.synrc.com', '6.6.14'},
+  {:kvs, 'KVS Abstract Chain Database', '8.10.4'},
+  {:ssl_verify_fun, 'SSL verification functions for Erlang\n', '1.1.6'},
+  {:n2o, 'N2O MQTT TCP WebSocket', '8.8.1'},
+  {:emqtt, 'Erlang MQTT v5.0 Client', '1.2.1'},
+  {:rpc, 'RPC Remote Procedure Call', '4.11.0'},
+  {:syn, 'A global Process Registry and Process Group manager.', '1.6.3'},
+  {:mnesia, 'MNESIA  CXC 138 12', '4.20.1'},
+  {:rocksdb, 'RocksDB for Erlang', '1.6.0'},
+  {:cowboy, 'Small, fast, modern HTTP server.', '2.5.0'},
+  {:ranch, 'Socket acceptor pool for TCP protocols.', '1.6.2'},
+  {:cowlib, 'Support library for manipulating Web protocols.', '2.6.0'},
+  {:hex, 'hex', '2.0.0'},
+  {:inets, 'INETS  CXC 138 49', '7.5'},
+  {:ssl, 'Erlang/OTP SSL application', '10.6.1'},
+  {:public_key, 'Public key infrastructure', '1.11.3'},
+  {:asn1, 'The Erlang ASN1 compiler version 5.0.17', '5.0.17'},
+  {:crypto, 'CRYPTO', '5.0.5'},
+  {:mix, 'mix', '1.12.2'},
+  {:iex, 'iex', '1.12.2'},
+  {:elixir, 'elixir', '1.12.2'},
+  {:compiler, 'ERTS  CXC 138 10', '8.0.4'},
+  {:stdlib, 'ERTS  CXC 138 10', '3.17'},
+  {:kernel, 'ERTS  CXC 138 10', '8.2'}
+]
 ```
 
 MQTT client
