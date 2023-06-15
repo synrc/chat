@@ -65,7 +65,7 @@ $ _build/dev/rel/chat/bin/chat daemon
 $ _build/dev/rel/chat/bin/chat remote
 ```
 
-```erlang
+```elixir
 Erlang/OTP 24 [erts-12.2.1] [source] [64-bit] [smp:12:12]
     [ds:12:12:10] [async-threads:1] [jit]
 
@@ -102,7 +102,7 @@ iex(1)> :application.which_applications
 MQTT client
 -----------
 
-```erlang
+```elixir
 iex(2)> pid = :chat.connect
 MQTT Server Connection: <0.790.0>#PID<0.790.0>
 iex(3)> :chat.sub pid
