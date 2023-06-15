@@ -43,7 +43,7 @@ This is Keybase, OTR, PGP (you name it) replacement for secure X.509 ASN.1 defin
 MQTT server
 -----------
 
-```erlang
+```sh
 $ sudo apt instal mosquitto mosquitto-clients
 $ mosquitto -c mosquitto.conf
 $ mosquitto_sub -p 8883 -t topic --cafile "caroot.pem" \
@@ -56,7 +56,7 @@ $ mosquitto_pub -p 8883 -t topic --cafile "caroot.pem" \
 CHAT server
 -----------
 
-```erlang
+```sh
 $ sudo apt install erlang elixir
 $ git clone git@github.com:synrc/mq && cd mq
 $ mix deps.get
