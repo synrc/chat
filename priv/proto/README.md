@@ -37,13 +37,13 @@ Intro
 Topics
 ------
 
-* `actions/:vsn/:module/:client_id` — Client Topic
+* `actions/:client` — Client Topic
 
 This topic is subscribed when connection established.
 This is done on server so client don't need to subscribe
 to this topic. All incoming mesages come to this topic.
 
-* `events/:vsn/:node/:module/:username/:client_id/:token` — Server Topic
+* `events/:client` — Server Topic
 
 The number of these topics are equal to the number of cores.
 Client sends API requesus to one of these topics and listen
@@ -57,7 +57,7 @@ this topic, all devices of the given phone will receive the
 message. If you have no right to send to this phone nothing
 will happens. New devices should be subscribed to this topic on registration.
 
-* `contacts/:phone_roster` — Friendship Broadcast
+* `contacts/:roster` — Friendship Broadcast
 
 This topic is representing the subscription mesh, based on
 friendship logic. If you send to this topic, all devices of
@@ -66,7 +66,7 @@ strict you from sending to other topics than yours. New devices
 of friends should be subscribed to this topic on registration.
 On friendship all friend devices are added to this topic.
 
-* `private/:phone_roster/:phone_roster` — Private Chat
+* `private/:roster/:roster` — Private Chat
 
 This topic is representing the private chat between two users.
 The name of the topic is constructed from two sorted roster
