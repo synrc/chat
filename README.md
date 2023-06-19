@@ -57,7 +57,7 @@ CHAT server
 -----------
 
 ```sh
-$ sudo apt install erlang elixir
+$ sudo apt install erlang elixir build-essential libcsv3 libcsv-dev cmake
 $ git clone git@github.com:synrc/mq && cd mq
 $ mix deps.get
 $ mix release
