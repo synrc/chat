@@ -20,7 +20,7 @@ CHAT protocol
 The CHAT protocols communicates with `actions/:client`, `events/:client`, `devices/:phone`,
 `contacts/:roster`, `private/:roster/:roster` MQTT topics, sending through them
 `Index`, `Typing`, `Search`, `Feature`, `Service`, `Desc`, `Presence`,
-`Friend`, `Tag`,  `Link`, `StickerPack`, `Message`, `Member`, `Room`, `Contact`,
+`Friend`, `Tag`,  `Link`, `Message`, `Member`, `Room`, `Contact`,
 `Star`, `RoomStar`, `Ack`, `Auth`, `Roster`, `Profile`, `History`, `push`, `io`
 ETF-serialized messages.
 
