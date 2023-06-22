@@ -6,10 +6,10 @@ Version 1.0 Maxim Sokhatsky
 Endpoints
 --------
 
-* `actions/1/api/:client` — MQTT
-* `events/1//api//` — MQTT
+* `actions/:client` — MQTT
+* `events/:client` — MQTT
 * `devices/:phone` - MQTT
-* `private/:phone_id/:phone_id` — MQTT
+* `private/:roster/:roster` — MQTT
 * `room/:room` — MQTT
 
 

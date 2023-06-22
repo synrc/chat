@@ -6,9 +6,9 @@ Version 1.0 Maxim Sokhatsky
 Endpoints
 --------
 
-* `room/Room` — MQTT
-* `actions/1/api/:client` — MQTT
-* `events/1//api/anon//` — MQTT
+* `room/:room` — MQTT
+* `actions/:client` — MQTT
+* `events/:client` — MQTT
 * `devices/:phone` — MQTT
 
 Tuples

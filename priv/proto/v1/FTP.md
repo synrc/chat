@@ -6,7 +6,7 @@ Version 1.0 Maxim Sokhatsky
 Endpoints
 --------
 
-* `ns.synrc.com:8000/ws` — WS
+* `chat.synrc.com:8888/ws` — WS
 
 Tuples
 ------

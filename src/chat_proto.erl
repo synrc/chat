@@ -1,8 +1,6 @@
 -module(chat_proto).
 -include("roster.hrl").
 -include_lib("n2o/include/n2o.hrl").
--compile({parse_transform, bert_javascript}).
--compile({parse_transform, bert_swift}).
 -export([info/3]).
 
 info(#'Typing'{}       = Typing,       Req, #cx{params = <<"emqttd_",_/binary>>} = State) -> roster_message         :info(Typing,       Req, State);

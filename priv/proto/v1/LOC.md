@@ -6,8 +6,8 @@ Version 1.0 Maxim Sokhatsky
 Endpoints
 --------
 
-* `actions/1/api/phone/:phone` — MQTT
-* `events/1//api/anon/:client/:token` — MQTT
+* `actions/:client` — MQTT
+* `events/:client` — MQTT
 
 Tuples
 ------

@@ -1,13 +1,13 @@
 AUTH: User Registration
 =======================
 
-Version 2.0 Maxim Sokhatsky, Liubov Mykhailova, Yuri Maslovsky
+Version 1.0 Maxim Sokhatsky
 
 Endpoints
 --------
 
-* `actions/1/api/:client` — MQTT
-* `events/1//api/anon//` — MQTT
+* `actions/:client` — MQTT
+* `events/:client` — MQTT
 
 Tuples
 ------

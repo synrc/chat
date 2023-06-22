@@ -6,7 +6,7 @@ Version 1.0 Maxim Sokhatsky
 Endpoints
 --------
 
-* `actions/1/:node/api/:client` — MQTT
+* `actions/:client` — MQTT
 
 Tuples
 ------

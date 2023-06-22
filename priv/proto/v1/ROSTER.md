@@ -6,11 +6,11 @@ Version 1.0 Maxim Sokhatsky
 Endpoints
 --------
 
-* `actions/1/api/:client` — MQTT
-* `events/1//api/anon//`  — MQTT
-* `devices/:phone`            — MQTT
-* `contacts/:phone_id`          — MQTT
-* `muc/:phone_id`         — MQTT
+* `actions/:client` — MQTT
+* `events/:client` — MQTT
+* `devices/:phone` — MQTT
+* `contacts/:roster` — MQTT
+* `muc/:room` — MQTT
 
 Tuples
 ------

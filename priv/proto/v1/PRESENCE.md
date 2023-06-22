@@ -6,9 +6,9 @@ Version 1.0 Maxim Sokhatsky
 Endpoints
 --------
 
-* `actions/1/api/:client` — MQTT
-* `contacts/:phone_id` — MQTT
-* `muc/:phone_id` — MQTT
+* `actions/:client` — MQTT
+* `contacts/:roster` — MQTT
+* `muc/:room` — MQTT
 
 Tuples
 ------
