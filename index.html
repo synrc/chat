@@ -66,10 +66,10 @@
          Each time user is being registered new PKCS-10 X.409 certificate enrollement is happened. It can be
          done by using command line utility.</p>
 
-       <p><b class=se>Domain Names</b>. Own domain name server [<a href="https://ns.erp.uno">NS</a>] DNSSEC.
+       <p><b class=se>Domains</b>. Own domain name server [<a href="https://ns.erp.uno">NS</a>] DNSSEC.
          The structure of hosted service is driven by own DNS server;</p>
 
-       <p><b class=se>LDAP</b>. Distributionally controlled [<a href="https://abac.erp.uno">ABAC</a>]
+       <p><b class=se>Directory</b>. Distributionally controlled [<a href="https://abac.erp.uno">ABAC</a>]
          support for multi-hierarchy domains. Top-level domain selects security admins for LDAP servers of the second-level;</p>
 
        <p><b class=se>Always encrypted</b>. Encrypt any message GCM/CCM [<a href="https://n2o.dev">N2O</a>] X.509 Envelope.
@@ -78,6 +78,10 @@
        <p><b class=se>No message storage</b>. Transient in-memeory (no-storage) queue [<a href="https://mq.erp.uno">MQ</a>]: TLS 1.3 Mosquitto or QUIC EMQX.
          No storage is used for storing messages. One massage receive is acknoledged by correspondent it is being
          deleted from MQTT transient in-memory queue;</p>
+
+       <p><b class=se>No metadata</b>. The messanger doesn't store any metadata
+          information like IP addresses, hardware client information, etc. The
+          CHAT is using only client, device, profile, roster internal identifiers for message routing purposes inside MQTT;</p>
 
        <p><b class=se>Client only roster storage</b>. Roster subscription trees or messages [<a href="https://ldap.erp.uno">LDAP</a>] are
          stored exclusively and paranoidal at client-side and transfered to new registered clients through MQTT.
