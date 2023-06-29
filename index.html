@@ -13,9 +13,9 @@
 </header><aside>
     <article>
         <section>
-            <h3>SERVER</h3>
+            <h3>MESSENGER</h3>
             <div>As a class CHAT is an open source non-federated secured by PKI X.509
-                 MQTT messenger based on Erlang/OTP for governmental purposes
+                 MQTT messenger based on Erlang/OTP for governmental purposes
                  with global availability.</div>
             <br/>
 
@@ -39,18 +39,16 @@
 
         </section>
         <section>
-            <h3><a href="chat">PROTOCOL</a></h3>
-            <div><ul><li><a href="man/chat_auth.htm">AUTH</a></li>
-                     <li><a href="man/chat_file.htm">FILE</a></li>
-                     <li><a href="man/chat_history.htm">HISTORY</a></li>
-                     <li><a href="man/chat.link">LINK</a></li>
-                     <li><a href="man/chat_message.htm">MESSAGE</a>
-                     <li><a href="man/chat_presence.htm">PRESENCE</a></li>
-                     <li><a href="man/chat_profile.htm">PROFILE</a></li>
-                     <li><a href="man/chat_push.htm">PUSH</a></li>
-                     <li><a href="man/chat_room.htm">ROOM</a></li>
-                     <li><a href="man/chat_roster.htm">ROSTER</a></li>
-                     <li><a href="man/chat_search.htm">SEARCH</a></li></ul></div>
+            <h3>WHITEPAPER</h3>
+            <div><ul><li><a href="#principles">PRINCIPLES</a></li>
+                     <li><a href="#structure">STRUCTURE</a></li>
+                     <li><a href="#business">BUSINESS</a></li>
+                     <li><a href="#social">SOCIAL</a></li>
+                     <li><a href="#protocol">PROTOCOL</a></li>
+                     <li><a href="#client">iOS</a>
+                     <li><a href="#gui">UNIX X Windows</a></li>
+                     <li><a href="#terminal">UNIX Terminal</a></li>
+                </ul></div>
             <br />
             <div>
                 VER 0.6.12 JUN 2023 © 5HT <a href="https://5ht.co/license/">DHARMA</a>
@@ -60,7 +58,7 @@
 </aside>
 <main>
     <section>
-    <h3>PRINCIPLES</h3>
+    <h3><a name="principles">PRINCIPLES</a></h3>
     <p>The company principles are following:</p>
     <p><b class=se>Authority</b>. Own X.509 certificate authority [<a href="https://ca.erp.uno">CA</a>] ECC SECP384R1 SHA384.
          Each time user is being registered new PKCS-10 X.409 certificate enrollement is happened. It can be
@@ -72,7 +70,7 @@
        <p><b class=se>Directory</b>. Distributionally controlled [<a href="https://abac.erp.uno">ABAC</a>]
          support for multi-hierarchy domains. Top-level domain selects security admins for LDAP servers of the second-level;</p>
 
-       <p><b class=se>Always encrypted</b>. Encrypt any message GCM/CCM [<a href="https://n2o.dev">N2O</a>] X.509 Envelope.
+       <p><b class=se>Always encrypted</b>. Encrypt any message GCM/CCM [<a href="https://ws.n2o.dev/man/n2o_secret.htm">N2O</a>] X.509 Envelope.
          Each message being sent is encrypted with GCM/CCM symmetric cipher, no unsecure messages are allowed.</p>
 
        <p><b class=se>No message storage</b>. Transient in-memeory (no-storage) queue [<a href="https://mq.erp.uno">MQ</a>]: TLS 1.3 Mosquitto or QUIC EMQX.
@@ -100,7 +98,7 @@
     </section>
 
     <section>
-    <h3>STRUCTURE</h3>
+    <a name="structure"><h3>STRUCTURE</h3></a>
     <p>The company structure is following:</p>
     <p> — Market competitors team: Threema, Signal, WhatsApp, Session, Element, Wire, Wickr;<br>
         — Protocol team: BERT/ASN.1 protocol [Swift] [Erlang];<br>
@@ -113,7 +111,7 @@
     </section>
 
     <section>
-    <h3>BUSINESS</h3>
+    <h3><a name="business">BUSINESS</a></h3>
     <p>Forms of cooperation:</p>
     <p>
        — Autonomous deployments [Your Own] instance;<br>
@@ -126,7 +124,7 @@
     </section>
 
     <section>
-    <h3>SOCIAL</h3>
+    <h3><a name=social>SOCIAL</a></h3>
     <p>Made for people:</p>
     <p>— Integrated alert channel system;<br>
        — B2C service channels (housekeeping);<br>
@@ -138,7 +136,7 @@
     </section>
 
     <section>
-    <h3>PROTOCOL</h3>
+    <h3><a name=protocol>PROTOCOL</a></h3>
 
 
     <p>The CHAT protocol communicates with <b>actions/:client</b>, <b>events/:client</b>,
@@ -167,7 +165,7 @@
     </section>
     <section>
 
-    <h3>iOS 13.0</h3>
+    <h3><a name=client>iOS 13.0</a></h3>
 
     <p>Here you can download the open source iOS client written in Swift:</p>
 
@@ -192,7 +190,7 @@
 
     </section>
     <section>
-       <h3>UNIX X Windows</h3>
+       <h3><a name=gui>UNIX X Windows</a></h3>
        <p>The default X Windows client application globally available for WSL, Linux and Mac written in C.
           The X.ORG CHAT X.509 client is based on:
           1) X Windows Toolkit (Xt),
@@ -208,7 +206,7 @@
     </section>
     <section>
 
-    <h3>UNIX Terminal</h3>
+    <h3><a name=terminal>UNIX Terminal</a></h3>
 
     <p>Here you can download the open source command line client:</p>
 
