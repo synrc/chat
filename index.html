@@ -66,31 +66,33 @@
 <main>
     <section>
     <h3>PRINCIPLES</h3>
-    <p>— Own X.509 certificate authority [CA] ECC SECP384R1 SHA384;<br>
-       — Own domain name server [NS] DNSSEC;<br>
-       — Promotion [ABAC] to multi-hierarchy domains;<br>
-       — Transient in-memeory (no-storage) queue [MQ]: TLS 1.3 Mosquitto or QUIC EMQX;<br>
-       — Client storage for roster subscription trees or messages [LDAP] LDIF slapd TLS;<br>
-       — Always encrypt any message GCM/CCM [N2O] X.509 Envelope;<br>
-       — LDAP server storage for roster subscription trees [ROSTER];<br>
-       — Multi-roster [PROFILE] phone and mail table verification [AUTH];<br>
+    <p>The company principles are following:</p>
+    <p>— Own X.509 certificate authority [<a href="https://ca.erp.uno">CA</a>] ECC SECP384R1 SHA384;<br>
+       — Own domain name server [<a href="https://ns.erp.uno">NS</a>] DNSSEC;<br>
+       — Distributionally controlled [<a href="https://abac.erp.uno">ABAC</a>] support for multi-hierarchy domains;<br>
+       — Transient in-memeory (no-storage) queue [<a href="https://mq.erp.uno">MQ</a>]: TLS 1.3 Mosquitto or QUIC EMQX;<br>
+       — Always encrypt any message GCM/CCM [<a href="https://n2o.dev">N2O</a>] X.509 Envelope;<br>
+       — Client storage: for roster subscription trees or messages [<a href="https://ldap.erp.uno">LDAP</a>] LDIF slapd TLS;<br>
+       — LDAP server storage: for roster subscription trees [ROSTER];<br>
+       — Multi-roster: [PROFILE] phone and mail table verification [AUTH].<br>
     </p>
     </section>
 
     <section>
     <h3>STRUCTURE</h3>
-    <p> — Review competitors: Telegram, Viber, Threema, Signal, WhatsApp;<br>
-        — BERT/ASN.1 protocol [Swift] [Erlang];<br>
-        — Development: Swift iOS Client [Chat X.509] Sesign UX [Figma] [Swift];<br>
-        — Development: Erlang/OTP CA NS LDAP AUTH MQTT [mac] CHAT CLI;<br>
-        — Deployment and Operations: NetBSD, Linux;<br>
-        — Certificates [SYNRC.PEM] Schema [SYNRC.LDIF] Zone [SYNRC.DNS].<br>
+    <p>The company structure is following:</p>
+    <p> — Market competitors team: Telegram, Viber, Threema, Signal, WhatsApp;<br>
+        — Protocol team: BERT/ASN.1 protocol [Swift] [Erlang];<br>
+        — Development team: Swift iOS Client [Chat X.509] Sesign UX [Figma] [Swift];<br>
+        — Development team: Erlang/OTP CA NS LDAP AUTH MQTT [mac] CHAT CLI;<br>
+        — Deployment and Operations team: NetBSD, Linux;<br>
+        — Client support team: Certs [SYNRC.PEM] Schema [SYNRC.LDIF] Zone [SYNRC.DNS].<br>
     </p>
     </section>
 
     <section>
     <h3>BUSINESS</h3>
-
+    <p>Forms of cooperation:</p>
     <p>
        — Autonomous deployments [Your Own] instance;<br>
        — Hosting by subscription [Our] instance;<br>
@@ -102,21 +104,21 @@
 
     <section>
     <h3>SOCIAL</h3>
-
+    <p>Made for people:</p>
     <p>— Integrated alert channel system;<br>
        — B2C service channels (housekeeping);<br>
        — Calendar vCard iCal events tasks database;<br>
        — Clean iOS UI Zero deps package;<br>
        — Public text command line client with directory search;<br>
-       — Governmental or Corporate X.509 identity ДСТУ 4145.<br>
+       — Governmental or Corporate X.509 identity ДСТУ 4145 authorisation.<br>
     </section>
 
     <section>
     <h3>PROTOCOL</h3>
 
-    <p>The CHAT protocol communicates with <b class=sel>actions/:client</b>, <b class=sel>events/:client</b>,
-       <b class=sel>devices/:phone</b>, <b class=sel>contacts/:roster</b>,
-       <b class=sel>private/:roster/:roster</b>, <b class=sel>room/:room</b> MQTT topics, sending through them
+    <p>The CHAT protocol communicates with <b>actions/:client</b>, <b>events/:client</b>,
+       <b>devices/:phone</b>, <b>contacts/:roster</b>,
+       <b>private/:roster/:roster</b>, <b>room/:room</b> MQTT topics, sending through them
        <b>Index</b>, <b>Typing</b>, <b>Search</b>, <b>Feature</b>, <b>Service</b>, <b>Desc</b>,
        <b>Presence, <b>Friend</b>, <b>Tag</b>, <b>Link</b>, <b>Message</b>, Member</b>,
        <b>Room</b>, <b>Contact</b>, <b>Star</b>, <b>RoomStar</b>, <b>Ack</b>, <b>Auth</b>,
@@ -124,7 +126,7 @@
 
      <p>The CHAT protocol is implemented in the set of sub-protocol modules:
         FILE, HISTORY, LINK, MESSAGE, PRESENSE, PROFILE, PUSH, ROOM, ROSTER, SEARCH, AUTH.
-        For full specification follow <b class=sel>priv/proto</b> folder.
+        For full specification follow <b>priv/proto</b> folder.
         The CHAT server implementation relies only on ISO/IETF connections
         such as DNSSEC, X.509 SCR, LDAP, QUIC, WebSocket, MQTT.</p>
 
@@ -136,13 +138,39 @@
 
     <ul><li><a href="https://github.com/synrc/chat/tree/main/priv/proto/">SYNRC CHAT</a> — ETF/MQTT protocol.</li></ul>
 
-    <h3>GET iOS CLIENT</h3>
+    <h3>PHONE</h3>
+
+    <p>Here you can download the open source iOS client:</p>
+
+    <ul><li><a href="https://github.com/chat-x509/">SYNRC CHAT X.509 </a> — the Swift iOS client.</li></ul>
 
 <table width="100%">
     <tbody><tr><td width="50%" align="right"><img src="https://tonpa.guru/stream/2023/img/splash.png" width="70%"></td>
         <td width="50%" align="left"><img src="https://tonpa.guru/stream/2023/img/home-screen-x509.jpg" width="70%"></td></tr></tbody></table>
 
-    <h3>GET TEXT COMMAND LINE CLIENT</h3>
+    </section>
+    <section>
+       <h3>UNIX GUI</h3>
+       <p>The default X Windows client application globally available for WSL, Linux and Mac.
+          The X.ORG CHAT X.509 client is based on:
+          1) X Windows Toolkit (Xt),
+          2) X Windows Library (Xlib) and
+          3) OpenGL for X Windows (GLX 1.3).</p>
+
+       <p>
+<img src="https://n2o.dev/img/pdf.jpg" width="35" style="margin-bottom:-12px;margin-right:10px;" />
+        <a href="https://chat.erp.uno/priv/design/GUI.pdf">GUI.PDF</a> &mdash; C console client for X Windows.
+       </p>
+
+
+    </section>
+    <section>
+
+    <h3>TERMINAL</h3>
+
+    <p>Here you can download the open source command line client:</p>
+
+    <ul><li><a href="https://github.com/chat-x509/">SYNRC CHAT-X509</a> — console client.</li></ul>
 
     <p>The CHAT includes text message delivery system base on SYN buil-in Erlang/OTP message broker along with MQTT.
        The implementation of SYNRC CHAT CLI protocol is trying to be informative but
@@ -191,15 +219,12 @@
  &lt; LIST
  >
     </code></figure>
-    </section>
-    <section>
-       <h3>BeOS CLIENT</h3>
-        <p><table cellspacing="10" valign="center"><tbody><tr><td>
-        <img src="https://n2o.dev/img/pdf.jpg" width="35" style="margin-bottom:-12px;margin-right:10px;" />
-        <a href="https://chat.erp.uno/priv/design/GUI.pdf">GUI.PDF</a></td></tr></tbody></table>
-        <br />
-       </p>
+
+   <br><center>&dot;</center>
+
     </section>
 </main><footer>
+   <br><center>&dot;</center>
+   <br>
     Made with <span class="heart">❤</span> to N2O
 </footer></body></html>
