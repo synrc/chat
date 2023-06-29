@@ -14,9 +14,15 @@
     <article>
         <section>
             <h3>SERVER</h3>
-            <div>CHAT is a simple instant messaging server based on ISO standards.
-                 It uses MQTT protocol and ETF binary serialization from Erlang/OTP.
-                 CHAT consists of a list of Erlang/OTP applications:</div><br/>
+            <div>As a class CHAT is an open source non-federated secured by PKI X.509
+                 MQTT messenger based on Erlang/OTP for governmental purposes with global availability.</div>
+            <br/>
+
+            <div>As an implementation CHAT is the simple instant messaging server
+                 based on ISO standards. It uses MQTT protocol and ETF binary
+                 serialization from Erlang/OTP and LDAP as enterprise directory trees storage.
+                 CHAT consists of the list of Erlang/OTP applications:</div>
+            <br>
 
             <div>
                  <ul><li>MQTT for publish-subscribe message queue;</li>
@@ -30,7 +36,7 @@
             <br>
 
         <figure>
-        <code> $ wscat -c wss://chat.synrc.com</code>
+        <code> $ chat-x509 -c wss://chat.erp.uno</code>
         </figure>
         </section>
         <section>
@@ -51,13 +57,62 @@
                 VER 0.6.12 JUN 2023 © 5HT <a href="https://5ht.co/license/">DHARMA</a>
             </div>
         </section>
+        <br>
         <section>
+            <img src="https://mail.n2o.dev/synrc-chat-3.png?v=1" style="margin-left:-110px;width:800px;">
         </section>
     </article>
-</aside><main>
+</aside>
+<main>
     <section>
+    <h3>PRINCIPLES</h3>
+    <p>— Own X.509 certificate authority [CA] ECC SECP384R1 SHA384;<br>
+       — Own domain name server [NS] DNSSEC;<br>
+       — Promotion [ABAC] to multi-hierarchy domains;<br>
+       — Transient in-memeory (no-storage) queue [MQ]: TLS 1.3 Mosquitto or QUIC EMQX;<br>
+       — Client storage for roster subscription trees or messages [LDAP] LDIF slapd TLS;<br>
+       — Always encrypt any message GCM/CCM [N2O] X.509 Envelope;<br>
+       — LDAP server storage for roster subscription trees [ROSTER];<br>
+       — Multi-roster [PROFILE] phone and mail table verification [AUTH];<br>
+    </p>
+    </section>
 
-    <h3>SYNRC CHAT</h3>
+    <section>
+    <h3>STRUCTURE</h3>
+    <p> — Review competitors: Telegram, Viber, Threema, Signal, WhatsApp;<br>
+        — BERT/ASN.1 protocol [Swift] [Erlang];<br>
+        — Development: Swift iOS Client [Chat X.509] Sesign UX [Figma] [Swift];<br>
+        — Development: Erlang/OTP CA NS LDAP AUTH MQTT [mac] CHAT CLI;<br>
+        — Deployment and Operations: NetBSD, Linux;<br>
+        — Certificates [SYNRC.PEM] Schema [SYNRC.LDIF] Zone [SYNRC.DNS].<br>
+    </p>
+    </section>
+
+    <section>
+    <h3>BUSINESS</h3>
+
+    <p>
+       — Autonomous deployments [Your Own] instance;<br>
+       — Hosting by subscription [Our] instance;<br>
+       — Multi-roster profiles support by subscription;<br>
+       — Integration API SDK for public services [PARTNERS];<br>
+       — Node analytics.<br>
+    </p>
+    </section>
+
+    <section>
+    <h3>SOCIAL</h3>
+
+    <p>— Integrated alert channel system;<br>
+       — B2C service channels (housekeeping);<br>
+       — Calendar vCard iCal events tasks database;<br>
+       — Clean iOS UI Zero deps package;<br>
+       — Public text command line client with directory search;<br>
+       — Governmental or Corporate X.509 identity ДСТУ 4145.<br>
+    </section>
+
+    <section>
+    <h3>PROTOCOL</h3>
 
     <p>The CHAT protocol communicates with <b class=sel>actions/:client</b>, <b class=sel>events/:client</b>,
        <b class=sel>devices/:phone</b>, <b class=sel>contacts/:roster</b>,
@@ -81,18 +136,25 @@
 
     <ul><li><a href="https://github.com/synrc/chat/tree/main/priv/proto/">SYNRC CHAT</a> — ETF/MQTT protocol.</li></ul>
 
-    <figure><img src="https://mail.n2o.dev/synrc-chat-3.png" width=900></figure>
+    <h3>GET iOS CLIENT</h3>
 
-    <h3>SYNRC CHAT TXT</h3>
+<table width="100%">
+    <tbody><tr><td width="50%" align="right"><img src="https://tonpa.guru/stream/2023/img/splash.png" width="70%"></td>
+        <td width="50%" align="left"><img src="https://tonpa.guru/stream/2023/img/home-screen-x509.jpg" width="70%"></td></tr></tbody></table>
+
+    <h3>GET TEXT COMMAND LINE CLIENT</h3>
+
     <p>The CHAT includes text message delivery system base on SYN buil-in Erlang/OTP message broker along with MQTT.
-       The implementation of SYNRC CHAT TXT protocol is trying to be informative but
+       The implementation of SYNRC CHAT CLI protocol is trying to be informative but
        not excessive, it should take care of run-time edge  cases but not too stable.
-       TXT text protocol is dedicated for demo purposes and really short message
+       CLI text protocol is dedicated for demo purposes and really short message
        when you don't have access to mobile clients, it doesn't support file upload and voice calls.
        It is basically SMPT done right: HELP, BOX, CUT, AUTH, SEND, LIST.
      </p>
+
+
     <figure><code>
- $ wscat -c wss://chat.synrc.com
+ $ chat-x509 -c wss://chat.erp.uno
  > HELP
  &lt; AUTH &lt;user&gt;
  | SEND &lt;user&gt; &lt;msg&gt;
@@ -131,7 +193,7 @@
     </code></figure>
     </section>
     <section>
-       <h3>GUI SPEC</h3>
+       <h3>BeOS CLIENT</h3>
         <p><table cellspacing="10" valign="center"><tbody><tr><td>
         <img src="https://n2o.dev/img/pdf.jpg" width="35" style="margin-bottom:-12px;margin-right:10px;" />
         <a href="https://chat.erp.uno/priv/design/GUI.pdf">GUI.PDF</a></td></tr></tbody></table>
