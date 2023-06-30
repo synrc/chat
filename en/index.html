@@ -1,0 +1,280 @@
+<html><head><meta charset="utf-8" /><meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="description" content="" />
+<meta name="author" content="Maxim Sokhatsky" /><title>CHAT</title>
+    <link rel="stylesheet" href="https://n2o.dev/blank.css" />
+    <link rel="stylesheet" href="https://n2o.dev/zima.css" />
+    <link rel="stylesheet" href="https://n2o.dev/pro/pro.css?v=1" />
+</head><body><nav>
+    <a href="https://erp.uno/en/">ERP</a>
+    <a href="https://chat.erp.uno" style="background:#ededed;">CHAT</a>
+  <div class="dropdown">
+    <a onclick="drop()" class="dropbtn">EN</a>
+    <div id="dropdown" class="dropdown-content">
+      <a href="../index.html">UA</a>
+      <a href="#">EN</a>
+    </div>
+  </div>
+</nav><header>
+    <a href="https://github.com/synrc/chat"><img src="https://openmoji.org/data/color/svg/E248.svg"/></a>
+    <h1>CHAT</h1>
+</header><aside>
+    <article>
+        <section>
+            <h3>MESSENGER</h3>
+            <div>As a class CHAT is an open source non-federated secured by PKI X.509
+                 MQTT messenger based on Erlang/OTP for governmental purposes
+                 with global availability.</div>
+            <br/>
+
+            <div>As an implementation CHAT is the simple instant messaging server
+                 based on ISO standards. It uses MQTT protocol and ETF binary
+                 serialization from Erlang/OTP and LDAP as enterprise directory trees storage.
+                 CHAT consists of the list of Erlang/OTP applications:</div>
+            <br>
+
+            <div>
+                 <ul><li>MQTT for publish-subscribe message queue;</li>
+                     <li>LDAP for user directory;</li>
+                     <li>DNS for domain name security;</li>
+                     <li>CA for X.509 client certificate enrollment.</li></ul>
+            <div>
+            <br>
+            <figure><code> $ chat-x509 -c wss://chat.erp.uno</code></figure>
+
+        </section>
+        <section>
+            <h3>WHITEPAPER</h3>
+            <div><ul><li><a href="#principles">PRINCIPLES</a></li>
+                     <li><a href="#structure">COMPANY</a></li>
+                     <li><a href="#business">BUSINESS</a></li>
+                     <li><a href="#social">SOCIAL</a></li>
+                     <li><a href="#protocol">PROTOCOL</a></li>
+                     <li><a href="#client">iOS</a>
+                     <li><a href="#gui">UNIX X Windows</a></li>
+                     <li><a href="#terminal">UNIX Terminal</a></li>
+                </ul></div>
+            <br />
+            <div>
+                VER 0.6.12 JUN 2023 © 5HT <a href="https://5ht.co/license/">DHARMA</a>
+            </div>
+        </section>
+    </article>
+</aside>
+<main>
+    <section>
+    <a name=principles><h3>PRINCIPLES</h3></a>
+    <p>The company principles are following:</p>
+    <p><b class=se>Authority</b>. Own X.509 certificate authority [<a href="https://ca.erp.uno">CA</a>] ECC SECP384R1 SHA384.
+         Each time user is being registered new PKCS-10 X.409 certificate enrollement is happened. It can be
+         done by using command line utility.</p>
+
+       <p><b class=se>Hierarchical domains</b>. Own domain name server [<a href="https://ns.erp.uno">NS</a>] DNSSEC.
+         The structure of hosted service is driven by own DNS server;</p>
+
+       <p><b class=se>Distributed directory</b>. Distributionally controlled [<a href="https://abac.erp.uno">ABAC</a>]
+         support for multi-hierarchy domains. Top-level domain selects security admins for LDAP servers of the second-level;</p>
+
+       <p><b class=se>Always encrypted</b>. Encrypt any message GCM/CCM [<a href="https://ws.n2o.dev/man/n2o_secret.htm">N2O</a>] X.509 Envelope.
+         Each message being sent is encrypted with GCM/CCM symmetric cipher, no unsecure messages are allowed.</p>
+
+       <p><b class=se>No message storage</b>. Transient in-memeory (no-storage) queue [<a href="https://mq.erp.uno">MQ</a>]: TLS 1.3 Mosquitto or QUIC EMQX.
+         No storage is used for storing messages. One massage receive is acknoledged by correspondent it is being
+         deleted from MQTT transient in-memory queue;</p>
+
+       <p><b class=se>No metadata</b>. The messanger doesn't store any metadata
+          information like IP addresses, hardware client information, etc. The
+          CHAT is using only client, device, profile, roster internal identifiers for message routing purposes inside MQTT;</p>
+
+       <p><b class=se>Client only roster storage</b>. Roster subscription trees or messages [<a href="https://ldap.erp.uno">LDAP</a>] are
+         stored exclusively and paranoidal at client-side and transfered to new registered clients through MQTT.
+         User can select not to store peer-to-peer subscriptions in LDAP directory but to store exclusively on client;</p>
+
+       <p><b class=se>LDAP roster storage</b>. Roster subscription trees [ROSTER] are stored in LDAP directory.
+         Users can select to store their peer-to-peer subscriptions in LDAP directory;</p>
+
+       <p><b class=se>Multi-roster</b> with profile <b>phone</b> and <b>mail</b> table verification.
+          Phone is not mandatory, email is not mandatory;</p>
+
+       <p><b class=se>Open source</b> foundation. Erlang ssl implementation outlived heartblead so
+          all infrastructure services are written in Erlang and open sourced for verification.
+          We remain compatible will all cerrified TLS clients.
+          The sole author (BDFL) and technical architect is Namdak Tonpa.</p>
+
+      <br><center>&dot;</center>
+      <figure><img src="https://mail.n2o.dev/synrc-chat-3.png"></figure>
+      <p></p>
+      <br><center>&dot;</center>
+    </section>
+
+    <section>
+    <a name=structure><h3>COMPANY</h3></a>
+    <p>The SYNRC CHAT division company structure is following:</p>
+    <p><b class=se>Market</b> competitors team: Threema, Signal, WhatsApp, Session, Element, Wire, Wickr;</p>
+    <p><b class=se>Protocol</b> team: BERT/ASN.1 protocol [Swift] [Erlang];</p>
+    <p><b class=se>Frontend Development</b> team: Swift iOS Client [Chat X.509] Sesign UX [Figma] [Swift];</p>
+    <p><b class=se>Backend Development</b> team: Erlang/OTP CA NS LDAP AUTH MQTT [mac] CHAT CLI;</p>
+    <p><b class=se>Deployment and Operations</b> team: NetBSD, Linux;</p>
+    <p><b class=se>Client</b> support team: Certs [SYNRC.PEM] Schema [SYNRC.LDIF] Zone [SYNRC.DNS].</p>
+    </p>
+   <br><center>&dot;</center>
+    </section>
+
+    <section>
+    <a name=business><h3>BUSINESS</h3></a>
+    <p>Forms of cooperation:</p>
+    <p>
+       — Autonomous deployments [Your Own] instance;<br>
+       — Hosting by subscription [Our] instance;<br>
+       — Multi-roster profiles support by subscription;<br>
+       — Integration API SDK for public services [PARTNERS];<br>
+       — Node analytics.<br>
+    </p>
+   <br><center>&dot;</center>
+    </section>
+
+    <section>
+    <a name=social><h3>SOCIAL</h3></a>
+    <p>Made for people:</p>
+    <p>— Integrated alert channel system;<br>
+       — B2C service channels (housekeeping);<br>
+       — Calendar vCard iCal events tasks database;<br>
+       — Clean iOS UI Zero deps package;<br>
+       — Public text command line client with directory search;<br>
+       — Governmental or Corporate X.509 identity ДСТУ 4145 authorisation.<br>
+   <br><center>&dot;</center>
+    </section>
+
+    <section>
+    <a name=protocol><h3>PROTOCOL</h3></a>
+
+    <p>The CHAT protocol communicates with <b>actions/:client</b>, <b>events/:client</b>,
+       <b>devices/:phone</b>, <b>contacts/:roster</b>,
+       <b>private/:roster/:roster</b>, <b>room/:room</b> MQTT topics, sending through them
+       <b>Index</b>, <b>Typing</b>, <b>Search</b>, <b>Feature</b>, <b>Service</b>,
+       <b>Presence, <b>Friend</b>, <b>Tag</b>, <b>Link</b>, <b>Message</b>, Member</b>,
+       <b>Room</b>, <b>Contact</b>, <b>Star</b>, <b>Ack</b>, <b>Auth</b>,
+       <b>Roster</b>, <b>Profile</b>, <b>History</b>, <b>push</b>, <b>io</b> ETF-serialized messages.</p>
+
+     <p>The CHAT protocol is implemented in the set of sub-protocol modules:
+        FILE, HISTORY, LINK, MESSAGE, PRESENSE, PROFILE, PUSH, ROOM, ROSTER, SEARCH, AUTH.
+        For full specification follow <b>priv/proto</b> folder.
+        The CHAT server implementation relies only on ISO/IETF connections
+        such as DNSSEC, X.509 CSR, LDAP, QUIC, WebSocket, MQTT.</p>
+
+    <p>CHAT is a simple instant messaging server based on ISO standards. It uses MQTT protocol and ETF binary
+       serialization from Erlang/OTP across applications: MQTT, N2O, KVS, MAIL, LDAP, NS, CA. Secure by default.
+        The CHAT application has Sign/Verify, Encrypt/Decrypt feature enabled for every single message passed by.
+        The delivered messages are being deleted from MQTT instance after recipient acknowledgment.
+        This is Keybase, OTR, PGP (you name it) replacement for secure X.509 ASN.1 defined communications.</p>
+
+    <ul><li><a href="https://github.com/synrc/chat/tree/main/priv/proto/">SYNRC CHAT</a> — ETF/MQTT protocol.</li></ul>
+
+   <br><center>&dot;</center>
+    </section>
+    <section>
+
+    <a name=client><h3>iOS 13.0</h3></a>
+
+    <p>Here you can download the open source iOS client written in Swift:</p>
+
+    <ul><li><a href="https://github.com/chat-x509/">SYNRC CHAT X.509 </a> — the iOS client (Swift, Objective C).</li></ul>
+
+     <center><table width="100%">
+    <tbody>
+    <tr><td width="33%" align="right"><img src="https://tonpa.guru/stream/2023/img/splash.png" width="100%"></td>
+        <td width="33%" align="center"><img src="https://tonpa.guru/stream/2023/img/home-screen-x509.jpg" width="100%"></td>
+        <td width="33%" align="left">
+          <center>
+          <video controls="" width="100%"><source src="https://tonpa.guru/stream/2023/img/JSQ.MP4" type="video/mp4"></video>
+          </center>
+        </td>
+    </tr></tbody></table></center>
+
+    <p></p>
+
+    <figure><img src="https://tonpa.guru/stream/2023/img/design-x509.jpg"></figure>
+
+   <br><center>&dot;</center>
+
+    </section>
+    <section>
+       <a name=gui><h3>UNIX X Windows</h3></a>
+       <p>The default X Windows client application globally available for WSL, Linux and Mac written in C.
+          The X.ORG CHAT X.509 client is based on:
+          1) X Windows Toolkit (Xt),
+          2) X Windows Library (Xlib) and
+          3) OpenGL for X Windows (GLX 1.3).</p>
+
+       <p>
+<img src="https://n2o.dev/img/pdf.jpg" width="35" style="margin-bottom:-12px;margin-right:10px;" />
+        <a href="https://chat.erp.uno/priv/design/GUI.pdf">CHAT-X509-GUI.PDF</a> &mdash; C console client for X Windows (xt, xlib, GLX, C99).
+       </p>
+
+   <br><center>&dot;</center>
+    </section>
+    <section>
+
+    <a name=terminal><h3>UNIX Terminal</h3></a>
+
+    <p>Here you can download the open source command line client:</p>
+
+    <ul><li><a href="https://github.com/chat-x509/">SYNRC CHAT-X509</a> — console client TERMIO, ANSI C99.</li></ul>
+
+    <p>The CHAT includes text message delivery system base on SYN buil-in Erlang/OTP message broker along with MQTT.
+       The implementation of SYNRC CHAT CLI protocol is trying to be informative but
+       not excessive, it should take care of run-time edge  cases but not too stable.
+       CLI text protocol is dedicated for demo purposes and really short message
+       when you don't have access to mobile clients, it doesn't support file upload and voice calls.
+       It is basically SMPT done right: HELP, BOX, CUT, AUTH, SEND, LIST.
+     </p>
+
+
+    <figure><code>
+ $ chat-x509 -c wss://chat.erp.uno
+ > HELP
+ &lt; AUTH &lt;user&gt;
+ | SEND &lt;user&gt; &lt;msg&gt;
+ | BOX
+ | CUT &lt;id&gt;.
+ > AUTH buddha
+ &lt; USER buddha
+ > SEND rocco HELO
+ &lt; ERROR user doesn't exist.
+ > AUTH rocco
+ &lt; USER rocco
+ > SEND buddha OK
+ &lt; NOTIFY rocco:buddha:1556151953113322286:OK
+ &lt; ACK "1556151953113322286"
+ > AUTH buddha
+ &lt; USER buddha
+ > BOX
+ &lt; LIST
+ rocco:buddha:1556151953113322286:OK
+ > SEND buddha this is me
+ &lt; NOTIFY buddha:buddha:1556152151055371152:this is me
+ &lt; ACK "1556152151055371152"
+ > SEND buddha back again
+ &lt; NOTIFY buddha:buddha:1556152157283311935:back again
+ &lt; ACK "1556152157283311935"
+ > BOX
+ &lt; LIST
+ rocco:buddha:1556151953113322286:OK
+ buddha:buddha:1556152151055371152:this is me
+ buddha:buddha:1556152157283311935:back again
+ > CUT 1556152157283311935
+ &lt; ERASED 3
+ > BOX
+ &lt; LIST
+ >
+    </code></figure>
+
+   <br><center>&dot;</center>
+
+    </section>
+</main><footer>
+   <br><center>&dot;</center>
+   <br>
+    Made with <span class="heart">❤</span> to N2O
+</footer></body>
+<script>function drop(){document.getElementById("dropdown").classList.toggle("show");}</script>
+</html>

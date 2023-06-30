@@ -2,46 +2,51 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="description" content="" />
 <meta name="author" content="Maxim Sokhatsky" /><title>CHAT</title>
     <link rel="stylesheet" href="https://n2o.dev/blank.css" />
-    <link rel="stylesheet" href="https://n2o.dev/zima.css" />
-    <link rel="stylesheet" href="https://n2o.dev/pro/pro.css?v=1" />
 </head><body><nav>
     <a href="https://erp.uno/en/">ERP</a>
     <a href="https://chat.erp.uno" style="background:#ededed;">CHAT</a>
+  <div class="dropdown">
+    <a onclick="drop()" class="dropbtn">UA</a>
+    <div id="dropdown" class="dropdown-content">
+      <a href="#">UA</a>
+      <a href="en/index.html">EN</a>
+    </div>
+  </div>
 </nav><header>
     <a href="https://github.com/synrc/chat"><img src="https://openmoji.org/data/color/svg/E248.svg"/></a>
-    <h1>CHAT</h1>
+    <h1>ЧАТ</h1>
 </header><aside>
     <article>
         <section>
-            <h3>MESSENGER</h3>
-            <div>As a class CHAT is an open source non-federated secured by PKI X.509
-                 MQTT messenger based on Erlang/OTP for governmental purposes
-                 with global availability.</div>
+            <h3>МЕСЕНЖЕР</h3>
+            <div>ЧАТ належить до класу захищених за допомогою Public Key Infrastructure X.509 сертифікатами,
+                 не-федеративних MQTT месенжерів, який побудований на Erlang/OTP для державних та комерційних
+                 підприємств з глобальною доступністю.</div>
             <br/>
 
-            <div>As an implementation CHAT is the simple instant messaging server
-                 based on ISO standards. It uses MQTT protocol and ETF binary
-                 serialization from Erlang/OTP and LDAP as enterprise directory trees storage.
-                 CHAT consists of the list of Erlang/OTP applications:</div>
+            <div>Як імплементація ЧАТ реалізований як простий сервер доставки миттєвих повідомлень
+                 розроблений для ненадійних мереж та у відповідності до стандартів ISO/IETF. Він
+                 використовує шину та брокер MQTT, LDAP сервер для корпоративних ієрархічних конфігурацій,
+                 та бінарну серіалізацію ETF (Erlang Term Format). ЧАТ складається за наступних додатків:</div>
             <br>
 
             <div>
-                 <ul><li>MQTT for publish-subscribe message queue;</li>
-                     <li>LDAP for user directory;</li>
-                     <li>DNS for domain name security;</li>
-                     <li>CA for X.509 client certificate enrollment.</li></ul>
+                 <ul><li>MQTT у якості Pub/Sub брокера;</li>
+                     <li>LDAP для директорії користувачів;</li>
+                     <li>DNS для безпекі іменного простору;</li>
+                     <li>CA для X.509 клієнтських сертифікатів та їх видачі.</li></ul>
             <div>
             <br>
             <figure><code> $ chat-x509 -c wss://chat.erp.uno</code></figure>
 
         </section>
         <section>
-            <h3>WHITEPAPER</h3>
-            <div><ul><li><a href="#principles">PRINCIPLES</a></li>
-                     <li><a href="#structure">COMPANY</a></li>
-                     <li><a href="#business">BUSINESS</a></li>
-                     <li><a href="#social">SOCIAL</a></li>
-                     <li><a href="#protocol">PROTOCOL</a></li>
+            <h3>БРОШУРА</h3>
+            <div><ul><li><a href="#principles">ПРИНЦИПИ</a></li>
+                     <li><a href="#structure">КОМПАНІЯ</a></li>
+                     <li><a href="#business">БІЗНЕС</a></li>
+                     <li><a href="#social">СУСПІЛЬСТВО</a></li>
+                     <li><a href="#protocol">ПРОТОКОЛ</a></li>
                      <li><a href="#client">iOS</a>
                      <li><a href="#gui">UNIX X Windows</a></li>
                      <li><a href="#terminal">UNIX Terminal</a></li>
@@ -55,43 +60,47 @@
 </aside>
 <main>
     <section>
-    <a name=principles><h3>PRINCIPLES</h3></a>
-    <p>The company principles are following:</p>
-    <p><b class=se>Authority</b>. Own X.509 certificate authority [<a href="https://ca.erp.uno">CA</a>] ECC SECP384R1 SHA384.
-         Each time user is being registered new PKCS-10 X.409 certificate enrollement is happened. It can be
-         done by using command line utility.</p>
+    <a name=principles><h3>ПРИНЦИПИ</h3></a>
+    <p>Компанія користується наступними принципами:</p>
+    <p><b class=se>Акредитовані Центр Сертифікації Ключів</b>. ЧАТ має власний X.509 центр видачі сертифікатів з використанням еліптичної криптографії ECC [<a href="https://ca.erp.uno">CA</a>] SECP384R1 SHA384.
+         Кожен раз при реєстрації нового користувача генерується PKCS-10 X.409 запит на створення сертифікату. Це також може бути зроблено за допомогою
+         консольної утіліти.</p>
 
-       <p><b class=se>Hierarchical domains</b>. Own domain name server [<a href="https://ns.erp.uno">NS</a>] DNSSEC.
-         The structure of hosted service is driven by own DNS server;</p>
+       <p><b class=se>Ієрархічні домени</b>. ЧАТ має власний DNS сервер [<a href="https://ns.erp.uno">NS</a>] з підтримкою DNSSEC.
+         Структура використаних сервісів та їх імена записані зберігаються в DNS сервері;</p>
 
-       <p><b class=se>Distributed directory</b>. Distributionally controlled [<a href="https://abac.erp.uno">ABAC</a>]
-         support for multi-hierarchy domains. Top-level domain selects security admins for LDAP servers of the second-level;</p>
+       <p><b class=se>Директорія підприємства як розподілена бага</b>. В складних розподілених ієрархія підпорядкування
+         з двома видами адміністраторів (безпеки і операційний) підтримка крос-DMZ реплікації регулюється глобальними правилами
+         системи для авторизації пошукових LDAP запитів. Топ-левел LDAP сервери вибирають адміністраторів безпеки LDAP серверів друго рівня, і т.д.;</p>
 
-       <p><b class=se>Always encrypted</b>. Encrypt any message GCM/CCM [<a href="https://ws.n2o.dev/man/n2o_secret.htm">N2O</a>] X.509 Envelope.
-         Each message being sent is encrypted with GCM/CCM symmetric cipher, no unsecure messages are allowed.</p>
+       <p><b class=se>Всі повідомлення шифруются завжди</b>. Кожне повідомлення шифрується за допомогою моделей полів Галуа GF(2^m) GCM або з
+         використанням еліптичних кривих та їх модулярних форм CCM, які зберігаються в X.509 конфертах як JKS. Нешифровані месаджі заборонені в системі.</p>
 
-       <p><b class=se>No message storage</b>. Transient in-memeory (no-storage) queue [<a href="https://mq.erp.uno">MQ</a>]: TLS 1.3 Mosquitto or QUIC EMQX.
-         No storage is used for storing messages. One massage receive is acknoledged by correspondent it is being
-         deleted from MQTT transient in-memory queue;</p>
+       <p><b class=se>Повідомлення не зберігаються</b> на сервері. Транзієнта оперативна черга доставки повідомлень MQTT,
+         сертифіковані сервери: [<a href="https://mq.erp.uno">MQ</a>]: Mosquitto через TLSv1.3 та EMQX через QUIC (HTTP/3).
+         Кожне повідомлення після останнього кроку отримання квитанції про доставку кореспондентом знищується на сервері
+         і залишається відтепер тільки на клієнті. Так працювали перші версії Viber;</p>
 
-       <p><b class=se>No metadata</b>. The messanger doesn't store any metadata
-          information like IP addresses, hardware client information, etc. The
-          CHAT is using only client, device, profile, roster internal identifiers for message routing purposes inside MQTT;</p>
+       <p><b class=se>Не збираєм метадані</b>. Месенжер не зберігає ніяких метаданих, як то локація, IP адреса,
+          інформація про апаратуру клієнта, тощо. ЧАТ використовує тільки наступні внутрішнін ідетифікатори: client,
+          device, profile, roster виключно для роутінга повідомлень. Користувач також має змогу обрати зберігати
+           контактну книгу (ростер) не на сервері, а на клієнті;</p>
 
-       <p><b class=se>Client only roster storage</b>. Roster subscription trees or messages [<a href="https://ldap.erp.uno">LDAP</a>] are
-         stored exclusively and paranoidal at client-side and transfered to new registered clients through MQTT.
-         User can select not to store peer-to-peer subscriptions in LDAP directory but to store exclusively on client;</p>
+       <p><b class=se>Ростер на клієнті</b>. Вся контактна інформація про ваші підписки, чати, канали, та компанії
+         може зберігатися ексклюзивно на клієнті. Після логіна на іншому присторії користовач має змогу отримати (по MQTT)
+         контактну книгу (ростер) з іншого клієнта, який працює на іншому пристрої;</p>
 
-       <p><b class=se>LDAP roster storage</b>. Roster subscription trees [ROSTER] are stored in LDAP directory.
-         Users can select to store their peer-to-peer subscriptions in LDAP directory;</p>
+       <p><b class=se>Ростер на сервері</b>. Вся контактна інформація про ваші підписки, чати, канали та компанії
+         зберігається в корпоративній LDAP дерикторії яка має багато каналів реплікації;</p>
 
-       <p><b class=se>Multi-roster</b> with profile <b>phone</b> and <b>mail</b> table verification.
-          Phone is not mandatory, email is not mandatory;</p>
+       <p><b class=se>Багато контактних книг</b>. Для ведення подвійного та багааватарного життя на платній основі
+          та для корпоративних акаунтів клієнт підтримує мульті-ростерність та верифікує акаунти за допомогою
+          <b>phone</b> та <b>mail</b> способів верифікації клієнта;</p>
 
-       <p><b class=se>Open source</b> foundation. Erlang ssl implementation outlived heartblead so
-          all infrastructure services are written in Erlang and open sourced for verification.
-          We remain compatible will all cerrified TLS clients.
-          The sole author (BDFL) and technical architect is Namdak Tonpa.</p>
+       <p><b class=se>Відкритий код</b>. Імплементація Erlang SSL пережила heartblead тому була
+          вибрана як основа безпеки TLS з'єднань в архітектурі ЧАТ. Всі серверні субкомпоненти системи написані
+          на Erlang та доступні для верифікації та ліцензування публічно. Єдиний і повний автор усіх компонент
+          системи який здійснює свою політику згідно BDFL собору є Максим Сохацький.</p>
 
       <br><center>&dot;</center>
       <figure><img src="https://mail.n2o.dev/synrc-chat-3.png"></figure>
@@ -100,65 +109,74 @@
     </section>
 
     <section>
-    <a name=structure><h3>COMPANY</h3></a>
-    <p>The SYNRC CHAT division company structure is following:</p>
-    <p><b class=se>Market</b> competitors team: Threema, Signal, WhatsApp, Session, Element, Wire, Wickr;</p>
-    <p><b class=se>Protocol</b> team: BERT/ASN.1 protocol [Swift] [Erlang];</p>
-    <p><b class=se>Frontend Development</b> team: Swift iOS Client [Chat X.509] Sesign UX [Figma] [Swift];</p>
-    <p><b class=se>Backend Development</b> team: Erlang/OTP CA NS LDAP AUTH MQTT [mac] CHAT CLI;</p>
-    <p><b class=se>Deployment and Operations</b> team: NetBSD, Linux;</p>
-    <p><b class=se>Client</b> support team: Certs [SYNRC.PEM] Schema [SYNRC.LDIF] Zone [SYNRC.DNS].</p>
+    <a name=structure><h3>КОМПАНІЯ</h3></a>
+    <p>ЧАТ компанії SYNRC представлений наступною організаційною структурою:</p>
+
+    <p><b class=se>Маркетинговий</b> відділ: Threema, Signal, WhatsApp, Session, Element, Wire, Wickr.
+       Займається дослідженням та розробкою конкурентів;</p>
+
+    <p><b class=se>Протокол</b>. Відділ проектної документації. BERT/ASN.1 protocol [Swift] [Erlang];</p>
+
+    <p><b class=se>Клієнт.</b> Відділ розробки. Swift iOS Client [Chat X.509] Sesign UX [Figma] [Swift];</p>
+
+    <p><b class=se>Сервер</b>. Відділ розробки. Erlang/OTP CA NS LDAP AUTH MQTT [mac] CHAT CLI;</p>
+
+    <p><b class=se>Впровадження і підтримка</b>. Відділ впровадження та супроводу [NetBSD] [Linux];</p>
+
+    <p><b class=se>CRM</b>. Відділ по роботі з клієнтами. [SYNRC.PEM] [SYNRC.LDIF] [SYNRC.DNS].</p>
     </p>
    <br><center>&dot;</center>
     </section>
 
     <section>
-    <a name=business><h3>BUSINESS</h3></a>
-    <p>Forms of cooperation:</p>
+    <a name=business><h3>БІЗНЕС</h3></a>
+    <p>Форми співробітництва:</p>
     <p>
-       — Autonomous deployments [Your Own] instance;<br>
-       — Hosting by subscription [Our] instance;<br>
-       — Multi-roster profiles support by subscription;<br>
-       — Integration API SDK for public services [PARTNERS];<br>
-       — Node analytics.<br>
+       — Автономні впровадження під ключа на ВАШИХ потужностях;<br>
+       — Хостінг сервіса по підписці на НАШИХ потужностях;<br>
+       — Багато-ростерні конфігурації по підписці;<br>
+       — Інтеграційне API SDK для партнерських програм;<br>
+       — Аналітика.<br>
     </p>
    <br><center>&dot;</center>
     </section>
 
     <section>
-    <a name=social><h3>SOCIAL</h3></a>
-    <p>Made for people:</p>
-    <p>— Integrated alert channel system;<br>
-       — B2C service channels (housekeeping);<br>
-       — Calendar vCard iCal events tasks database;<br>
-       — Clean iOS UI Zero deps package;<br>
-       — Public text command line client with directory search;<br>
-       — Governmental or Corporate X.509 identity ДСТУ 4145 authorisation.<br>
+    <a name=social><h3>СУСПІЛЬСТВО</h3></a>
+    <p>Зроблено для людей:</p>
+    <p>— Інтегровані системи сповіщення надзвичайних подій;<br>
+       — B2C сервісні канали (вода, електрика);<br>
+       — Календар iCal та Контакт vCard органайзер;<br>
+       — Референсний iOS UI дизайн, додаток без залежностей;<br>
+       — Відкритий референсний консольний клієнт;<br>
+       — Державний або корпоративний X.509 ДСТУ 4145 логін.<br>
    <br><center>&dot;</center>
     </section>
 
     <section>
-    <a name=protocol><h3>PROTOCOL</h3></a>
+    <a name=protocol><h3>ПРОТОКОЛ</h3></a>
 
-    <p>The CHAT protocol communicates with <b>actions/:client</b>, <b>events/:client</b>,
+    <p><b class=se>Топіки</b>. ЧАТ протокол використовує наступні MQTT топіки: <b>actions/:client</b>, <b>events/:client</b>,
        <b>devices/:phone</b>, <b>contacts/:roster</b>,
-       <b>private/:roster/:roster</b>, <b>room/:room</b> MQTT topics, sending through them
+       <b>private/:roster/:roster</b>, <b>room/:room</b>.
+
+    <p><b class=se>Записи</b>. По цим топікам передаються наступні Erlang записи (records):
        <b>Index</b>, <b>Typing</b>, <b>Search</b>, <b>Feature</b>, <b>Service</b>,
        <b>Presence, <b>Friend</b>, <b>Tag</b>, <b>Link</b>, <b>Message</b>, Member</b>,
        <b>Room</b>, <b>Contact</b>, <b>Star</b>, <b>Ack</b>, <b>Auth</b>,
-       <b>Roster</b>, <b>Profile</b>, <b>History</b>, <b>push</b>, <b>io</b> ETF-serialized messages.</p>
+       <b>Roster</b>, <b>Profile</b>, <b>History</b>, <b>push</b>, <b>io</b> закодовані ETF серіалізатором.</p>
 
-     <p>The CHAT protocol is implemented in the set of sub-protocol modules:
-        FILE, HISTORY, LINK, MESSAGE, PRESENSE, PROFILE, PUSH, ROOM, ROSTER, SEARCH, AUTH.
-        For full specification follow <b>priv/proto</b> folder.
-        The CHAT server implementation relies only on ISO/IETF connections
-        such as DNSSEC, X.509 CSR, LDAP, QUIC, WebSocket, MQTT.</p>
-
-    <p>CHAT is a simple instant messaging server based on ISO standards. It uses MQTT protocol and ETF binary
-       serialization from Erlang/OTP across applications: MQTT, N2O, KVS, MAIL, LDAP, NS, CA. Secure by default.
-        The CHAT application has Sign/Verify, Encrypt/Decrypt feature enabled for every single message passed by.
-        The delivered messages are being deleted from MQTT instance after recipient acknowledgment.
-        This is Keybase, OTR, PGP (you name it) replacement for secure X.509 ASN.1 defined communications.</p>
+     <p>Протокол ЧАТ реалізований у наборі модулів-підпротоколів: ФАЙЛ, ІСТОРІЯ, ПОСИЛАННЯ, ПОВІДОМЛЕННЯ,
+        ПРИСУТНІСТЬ, ПРОФІЛЬ, PUSH, КІМНАТА, РЕСТЕР, ПОШУК, АУТ. Щоб отримати повну специфікацію,
+        перейдіть до папки priv/proto. Реалізація сервера CHAT покладається лише на підключення ISO/IETF,
+        такі як DNSSEC, X.509 CSR, LDAP, QUIC, WebSocket, MQTT.</p>
+ 
+     <p>ЧАТ — це простий сервер обміну миттєвими повідомленнями на основі стандартів ISO.
+        Він використовує протокол MQTT і бінарну серіалізацію ETF від Erlang/OTP у різних своїх додатках:
+        MQTT, LDAP, DNS, CA. Безпечний за замовчуванням. Додаток ЧАТ має функцію підпису/підтвердження,
+        шифрування/розшифрування, увімкнену для кожного окремого переданого повідомлення.
+        Доставлені повідомлення видаляються з MQTT сервера після підтвердження отримки одержувачем.
+        Це заміна Keybase, OTR, PGP (називайте як хочете) для безпечних комунікацій, визначених X.509 ASN.1.</p>
 
     <ul><li><a href="https://github.com/synrc/chat/tree/main/priv/proto/">SYNRC CHAT</a> — ETF/MQTT protocol.</li></ul>
 
@@ -168,9 +186,9 @@
 
     <a name=client><h3>iOS 13.0</h3></a>
 
-    <p>Here you can download the open source iOS client written in Swift:</p>
+    <p>Тут ви можете завантажити білд iOS клієнта написаного на Swift:</p>
 
-    <ul><li><a href="https://github.com/chat-x509/">SYNRC CHAT X.509 </a> — the iOS client (Swift, Objective C).</li></ul>
+    <ul><li><a href="https://github.com/chat-x509/">SYNRC CHAT X.509 </a> — iOS клієнт (Swift, Objective C).</li></ul>
 
      <center><table width="100%">
     <tbody>
@@ -192,8 +210,8 @@
     </section>
     <section>
        <a name=gui><h3>UNIX X Windows</h3></a>
-       <p>The default X Windows client application globally available for WSL, Linux and Mac written in C.
-          The X.ORG CHAT X.509 client is based on:
+       <p>Простий X Windows клієнт доступний для запуску у  WSL, BSD, Linux та Mac. Написаний на C.
+          ЧАТ клієнт X.ORG X.509 базується на наступних бібліотеках:
           1) X Windows Toolkit (Xt),
           2) X Windows Library (Xlib) and
           3) OpenGL for X Windows (GLX 1.3).</p>
@@ -207,19 +225,21 @@
     </section>
     <section>
 
+
+
     <a name=terminal><h3>UNIX Terminal</h3></a>
 
-    <p>Here you can download the open source command line client:</p>
+    <p>Тут ви можете завантажити консолький референсний клієнт CHAT-X509:</p>
 
-    <ul><li><a href="https://github.com/chat-x509/">SYNRC CHAT-X509</a> — console client TERMIO, ANSI C99.</li></ul>
+    <ul><li><a href="https://github.com/chat-x509/">SYNRC CHAT-X509</a> — консольний клієнт TERMIO, ANSI C99.</li></ul>
 
-    <p>The CHAT includes text message delivery system base on SYN buil-in Erlang/OTP message broker along with MQTT.
-       The implementation of SYNRC CHAT CLI protocol is trying to be informative but
-       not excessive, it should take care of run-time edge  cases but not too stable.
-       CLI text protocol is dedicated for demo purposes and really short message
-       when you don't have access to mobile clients, it doesn't support file upload and voice calls.
-       It is basically SMPT done right: HELP, BOX, CUT, AUTH, SEND, LIST.
-     </p>
+    <p>CHAT включає систему доставки текстових повідомлень на основі вбудованого брокера
+       повідомлень Erlang/OTP SYN разом із MQTT. Реалізація протоколу SYNRC CHAT CLI
+       намагається бути інформативною, але не надмірною, вона повинна подбати про граничні
+       випадки під час виконання, але не надто стабільна. Текстовий протокол CLI призначений для
+       демонстраційних цілей і справді коротких повідомлень, коли у вас немає доступу до
+       мобільних клієнтів, він підтримує завантаження файлів, але не підтримує олосові виклики.
+       Це SMPT, але зроблений правильно: HELP, BOX, CUT, AUTH, SEND, LIST. </p>
 
 
     <figure><code>
@@ -268,4 +288,6 @@
    <br><center>&dot;</center>
    <br>
     Made with <span class="heart">❤</span> to N2O
-</footer></body></html>
+</footer></body>
+<script>function drop(){document.getElementById("dropdown").classList.toggle("show");}</script>
+</html>
