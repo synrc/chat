@@ -156,22 +156,27 @@
     <section>
     <a name=protocol><h3>ПРОТОКОЛ</h3></a>
 
-    <p><b class=se>Топіки</b>. ЧАТ протокол використовує наступні MQTT топіки: <b>actions/:client</b>, <b>events/:client</b>,
-       <b>devices/:phone</b>, <b>contacts/:roster</b>,
-       <b>private/:roster/:roster</b>, <b>room/:room</b>.
+    <p><b class=se>Топіки</b>. ЧАТ протокол використовує наступні MQTT топіки, перелік яких зберігається на клієнті:</p>
+
+    <p>&mdash; actions/:client<br>
+       &mdash; events/:client<br>
+       &mdash; devices/:phone<br>
+       &mdash; contacts/:roster<br>
+       &mdash; private/:roster/:roster<br>
+       &mdash; room/:room</p>
 
     <p><b class=se>Записи</b>. По цим топікам передаються наступні Erlang записи (records):
-       <b>Index</b>, <b>Typing</b>, <b>Search</b>, <b>Feature</b>, <b>Service</b>,
-       <b>Presence, <b>Friend</b>, <b>Tag</b>, <b>Link</b>, <b>Message</b>, Member</b>,
-       <b>Room</b>, <b>Contact</b>, <b>Star</b>, <b>Ack</b>, <b>Auth</b>,
-       <b>Roster</b>, <b>Profile</b>, <b>History</b>, <b>push</b>, <b>io</b> закодовані ETF серіалізатором.</p>
+       Index, Typing, Search, Feature, Service,
+       Presence, Friend, Tag, Link, Message, Member,
+       Room, Contact, Star, Ack, Auth,
+       Roster, Profile, History, push, io закодовані ETF серіалізатором.</p>
 
-     <p>Протокол ЧАТ реалізований у наборі модулів-підпротоколів: ФАЙЛ, ІСТОРІЯ, ПОСИЛАННЯ, ПОВІДОМЛЕННЯ,
+     <p><b class=se>Модулі</b>. Протокол ЧАТ реалізований у наборі модулів-підпротоколів: ФАЙЛ, ІСТОРІЯ, ПОСИЛАННЯ, ПОВІДОМЛЕННЯ,
         ПРИСУТНІСТЬ, ПРОФІЛЬ, PUSH, КІМНАТА, РЕСТЕР, ПОШУК, АУТ. Щоб отримати повну специфікацію,
         перейдіть до папки priv/proto. Реалізація сервера CHAT покладається лише на підключення ISO/IETF,
         такі як DNSSEC, X.509 CSR, LDAP, QUIC, WebSocket, MQTT.</p>
  
-     <p>ЧАТ — це простий сервер обміну миттєвими повідомленнями на основі стандартів ISO.
+     <p><b class=se>Додатки</b>.ЧАТ — це простий сервер обміну миттєвими повідомленнями на основі стандартів ISO.
         Він використовує протокол MQTT і бінарну серіалізацію ETF від Erlang/OTP у різних своїх додатках:
         MQTT, LDAP, DNS, CA. Безпечний за замовчуванням. Додаток ЧАТ має функцію підпису/підтвердження,
         шифрування/розшифрування, увімкнену для кожного окремого переданого повідомлення.
