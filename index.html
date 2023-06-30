@@ -145,14 +145,8 @@
 
     <p>Поняття протоколу:</p>
 
-    <p><b class=se>Топіки</b>. ЧАТ протокол використовує наступні MQTT топіки, перелік яких зберігається на клієнті:</p>
-
-    <p>&mdash; actions/:client<br>
-       &mdash; events/:client<br>
-       &mdash; devices/:phone<br>
-       &mdash; contacts/:roster<br>
-       &mdash; private/:roster/:roster<br>
-       &mdash; room/:room</p>
+    <p><b class=se>Топіки</b>. ЧАТ протокол використовує наступні MQTT топіки, перелік яких зберігається на клієнті:
+       1) actions/:client; 2) events/:client; 3) devices/:phone; 4) contacts/:roster; 5) private/:roster/:roster; 6) room/:room.</p>
 
     <p><b class=se>Записи</b>. По цим топікам передаються наступні Erlang записи (records):
        Index, Typing, Search, Feature, Service,
