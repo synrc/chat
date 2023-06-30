@@ -60,7 +60,13 @@
 </aside>
 <main>
     <section>
+      <br><center>&dot;</center>
+      <figure><img src="https://mail.n2o.dev/synrc-chat-3.png"></figure>
+      <p></p>
+      <br><center>&dot;</center>
+
     <a name=principles><h3>ПРИНЦИПИ</h3></a>
+    <figure><img src="priv/design/slides/01 SLIDE.svg"></figure>
     <p>Компанія користується наступними принципами:</p>
     <p><b class=se>Акредитовані Центр Сертифікації Ключів</b>. ЧАТ має власний X.509 центр видачі сертифікатів з використанням еліптичної криптографії ECC [<a href="https://ca.erp.uno">CA</a>] SECP384R1 SHA384.
          Кожен раз при реєстрації нового користувача генерується PKCS-10 X.409 запит на створення сертифікату. Це також може бути зроблено за допомогою
@@ -102,14 +108,11 @@
           на Erlang та доступні для верифікації та ліцензування публічно. Єдиний і повний автор усіх компонент
           системи який здійснює свою політику згідно BDFL собору є Максим Сохацький.</p>
 
-      <br><center>&dot;</center>
-      <figure><img src="https://mail.n2o.dev/synrc-chat-3.png"></figure>
-      <p></p>
-      <br><center>&dot;</center>
     </section>
 
     <section>
     <a name=structure><h3>КОМПАНІЯ</h3></a>
+    <figure><img src="priv/design/slides/02 SLIDE.svg"></figure>
     <p>ЧАТ компанії SYNRC представлений наступною організаційною структурою:</p>
 
     <p><b class=se>Маркетинговий</b> відділ: Threema, Signal, WhatsApp, Session, Element, Wire, Wickr.
@@ -130,6 +133,7 @@
 
     <section>
     <a name=business><h3>БІЗНЕС</h3></a>
+    <figure><img src="priv/design/slides/03 SLIDE.svg"></figure>
     <p>Форми співробітництва:</p>
     <p>
        — Автономні впровадження під ключа на ВАШИХ потужностях;<br>
@@ -142,7 +146,9 @@
     </section>
 
     <section>
+
     <a name=social><h3>СУСПІЛЬСТВО</h3></a>
+    <figure><img src="priv/design/slides/04 SLIDE.svg"></figure>
     <p>Зроблено для людей:</p>
     <p>— Інтегровані системи сповіщення надзвичайних подій;<br>
        — B2C сервісні канали (вода, електрика);<br>
@@ -176,7 +182,7 @@
         перейдіть до папки priv/proto. Реалізація сервера CHAT покладається лише на підключення ISO/IETF,
         такі як DNSSEC, X.509 CSR, LDAP, QUIC, WebSocket, MQTT.</p>
  
-     <p><b class=se>Додатки</b>.ЧАТ — це простий сервер обміну миттєвими повідомленнями на основі стандартів ISO.
+     <p><b class=se>Додатки</b>. ЧАТ — це простий сервер обміну миттєвими повідомленнями на основі стандартів ISO.
         Він використовує протокол MQTT і бінарну серіалізацію ETF від Erlang/OTP у різних своїх додатках:
         MQTT, LDAP, DNS, CA. Безпечний за замовчуванням. Додаток ЧАТ має функцію підпису/підтвердження,
         шифрування/розшифрування, увімкнену для кожного окремого переданого повідомлення.
