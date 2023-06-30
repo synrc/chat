@@ -61,7 +61,9 @@
 <main>
     <section>
       <br><center>&dot;</center>
+      <p>Рекламний презентаційний проспект продукту з функціональною поверхнею:</p>
     <figure><img src="priv/design/slides/ChatDP.png"></figure>
+      <p>Слайди презентацій виконані в техніці муар:</p>
     <figure><img src="https://mail.n2o.dev/synrc-chat-3.png"></figure>
       <p></p>
       <br><center>&dot;</center>
@@ -143,6 +145,11 @@
     <section>
     <a name=protocol><h3>ПРОТОКОЛ</h3></a>
 
+    <p>Технічна специфікація протоколу:</p>
+
+    <ul><li><img src="https://github.com/fluidicon.png" width="35" style="margin-bottom:-12px;margin-right:10px;" />
+<a href="https://github.com/synrc/chat/tree/main/priv/proto/">SYNRC CHAT</a> — ETF/MQTT protocol.</li></ul>
+
     <p>Поняття протоколу:</p>
 
     <p><b class=se>Топіки</b>. ЧАТ протокол використовує наступні MQTT топіки, перелік яких зберігається на клієнті:
@@ -166,9 +173,6 @@
         Доставлені повідомлення видаляються з MQTT сервера після підтвердження отримки одержувачем.
         Це заміна Keybase, OTR, PGP (називайте як хочете) для безпечних комунікацій, визначених X.509 ASN.1.</p>
 
-    <p>Технічна специфікація протоколу:</p>
-
-    <ul><li><a href="https://github.com/synrc/chat/tree/main/priv/proto/">SYNRC CHAT</a> — ETF/MQTT protocol.</li></ul>
 
    <br><center>&dot;</center>
     </section>
@@ -176,10 +180,14 @@
 
     <a name=client><h3>iOS 13.0</h3></a>
 
+
     <figure><img src="priv/design/slides/05 SLIDE.svg"></figure>
+
+
     <p>Тут ви можете завантажити білд iOS клієнта написаного на Swift:</p>
 
-    <ul><li><a href="https://github.com/chat-x509/">SYNRC CHAT X.509 </a> — iOS клієнт (Swift, Objective C).</li></ul>
+    <ul><li><img src="https://github.com/fluidicon.png" width="35" style="margin-bottom:-12px;margin-right:10px;" />
+<a href="https://github.com/chat-x509/">CHAT X.509 </a> — iOS клієнт (Swift, Objective C).</li></ul>
 
      <p><table width=100% cellspacing=10>
         <tr><td width=33%><img src="priv/design/slides/SCREEN 0.svg" width=100%/></td>
@@ -203,7 +211,7 @@
 
        <p>
 <img src="https://n2o.dev/img/pdf.jpg" width="35" style="margin-bottom:-12px;margin-right:10px;" />
-        <a href="https://chat.erp.uno/priv/design/GUI.pdf">CHAT-X509-GUI</a> &mdash; C console client for X Windows (xt, xlib, GLX, C99).
+        <a href="https://chat.erp.uno/priv/design/GUI.pdf">CHAT-X509-GUI</a> &mdash; C клієнт під X Windows (xt, xlib, GLX, C99).
        </p>
 
    <br><center>&dot;</center>
@@ -212,9 +220,13 @@
 
     <a name=terminal><h3>POSIX</h3></a>
 
+    <figure><img src="priv/design/slides/06 SLIDE.svg"></figure>
+
     <p>Тут ви можете завантажити консолький референсний клієнт CHAT-X509:</p>
 
-    <ul><li><a href="https://github.com/chat-x509/">SYNRC CHAT-X509</a> — консольний клієнт TERMIO, ANSI C99.</li></ul>
+    <ul><li>
+<img src="https://github.com/fluidicon.png" width="35" style="margin-bottom:-12px;margin-right:10px;" />
+<a href="https://github.com/chat-x509/">CHAT-X509</a> — консольний клієнт TERMIO, ANSI C99.</li></ul>
 
     <p>CHAT включає систему доставки текстових повідомлень на основі вбудованого брокера
        повідомлень Erlang/OTP SYN разом із MQTT. Реалізація протоколу SYNRC CHAT CLI
@@ -264,9 +276,6 @@
  >
     </code></figure>
 
-   <br><center>&dot;</center>
-
-    <figure><img src="priv/design/slides/06 SLIDE.svg"></figure>
 
    <br><center>&dot;</center>
    <br>
@@ -276,21 +285,36 @@
     <section>
     <a name=structure><h3>КОМПАНІЯ</h3></a>
     <figure><img src="priv/design/slides/02 SLIDE.svg"></figure>
-    <p>Структура компанії:</p>
+
+    <ul><li>
+<img src="https://github.com/fluidicon.png" width="35" style="margin-bottom:-12px;margin-right:10px;" />
+<a href="https://chat.erp.uno/">CHAT ERP/1</a> — Головний сайт продукту.</li></ul>
+
+    <p>Структура виробничого процесу компанії:</p>
 
     <p><b class=se>Маркетинговий</b> відділ: Threema, Signal, WhatsApp, Session, Element, Wire, Wickr.
-       Займається дослідженням та розробкою конкурентів;</p>
+       Займається дослідженням найкращих практик та адаптацією їх до дизайну месанжера;</p>
 
-    <p><b class=se>Протокол</b>. Відділ проектної документації. BERT/ASN.1 protocol [Swift] [Erlang];</p>
+    <p><b class=se>Протокол</b>. Відділ проектної документації займається розвитком та
+      підтримкою протоколу, дидактичних матеріалів та технічної докментації. BERT/ASN.1 protocol [Swift] [Erlang];</p>
 
-    <p><b class=se>Клієнт.</b> Відділ розробки. Swift iOS Client [Chat X.509] Sesign UX [Figma] [Swift];</p>
+    <p><b class=se>Клієнтський.</b> відділ розробки iOS клієнта на мові програмування Swift 5.8
+        [Chat X.509] Design UX [Figma] [Swift];</p>
 
-    <p><b class=se>Сервер</b>. Відділ розробки. Erlang/OTP CA NS LDAP AUTH MQTT [mac] CHAT CLI;</p>
+    <p><b class=se>Серверний</b> відділ розробки. Займається як розвитком сервера на Erlang/OTP
+       так і розробкою інших серверів в інфраструктурі системи: CA NS LDAP AUTH MQTT [mac] CHAT CLI;</p>
 
-    <p><b class=se>Впровадження і підтримка</b>. Відділ впровадження та супроводу [NetBSD] [Linux];</p>
 
-    <p><b class=se>CRM</b>. Відділ по роботі з клієнтами. [SYNRC.PEM] [SYNRC.LDIF] [SYNRC.DNS].</p>
+    <p><b class=se>CRM</b>. Відділ по роботі з корпоративними клієнтами займається підтримкою
+       та комунікацією з органами державної влади, партнерами, провайдерами та зовнішніми
+       контрагентами. [SYNRC.PEM] [SYNRC.LDIF] [SYNRC.DNS];</p>
     </p>
+
+    <p><b class=se>Впровадження і підтримка</b>. Відділ впровадження та супроводу займається
+       інсталяціями під ключ та супроводом існуючої публічної клієнтської бази користувачів
+       месенжера [NetBSD] [Linux]. Головний продукт компанії X.509 чат месенжер.</p>
+
+
    <br><center>&dot;</center>
    <br>
     </section>
