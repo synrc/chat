@@ -147,6 +147,13 @@
     <section>
     <a name=protocol><h3>PROTOCOL</h3></a>
 
+    <p>The protocol specification:</p>
+
+    <ul><li><img src="https://github.com/fluidicon.png" width="35" style="margin-bottom:-12px;margin-right:10px;" />
+      <a href="https://github.com/synrc/chat/tree/main/priv/proto/">SYNRC CHAT</a> — ETF/MQTT protocol.</li></ul>
+
+    <p>The protocol entities:</p>
+
     <p><b class=se>Topics</b>. The CHAT protocol communicates with <b>actions/:client</b>, <b>events/:client</b>,
        <b>devices/:phone</b>, <b>contacts/:roster</b>,
        <b>private/:roster/:roster</b>, <b>room/:room</b> MQTT topics.
@@ -169,7 +176,6 @@
         The delivered messages are being deleted from MQTT instance after recipient acknowledgment.
         This is Keybase, OTR, PGP (you name it) replacement for secure X.509 ASN.1 defined communications.</p>
 
-    <ul><li><a href="https://github.com/synrc/chat/tree/main/priv/proto/">SYNRC CHAT</a> — ETF/MQTT protocol.</li></ul>
 
    <br><center>&dot;</center>
     </section>
@@ -179,22 +185,17 @@
 
     <p>Here you can download the open source iOS client written in Swift:</p>
 
-    <ul><li><a href="https://github.com/chat-x509/">SYNRC CHAT X.509 </a> — the iOS client (Swift, Objective C).</li></ul>
+    <ul><li><img src="https://github.com/fluidicon.png" width="35" style="margin-bottom:-12px;margin-right:10px;" />
+<a href="https://github.com/chat-x509/">CHAT X.509 </a> — iOS client (Swift, Objective C).</li></ul>
 
-     <center><table width="100%">
-    <tbody>
-    <tr><td width="33%" align="right"><img src="https://tonpa.guru/stream/2023/img/splash.png" width="100%"></td>
-        <td width="33%" align="center"><img src="https://tonpa.guru/stream/2023/img/home-screen-x509.jpg" width="100%"></td>
-        <td width="33%" align="left">
-          <center>
-          <video controls="" width="100%"><source src="https://tonpa.guru/stream/2023/img/JSQ.MP4" type="video/mp4"></video>
-          </center>
-        </td>
-    </tr></tbody></table></center>
-
-    <p></p>
-
-    <figure><img src="https://tonpa.guru/stream/2023/img/design-x509.jpg"></figure>
+     <p><table width=100% cellspacing=10>
+        <tr><td width=33%><img src="../priv/design/slides/SCREEN 0.svg" width=100%/></td>
+            <td width=33%><img src="../priv/design/slides/SCREEN 1.svg" width=100%/></td>
+            <td width=33%><img src="../priv/design/slides/SCREEN 2.svg" width=100%/></td></td></tr>
+        <tr><td><img src="../priv/design/slides/SCREEN 3.svg" width=100%/></td>
+            <td><img src="../priv/design/slides/SCREEN 4.svg" width=100%/></td>
+            <td><img src="../priv/design/slides/SCREEN 5.svg" width=100%/></td></td></tr>
+     </table></p>
 
    <br><center>&dot;</center>
 
@@ -216,11 +217,12 @@
     </section>
     <section>
 
-    <a name=terminal><h3>UNIX Terminal</h3></a>
+    <a name=terminal><h3>POSIX</h3></a>
 
     <p>Here you can download the open source command line client:</p>
 
-    <ul><li><a href="https://github.com/chat-x509/">SYNRC CHAT-X509</a> — console client TERMIO, ANSI C99.</li></ul>
+    <ul><li><img src="https://github.com/fluidicon.png" width="35" style="margin-bottom:-12px;margin-right:10px;" />
+       <a href="https://github.com/chat-x509/">CHAT-X509</a> — console client TERMIO, ANSI C99.</li></ul>
 
     <p>The CHAT includes text message delivery system base on SYN buil-in Erlang/OTP message broker along with MQTT.
        The implementation of SYNRC CHAT CLI protocol is trying to be informative but
@@ -229,7 +231,6 @@
        when you don't have access to mobile clients, it doesn't support file upload and voice calls.
        It is basically SMPT done right: HELP, BOX, CUT, AUTH, SEND, LIST.
      </p>
-
 
     <figure><code>
  $ chat-x509 -c wss://chat.erp.uno
