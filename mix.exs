@@ -1,7 +1,7 @@
 defmodule CHAT.Mixfile do
   use Mix.Project
 
-  def application(), do: [mod: {:chat, []}]
+  def application(), do: [mod: {:chat, [:curve25519]}]
 
   def project do
     [app: :chat,
@@ -25,6 +25,7 @@ defmodule CHAT.Mixfile do
     [#{:ex_doc, ">= 0.0.0", only: :dev},
       {:cowboy, "~> 2.5"},
       {:emqtt, "~> 1.2.1"},
+      {:curve25519, "~> 1.0.5"},
       {:n2o, "~> 8.8.1"},
       {:ssl_verify_fun, "~> 1.1.5"},
       {:kvs, "~> 8.10.4"}
