@@ -186,15 +186,15 @@
 
      <figure><code>> roccoK := privat(32)
 > roccoP := public(roccoK)
-> maximK := privat(32)
-> maximP := public(maximK)
-> maximS := shared(maximK,roccoP)
-> roccoS := shared(roccoK,maximP)
-> roccoS == maximS</code></figure>
+> tonpaK := privat(32)
+> tonpaP := public(tonpaK)
+> tonpaS := shared(tonpaK,roccoP)
+> roccoS := shared(roccoK,tonpaP)
+> roccoS == tonpaS</code></figure>
 
-    <p>Тепер можна шифрувати симетричним ключем по shared (aliceS==bobS) токену:
-       на стороні Еліс &mdash; :n2o.encrypt(msg,aliceS) і на стороні
-       Боба: :n2o.decrypt(msg,bobS).</p>
+    <p>Тепер можна шифрувати симетричним ключем по shared (roccoS==tonpaS) токену:
+       на стороні Тонпа &mdash; :n2o.encrypt(msg,tonpaS) і на стороні
+       Рокко: :n2o.decrypt(msg,roccoS).</p>
 
    <br><center>&dot;</center>
     </section>
