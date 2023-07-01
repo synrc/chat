@@ -184,14 +184,13 @@
        <p>Схема Монтгомері y²=x³+486662⋅x²+x (p=2^255-19,b=9) з порядком циклічної
           групи породженою простим числом p та базою b &mdash; 2^252 + 27742317777372353535851937790883648493:</p>
 
-     <figure><code>> aliceK = private(32)
-> aliceP = public(aliceK)
-> bobK = private(32)
-> bobP = public(bobK)
-> aliceS = shared(aliceK,bobP)
-> bobS = shared(bobK,aliceP)
-> aliceS == bobS
-true</code></figure>
+     <figure><code>> roccoK := privat(32)
+> roccoP := public(roccoK)
+> maximK := privat(32)
+> maximP := public(maximK)
+> maximS := shared(maximK,roccoP)
+> roccoS := shared(roccoK,maximP)
+> roccoS == maximS</code></figure>
 
     <p>Тепер можна шифрувати симетричним ключем по shared (aliceS==bobS) токену:
        на стороні Еліс &mdash; :n2o.encrypt(msg,aliceS) і на стороні
