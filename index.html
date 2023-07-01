@@ -181,6 +181,17 @@
         доступ до державних та юридичних сервісів ДСТУ-4145. Кожен учасник системи
         перед комунікацією здійснює реанонс своїх публічних частин цих асиметричних ключів.</p>
 
+     <figure><code>> {alice_priv,alice_pub} = generateKeyPair
+> {bob_priv,bob_pub}     = generateKeyPair
+> shared_alice           = deriveShared alice_priv, bob_pub
+> shared_bob             = deriveShared bob_priv, alice_pub
+> shared_alice          == shared_bob
+true</code></figure>
+
+    <p>Тепер можна шифрувати симетричним ключем по shared токену:
+       на стороні Еліс &mdash; :n2o.encrypt(msg,shared_alice) і на стороні
+       Боба: :n2o.decrypt(msg,shared_bob).</p>
+
    <br><center>&dot;</center>
     </section>
     <section>
