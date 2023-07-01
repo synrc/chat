@@ -181,13 +181,13 @@
         доступ до державних та юридичних сервісів ДСТУ-4145. Кожен учасник системи
         перед комунікацією здійснює реанонс своїх публічних частин цих асиметричних ключів.</p>
 
-     <figure><code>> aliceK = privKey(32)
-> aliceP = publicKey(aliceK)
-> bobK = privKey(32)
-> bobP = publicKey(bobK)
+     <figure><code>> aliceK = private(32)
+> aliceP = public(aliceK)
+> bobK = private(32)
+> bobP = public(bobK)
 > aliceS = shared(aliceK,bobP)
 > bobS = shared(bobK,aliceP)
-> aliceS== bobS
+> aliceS == bobS
 true</code></figure>
 
     <p>Тепер можна шифрувати симетричним ключем по shared токену:
