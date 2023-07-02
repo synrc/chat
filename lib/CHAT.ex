@@ -15,7 +15,7 @@ defmodule CHAT.CRYPTO do
 
     def shared(pub, key, scheme), do: :crypto.compute_key(:ecdh, pub, key, scheme)
 
-    def checkSECP384R1() do # read from PEM files
+    def checkSECP384R1() do # SECP384r1
         scheme = :secp384r1
         aliceP = public "client"
         aliceK = privat "client"
@@ -26,13 +26,23 @@ defmodule CHAT.CRYPTO do
         maximS == aliceS
     end
 
-    def checkED25519() do # generate on-fly
+    def checkX25519() do # X25519
         scheme = :x25519
         {aliceP,aliceK} = :crypto.generate_key(:ecdh, scheme)
         {maximP,maximK} = :crypto.generate_key(:ecdh, scheme)
         maximS = shared(aliceP,maximK,scheme)
         aliceS = shared(maximP,aliceK,scheme)
         maximS == aliceS
+    end
+
+    def checkX448() do # X488
+        scheme = :x448
+        {aliceP,aliceK} = :crypto.generate_key(:ecdh, scheme)
+        {maximP,maximK} = :crypto.generate_key(:ecdh, scheme)
+        maximS = shared(aliceP,maximK,scheme)
+        aliceS = shared(maximP,aliceK,scheme)
+        maximS == aliceS
+        maximS
     end
 
 end
