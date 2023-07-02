@@ -1,4 +1,3 @@
 #!/bin/sh
 
-openssl cms -encrypt -in message.txt -aes256 -out encrypted.txt client.bun
-
+openssl cms -encrypt -in message.txt -binary -out encrypted.txt client.pem
