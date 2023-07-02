@@ -13,21 +13,16 @@ defmodule CHAT.CRYPTO do
         keyBin
     end
 
-    def shared(pub, key), do: shared(pub, key, :secp384r1)
-    def shared(pub, key, scheme) do
-        case scheme do
-             :secp384r1 -> {:ok, :crypto.compute_key(:ecdh, pub, key, :secp384r1)}
-             _ -> {:error, :no_scheme}
-        end
-    end
+    def shared(pub, key, scheme), do: :crypto.compute_key(:ecdh, pub, key, scheme)
 
     def checkSECP384R1() do
+        scheme = :secp384r1
         aliceP = public "client"
         aliceK = privat "client"
         maximP = public "server"
         maximK = privat "server"
-        maximS = shared(aliceP,maximK)
-        aliceS = shared(maximP,aliceK)
+        maximS = shared(aliceP,maximK,scheme)
+        aliceS = shared(maximP,aliceK,scheme)
         maximS == aliceS
     end
 
