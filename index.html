@@ -186,14 +186,13 @@
         і його обчислення на сторонах кореспондентів комунікації. Нище наведені параметри
         протоколів обміну ключами <b>ED-25519</b>, <b>SECP384r1</b>, <b>SECP571r1</b>, <b>ДСТУ-GF(2^431)</b> які використовуються в месенжері.</p>
 
-     <figure><code>> open ED-25519
-> roccoK := privat(32)
-> roccoP := public(roccoK)
-> tonpaK := privat(32)
-> tonpaP := public(tonpaK)
-> tonpaS := shared(tonpaK,roccoP)
-> roccoS := shared(roccoK,tonpaP)
-> roccoS == tonpaS</code></figure>
+     <p><figure ><code style="text-align: center;"> roccoK := privat(32)
+ roccoP := public(roccoK)
+ tonpaK := privat(32)
+ tonpaP := public(tonpaK)
+ tonpaS := shared(tonpaK,roccoP)
+ roccoS := shared(roccoK,tonpaP)
+ roccoS == tonpaS</code></figure></p>
 
        <p>Схема ED-25519 поліноміальної репрезентації Монтгомері B⋅y²=x³+A⋅x²+x () і редукційного
           многочлена x²⁵⁵-19 з порядком циклічної групи &mdash; 2^252 + 27742317777372353535851937790883648493,
@@ -220,12 +219,12 @@
             F40F973F 2F06C5E8 0EFE3B43 651BD5FF
             8B06BA5F 9299.</p>
 
-    <p><b class=se>Симетричний блочний шифр</b>. Тепер можна шифрувати симетричним
+    <p><b class=se>Симетричні блочні шифри</b>. Тепер можна шифрувати симетричним
           ключем (<b>AES-GCM</b>, <b>AES-CCM</b>, <b>ДСТУ-КАЛИНА</b>) по ізоморфному (roccoS==tonpaS) закритому токену:
        на стороні Тонпа &mdash; :n2o.encrypt(msg,tonpaS) і на стороні
        Рокко: :n2o.decrypt(msg,roccoS).
 
-     <p><b class=se>Геш-функція</b>. Для перевірки підпису можуть використовуватися
+     <p><b class=se>Геш-функції</b>. Для перевірки підпису можуть використовуватися
        наступні геші: <b>ДСТУ-КУПИНА</b>, <b>SHA-2</b>, <b>POLY-1305</b>, <b>AES-CMAK</b>.</p>
 
      <p><b class=se>Відкритість платформи</b>. Єдиний додаток як в часи IRC та
