@@ -192,7 +192,7 @@
 > roccoS := shared(roccoK,tonpaP)
 > roccoS == tonpaS</code></figure>
 
-    <p>Тепер можна шифрувати симетричним ключем (GCM, CCM, КАЛИНА) по shared (roccoS==tonpaS) токену:
+    <p>Тепер можна шифрувати симетричним ключем (AES-GCM, AES-CCM, ДСТУ-КАЛИНА) по ізоморфному (roccoS==tonpaS) закритому токену:
        на стороні Тонпа &mdash; :n2o.encrypt(msg,tonpaS) і на стороні
        Рокко: :n2o.decrypt(msg,roccoS).</p>
 
