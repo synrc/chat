@@ -23,9 +23,12 @@ defmodule CHAT.Mixfile do
 
   def deps() do
     [#{:ex_doc, ">= 0.0.0", only: :dev},
-      {:cowboy, "~> 2.5"},
-      {:emqtt, "~> 1.2.1"},
-      {:curve25519, "~> 1.0.5"},
+      {:ca, "~> 4.6.0"},
+      {:ns, "~> 1.6.2"},
+      {:ldap, "~> 8.6.2"},
+      {:cowboy, "~> 2.5.0"},
+      {:cowlib, "~> 2.6.0"},
+      {:emqtt, "~> 1.2.0"},
       {:n2o, "~> 8.8.1"},
       {:ssl_verify_fun, "~> 1.1.5"},
       {:kvs, "~> 8.10.4"}

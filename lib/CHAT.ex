@@ -1,5 +1,19 @@
 defmodule CHAT.CRYPTO do
 
+    def testCMSX509() do
+        {_,base} = :file.read_file "priv/mosquitto/encrypted.txt"
+        bin = :base64.decode base
+        :'CryptographicMessageSyntax-2009'.decode(:ContentInfo, bin)
+    end
+
+    def test() do
+        key = privat "client"
+        public = public "client"
+         {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,_,cipher},_}}} = CA.CRYPTO.testCMSX509
+        [kari: {_,:v3,{_,{_,_,pub}},_,_,[{_,_,data}]}] = x
+        {pub,public,data,key,cipher}
+    end
+
     def decrypt(cipher, secret) do
         key = :binary.part(secret, 0, 32)
         <<iv::binary-16, tag::binary-16, bin::binary>> = cipher
