@@ -1,5 +1,12 @@
 defmodule CHAT.CRYPTO do
 
+    def filterSYNRCapps() do
+        f = fn {x,_,_} when x == :n2o or x == :chat or x == :bpe or x== :ca or x == :ns or x == :kvs or x == :ldap or
+                            x == :inets or x == :compiler or x == :stdlib or x == :kernel or x == :mnesia or x == :crypto  -> true
+                          _ -> false end
+        :lists.filter(f, :application.which_applications)
+    end
+
     def testCMSX509() do
         {_,base} = :file.read_file "priv/mosquitto/encrypted.txt"
         bin = :base64.decode base
@@ -9,7 +16,7 @@ defmodule CHAT.CRYPTO do
     def test() do
         key = privat "client"
         public = public "client"
-         {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,_,cipher},_}}} = CA.CRYPTO.testCMSX509
+         {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,_,cipher},_}}} = testCMSX509
         [kari: {_,:v3,{_,{_,_,pub}},_,_,[{_,_,data}]}] = x
         {pub,public,data,key,cipher}
     end
