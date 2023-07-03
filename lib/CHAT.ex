@@ -46,7 +46,6 @@ defmodule CHAT.CRYPTO do
         {maximP,maximK} = :crypto.generate_key(:ecdh, scheme)
         maximS = shared(aliceP,maximK,scheme)
         aliceS = shared(maximP,aliceK,scheme)
-        maximS == aliceS
         x = encrypt("Success!", :binary.part(maximS, 0, 32))
         "Success!" == decrypt(x, :binary.part(aliceS, 0, 32))
     end
@@ -57,7 +56,6 @@ defmodule CHAT.CRYPTO do
         {maximP,maximK} = :crypto.generate_key(:ecdh, scheme)
         maximS = shared(aliceP,maximK,scheme)
         aliceS = shared(maximP,aliceK,scheme)
-        maximS == aliceS
         x = encrypt("Success!", :binary.part(maximS, 0, 32))
         "Success!" == decrypt(x, :binary.part(aliceS, 0, 32))
     end
