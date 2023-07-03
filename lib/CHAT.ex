@@ -10,6 +10,7 @@ defmodule CHAT.CRYPTO do
     def testCMSX509() do
         {_,base} = :file.read_file "priv/mosquitto/encrypted.txt"
         bin = :base64.decode base
+        :file.write_file "priv/mosquitto/encrypted.bin", bin
         :'CryptographicMessageSyntax-2009'.decode(:ContentInfo, bin)
     end
 
@@ -17,7 +18,7 @@ defmodule CHAT.CRYPTO do
         key = privat "client"
         public = public "client"
         t = testCMSX509
-        {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,_,cipher},_}}} = t
+        {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,{_,params},cipher},_}}} = t
         [kari: {_,:v3,{_,{_,_,pub}},_,_,[{_,_,data}]}] = x
         {pub,public,data,key,cipher,t}
         data
@@ -64,11 +65,16 @@ defmodule CHAT.CRYPTO do
         {_,maximP} = public "server"
         {_,maximK} = privat "server"
         cms = testCMSX509
-        {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,{_,_,{_,bin}},iv},_}}} = cms
-        [kari: {_,:v3,{_,{_,_,pub}},_,_,[{_,_,key}]}] = x
+        {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,{_,_,{_,msg}},iv},_}}} = cms
+        [kari: {_,:v3,{_,{_,_,publicKey}},_,_,[{_,_,encryptedKey}]}] = x
         maximS = shared(aliceP,maximK,scheme)
         aliceS = shared(maximP,aliceK,scheme)
-        :io.format('~ts',[decrypt2(bin, aliceS, iv)])
+        key = decrypt2(encryptedKey, aliceS, :binary.part(iv,0,16))
+        :io.format('Public Key: ~tp~n',[publicKey])
+        :io.format('Encryption Key: ~tp~n',[key])
+        text = decrypt2(msg, key, iv)
+        :io.format('Decoded Message: ~ts~n',[text])
+       cms
     end
 
     def checkSECP384R1() do # SECP384r1
