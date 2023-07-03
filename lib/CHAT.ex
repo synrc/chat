@@ -8,8 +8,9 @@ defmodule CHAT.CRYPTO do
     end
 
     def testCMSX509() do
-        {_,base} = :file.read_file "priv/mosquitto/encrypted.txt"
-        bin = :base64.decode base
+        {_,base} = :file.read_file "priv/mosquitto/encrypted.bin"
+#        bin = :base64.decode base
+        bin = base
         :file.write_file "priv/mosquitto/encrypted.bin", bin
         :'CryptographicMessageSyntax-2009'.decode(:ContentInfo, bin)
     end
@@ -66,11 +67,12 @@ defmodule CHAT.CRYPTO do
         {_,maximK} = privat "server"
         cms = testCMSX509
         {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,{_,_,{_,msg}},iv},_}}} = cms
-        [kari: {_,:v3,{_,{_,_,publicKey}},_,_,[{_,_,encryptedKey}]}] = x
+        [{:kari,{_,:v3,{_,{_,_,publicKey}},_,_,[{_,_,encryptedKey}]}}|y] = x
         maximS = shared(aliceP,maximK,scheme)
         aliceS = shared(maximP,aliceK,scheme)
-        key = decrypt2(encryptedKey, aliceS, :binary.part(iv,0,16))
-        :io.format('Public Key: ~tp~n',[publicKey])
+        :io.format('Shared Key: ~tp~n',[:binary.part(:chat.hex(aliceS),0,32)])
+        :io.format('Encrypted Key: ~tp~n',[encryptedKey])
+        key = decrypt2(encryptedKey, aliceK, :binary.part(iv,0,16))
         :io.format('Encryption Key: ~tp~n',[key])
         text = decrypt2(msg, key, iv)
         :io.format('Decoded Message: ~ts~n',[text])

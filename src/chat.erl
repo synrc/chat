@@ -1,6 +1,6 @@
 -module(chat).
 -behaviour(application).
--export([start/2, stop/1, init/1, connect/0, pub/1, sub/1, tables/0, metainfo/0, phone_id/1]).
+-export([start/2, stop/1, init/1, connect/0, pub/1, sub/1, tables/0, metainfo/0, phone_id/1, hex/1, unhex/1]).
 -include_lib("chat/include/roster.hrl").
 -include_lib("n2o/include/n2o.hrl").
 -include_lib("kvs/include/metainfo.hrl").
@@ -11,6 +11,10 @@
 -define(URL_RE, <<"(?:(?:https?|ftp|file|smtp):\/\/|www\.|ftp\.)(?:\([-A-Z0-9+&@#\/%=~_|$?!:,.]*\)|[-A-Za-z0-9+&@#\/%=~_|$?!:,.])*(?:\([-A-Za-z0-9+&@#\/%=~_|$?!:,.]*\)|[A-Za-z0-9+&@#\/%=~_|$])">>).
 
 
+digit(X) when X >= 0 andalso X =< 9 -> X + 48;
+digit(X) when X >= 10 andalso X =< 15 -> X + 87.
+hex(Bin) -> << << (digit(A1)),(digit(A2)) >> || <<A1:4,A2:4>> <= Bin >>.
+unhex(Hex) -> << << (erlang:list_to_integer([H1,H2], 16)) >> || <<H1,H2>> <= Hex >>.
 
 connect() ->
    {ok,Pid} = emqtt:start_link([
