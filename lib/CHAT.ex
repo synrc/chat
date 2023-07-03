@@ -16,15 +16,22 @@ defmodule CHAT.CRYPTO do
     def test() do
         key = privat "client"
         public = public "client"
-         {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,_,cipher},_}}} = testCMSX509
+        t = testCMSX509
+        {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,_,cipher},_}}} = t
         [kari: {_,:v3,{_,{_,_,pub}},_,_,[{_,_,data}]}] = x
-        {pub,public,data,key,cipher}
+        {pub,public,data,key,cipher,t}
+        data
     end
 
     def decrypt(cipher, secret) do
         key = :binary.part(secret, 0, 32)
         <<iv::binary-16, tag::binary-16, bin::binary>> = cipher
         :crypto.crypto_one_time_aead(:aes_256_gcm, key, iv, bin, "AES256GCM", tag, false)
+    end
+
+    def decrypt2(cipher, secret, iv) do
+        secret = :binary.part(secret, 0, 32)
+        :crypto.crypto_one_time(:aes_256_cbc,secret,iv,cipher,[{:encrypt,false}])
     end
 
     def encrypt(plaintext, secret) do
@@ -50,6 +57,20 @@ defmodule CHAT.CRYPTO do
 
     def shared(pub, key, scheme), do: :crypto.compute_key(:ecdh, pub, key, scheme)
 
+    def testSECP384R1() do # SECP384r1
+        scheme = :secp384r1
+        {_,aliceP} = public "client"
+        {_,aliceK} = privat "client"
+        {_,maximP} = public "server"
+        {_,maximK} = privat "server"
+        cms = testCMSX509
+        {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,{_,_,{_,bin}},iv},_}}} = cms
+        [kari: {_,:v3,{_,{_,_,pub}},_,_,[{_,_,key}]}] = x
+        maximS = shared(aliceP,maximK,scheme)
+        aliceS = shared(maximP,aliceK,scheme)
+        :io.format('~ts',[decrypt2(bin, aliceS, iv)])
+    end
+
     def checkSECP384R1() do # SECP384r1
         scheme = :secp384r1
         {_,aliceP} = public "client"
@@ -61,6 +82,7 @@ defmodule CHAT.CRYPTO do
         x = encrypt("Success!", maximS)
         "Success!" == decrypt(x, aliceS)
     end
+
 
     def checkX25519() do # X25519
         scheme = :x25519
