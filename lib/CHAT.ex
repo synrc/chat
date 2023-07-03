@@ -1,11 +1,13 @@
 defmodule CHAT.CRYPTO do
 
-    def decrypt(cipher, key) do
+    def decrypt(cipher, secret) do
+        key = :binary.part(secret, 0, 32)
         <<iv::binary-16, tag::binary-16, bin::binary>> = cipher
         :crypto.crypto_one_time_aead(:aes_256_gcm, key, iv, bin, "AES256GCM", tag, false)
     end
 
-    def encrypt(plaintext, key) do
+    def encrypt(plaintext, secret) do
+        key = :binary.part(secret, 0, 32)
         iv = :crypto.strong_rand_bytes(16)
         {cipher, tag} = :crypto.crypto_one_time_aead(:aes_256_gcm, key, iv, plaintext, "AES256GCM", true)
         iv <> tag <> cipher
@@ -35,9 +37,8 @@ defmodule CHAT.CRYPTO do
         {_,maximK} = privat "server"
         maximS = shared(aliceP,maximK,scheme)
         aliceS = shared(maximP,aliceK,scheme)
-        maximS == aliceS
-        x = encrypt("Success!", :binary.part(maximS, 0, 32))
-        "Success!" == decrypt(x, :binary.part(aliceS, 0, 32))
+        x = encrypt("Success!", maximS)
+        "Success!" == decrypt(x, aliceS)
     end
 
     def checkX25519() do # X25519
@@ -46,8 +47,8 @@ defmodule CHAT.CRYPTO do
         {maximP,maximK} = :crypto.generate_key(:ecdh, scheme)
         maximS = shared(aliceP,maximK,scheme)
         aliceS = shared(maximP,aliceK,scheme)
-        x = encrypt("Success!", :binary.part(maximS, 0, 32))
-        "Success!" == decrypt(x, :binary.part(aliceS, 0, 32))
+        x = encrypt("Success!", maximS)
+        "Success!" == decrypt(x, aliceS)
     end
 
     def checkX448() do # X488
@@ -56,8 +57,8 @@ defmodule CHAT.CRYPTO do
         {maximP,maximK} = :crypto.generate_key(:ecdh, scheme)
         maximS = shared(aliceP,maximK,scheme)
         aliceS = shared(maximP,aliceK,scheme)
-        x = encrypt("Success!", :binary.part(maximS, 0, 32))
-        "Success!" == decrypt(x, :binary.part(aliceS, 0, 32))
+        x = encrypt("Success!", maximS)
+        "Success!" == decrypt(x, aliceS)
     end
 
 end
