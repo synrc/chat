@@ -68,7 +68,7 @@ defmodule CHAT.CRYPTO do
         :io.format('Encrypted Key: ~tp~n',[encryptedKey])
         key = decrypt2(encryptedKey, aliceK, :binary.part(iv,0,16))
         :io.format('Encryption Key: ~tp~n',[key])
-        text = decrypt2(msg, key, iv)
+        text = decrypt2(msg, key, :binary.part(iv,0,16))
         :io.format('Decoded Message: ~ts~n',[text])
        cms end
 
