@@ -17,7 +17,7 @@ defmodule CHAT.CRYPTO do
         key = privat "client"
         public = public "client"
         t = testCMSX509
-        {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,{_,params},cipher},_}}} = t
+        {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,{_,_,{_,params}},cipher},_}}} = t
         [kari: {_,:v3,{_,{_,_,pub}},_,_,[{_,_,data}]}] = x
         {pub,public,data,key,cipher,t}
         data end
@@ -30,6 +30,10 @@ defmodule CHAT.CRYPTO do
     def decrypt2(cipher, secret, iv) do
         secret = :binary.part(secret, 0, 32)
         :crypto.crypto_one_time(:aes_256_cbc,secret,iv,cipher,[{:encrypt,false}]) end
+
+    def decrypt3(cipher, secret, iv) do
+        secret = :binary.part(secret, 0, 16)
+        :crypto.crypto_one_time(:aes_128_cbc,secret,iv,cipher,[{:encrypt,false}]) end
 
     def encrypt(plaintext, secret) do
         key = :binary.part(secret, 0, 32)
@@ -60,15 +64,16 @@ defmodule CHAT.CRYPTO do
         {_,maximP} = public "server"
         {_,maximK} = privat "server"
         cms = testCMSX509
-        {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,{_,_,{_,msg}},iv},_}}} = cms
+        {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,{_,_,{_,iv}},msg},_}}} = cms
         [{:kari,{_,:v3,{_,{_,_,publicKey}},_,_,[{_,_,encryptedKey}]}}|y] = x
         maximS = shared(aliceP,maximK,scheme)
         aliceS = shared(maximP,aliceK,scheme)
+        :io.format('IV: ~tp~n',[iv])
         :io.format('Shared Key: ~tp~n',[:binary.part(:chat.hex(aliceS),0,32)])
         :io.format('Encrypted Key: ~tp~n',[encryptedKey])
         key = decrypt2(encryptedKey, aliceK, :binary.part(iv,0,16))
         :io.format('Encryption Key: ~tp~n',[key])
-        text = decrypt2(msg, key, :binary.part(iv,0,16))
+        text = decrypt2(msg, key, iv)
         :io.format('Decoded Message: ~ts~n',[text])
        cms end
 
