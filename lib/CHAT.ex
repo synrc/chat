@@ -1,113 +1,27 @@
 defmodule CHAT.CRYPTO do
 
-    def filterSYNRCapps() do
-        :lists.filter(fn {x,_,_} when
-            x == :n2o or x == :chat or x == :bpe or x== :ca or x == :ns or x == :kvs or x == :ldap or
-            x == :inets or x == :compiler or x == :stdlib or x == :kernel or x == :mnesia or x == :crypto  -> true
-                _ -> false end, :application.which_applications) end
+    def e(x,y),       do: :erlang.element(x,y)
+    def privat(name), do: e(3,:public_key.pem_entry_decode(readPEM("priv/certs/",name)))
+    def public(name), do: e(3,e(8, e(2, :public_key.pem_entry_decode(readPEM("priv/certs/",name)))))
+    def readPEM(folder, name),     do: hd(:public_key.pem_decode(e(2, :file.read_file(folder <> name))))
+    def shared(pub, key, scheme),  do: :crypto.compute_key(:ecdh, pub, key, scheme)
+    def eccCMS(ukm, len), do: {:'ECC-CMS-SharedInfo', {:'KeyWrapAlgorithm',{2,16,840,1,101,3,4,1,45},:asn1_NOVALUE}, ukm, <<len::32>>}
 
-    def testCMSX509() do
-        {_,base} = :file.read_file "priv/mosquitto/encrypted.txt"
-        [_,s] = :string.split base, "\n\n" # S/MIME
-        bin = :base64.decode s
-        :file.write_file "priv/mosquitto/encrypted.bin", bin
-        :'CryptographicMessageSyntax-2009'.decode(:ContentInfo, bin) end
+    def testSMIME() do
+        {:ok,base} = :file.read_file "priv/certs/encrypted.txt" ; [_,s] = :string.split base, "\n\n"
+        :'CryptographicMessageSyntax-2010'.decode(:ContentInfo, :base64.decode(s))
+    end
 
-    def test() do
-        key = privat "client"
-        public = public "client"
-        t = testCMSX509
-        {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,{_,_,{_,params}},cipher},_}}} = t
-        [kari: {_,:v3,{_,{_,_,pub}},_,_,[{_,_,data}]}] = x
-        {pub,public,data,key,cipher,t}
-        data end
-
-    def decrypt(cipher, secret) do
-        key = :binary.part(secret, 0, 32)
-        <<iv::binary-16, tag::binary-16, bin::binary>> = cipher
-        :crypto.crypto_one_time_aead(:aes_256_gcm, key, iv, bin, "AES256GCM", tag, false) end
-
-    def decrypt2(cipher, secret, iv) do
-        secret = :binary.part(secret, 0, 32)
-        :crypto.crypto_one_time(:aes_256_cbc,secret,iv,cipher,[{:encrypt,false}]) end
-
-    def decrypt3(cipher, secret, iv) do
-        secret = :binary.part(secret, 0, 16)
-        :crypto.crypto_one_time(:aes_128_cbc,secret,iv,cipher,[{:encrypt,false}]) end
-
-    def encrypt(plaintext, secret) do
-        key = :binary.part(secret, 0, 32)
-        iv = :crypto.strong_rand_bytes(16)
-        {cipher, tag} = :crypto.crypto_one_time_aead(:aes_256_gcm, key, iv, plaintext, "AES256GCM", true)
-        iv <> tag <> cipher end
-
-    def public(name) do
-        prefix = "priv/mosquitto/"
-        pub = :public_key.pem_entry_decode(:erlang.hd(
-              :public_key.pem_decode(:erlang.element(2, :file.read_file(prefix <> name <> ".pem")))))
-        x = :erlang.element(3,:erlang.element(8, :erlang.element(2, pub)))
-        {pub,x} end
-
-    def privat(name) do
-        prefix = "priv/mosquitto/"
-        key = :public_key.pem_entry_decode(:erlang.hd(
-              :public_key.pem_decode(:erlang.element(2, :file.read_file(prefix <> name <> ".key")))))
-        {_,_,keyBin,_,_,_} = key
-        {key,keyBin} end
-
-    def shared(pub, key, scheme), do: :crypto.compute_key(:ecdh, pub, key, scheme)
-
-    def testSECP384R1() do # SECP384r1
+    def testCMS() do
+        privateKey = privat "client.key"
         scheme = :secp384r1
-        {_,aliceP} = public "client"
-        {_,aliceK} = privat "client"
-        {_,maximP} = public "server"
-        {_,maximK} = privat "server"
-        cms = testCMSX509
-        {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,{_,_,{_,iv}},msg},_}}} = cms
-        [{:kari,{_,:v3,{_,{_,_,publicKey}},_,_,[{_,_,encryptedKey}]}}|y] = x
-        maximS = shared(aliceP,maximK,scheme)
-        aliceS = shared(maximP,aliceK,scheme)
-        :io.format('IV: ~tp~n',[iv])
-        :io.format('Shared Key: ~tp~n',[:binary.part(:chat.hex(aliceS),0,32)])
-        :io.format('Encrypted Key: ~tp~n',[encryptedKey])
-        key = decrypt2(encryptedKey, aliceK, :binary.part(iv,0,16))
-        :io.format('Encryption Key: ~tp~n',[key])
-        text = decrypt2(msg, key, iv)
-        :io.format('Decoded Message: ~ts~n',[text])
-       cms end
-
-    def checkSECP384R1() do # SECP384r1
-        scheme = :secp384r1
-        {_,aliceP} = public "client"
-        {_,aliceK} = privat "client"
-        {_,maximP} = public "server"
-        {_,maximK} = privat "server"
-        maximS = shared(aliceP,maximK,scheme)
-        aliceS = shared(maximP,aliceK,scheme)
-        x = encrypt("Success!", maximS)
-        "Success!" == decrypt(x, aliceS)
-        :ok end
-
-
-    def checkX25519() do # X25519
-        scheme = :x25519
-        {aliceP,aliceK} = :crypto.generate_key(:ecdh, scheme)
-        {maximP,maximK} = :crypto.generate_key(:ecdh, scheme)
-        maximS = shared(aliceP,maximK,scheme)
-        aliceS = shared(maximP,aliceK,scheme)
-        x = encrypt("Success!", maximS)
-        "Success!" == decrypt(x, aliceS)
-        :ok end
-
-    def checkX448() do # X488
-        scheme = :x448
-        {aliceP,aliceK} = :crypto.generate_key(:ecdh, scheme)
-        {maximP,maximK} = :crypto.generate_key(:ecdh, scheme)
-        maximS = shared(aliceP,maximK,scheme)
-        aliceS = shared(maximP,aliceK,scheme)
-        x = encrypt("Success!", maximS)
-        "Success!" == decrypt(x, aliceS)
-        :ok end
+        {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,{_,_,{_,iv}},data},_}}} = testSMIME()
+        [{:kari,{_,:v3,{_,{_,_,publicKey}},ukm,_,[{_,_,encryptedKey}]}}|_] = x
+        sharedKey    = shared(publicKey,privateKey,scheme)
+        {_,content}  =  :'CMSECCAlgs-2009-02'.encode(:'ECC-CMS-SharedInfo', eccCMS(ukm, 256))
+        kdf          = KDF.derive(:sha256, sharedKey, 16, content)
+#        unwrap       = :aes_kw.unwrap(encryptedKey, kdf)
+#        CA.AES.decrypt(:aes_256_cbc, data, unwrap, :binary.part(iv,2,16))
+    end
 
 end
