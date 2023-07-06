@@ -1,5 +1,8 @@
 use Mix.Config
 
+config :ca,
+  port: 8013
+
 config :ns,
   dnssec: [{:enabled, true}],
   use_root_hints: false,
