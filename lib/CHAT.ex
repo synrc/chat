@@ -8,7 +8,17 @@ defmodule CHAT.CRYPTO do
     def eccCMS(ukm, len), do: {:'ECC-CMS-SharedInfo',
         {:'KeyWrapAlgorithm',{2,16,840,1,101,3,4,1,45},:asn1_NOVALUE}, ukm, <<len::32>>}
 
-    def selector({1,3,132,0,34}), do: :secp384r1
+    def testDecryptCMS() do
+        cms = testSMIME()
+        {privateKey,_} = testPrivateKey()
+        CA.CRYPTO.decryptCMS(cms, privateKey)
+    end
+
+    def testPrivateKey() do
+        privateKey = :public_key.pem_entry_decode(readPEM("priv/certs/","client.key"))
+        privateKeyBin = e(3, privateKey)
+        {privateKey,privateKeyBin}
+    end
 
     def testSMIME() do
         {:ok,base} = :file.read_file "priv/certs/encrypted.txt" ; [_,s] = :string.split base, "\n\n"
