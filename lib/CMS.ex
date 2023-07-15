@@ -1,4 +1,4 @@
-defmodule CHAT.CRYPTO do
+defmodule CMS do
 
 #   S/MIME Working Group: https://datatracker.ietf.org/wg/smime/documents/
 
@@ -38,29 +38,9 @@ defmodule CHAT.CRYPTO do
     #             -in encrypted2.txt
 
     def e(x,y),           do: :erlang.element(x,y)
-    def readPEM(name),    do: hd(:public_key.pem_decode(e(2, :file.read_file(name))))
+    def pem(name),    do: hd(:public_key.pem_decode(e(2,:file.read_file(name))))
     def eccCMS(ukm, len), do: {:'ECC-CMS-SharedInfo',
         {:'KeyWrapAlgorithm',{2,16,840,1,101,3,4,1,45},:asn1_NOVALUE}, ukm, <<len::32>>}
-
-    def testDecryptECC() do
-        cms = testECC()
-        :io.format 'CMS ECC: ~p~n', [cms]
-        {schemeOID,privateKey} = testPrivateKeyECC()
-        decryptCMS(cms, privateKey, schemeOID)
-    end
-
-    def testDecryptKEK() do
-        cms = testKEK()
-        :io.format 'CMS KEK: ~p~n', [cms]
-        decryptCMS(cms, :binary.decode_hex("0123456789ABCDEF0123456789ABCDEF"), [])
-    end
-
-    def testDecryptRSA() do
-        cms = testRSA()
-        :io.format 'CMS RSA: ~p~n', [cms]
-        {schemeOID,privateKey} = testPrivateKeyRSA()
-        decryptCMS(cms, privateKey, schemeOID)
-    end
 
     def decodeData(enc, data, unwrap, iv) do
         case enc do
@@ -70,7 +50,7 @@ defmodule CHAT.CRYPTO do
         end
     end
 
-    # ECC KDF AES-KW
+    # CMS Codec KARI: ECC+KDF/ECB+AES/KW+256/CBC
 
     def kari(kari, privateKeyBin, schemeOID, encOID, data, iv) do
         {:'KeyAgreeRecipientInfo',:v3,{_,{_,_,publicKey}},ukm,{_,kdfOID,_},[{_,_,encryptedKey}]} = kari
@@ -89,7 +69,7 @@ defmodule CHAT.CRYPTO do
         {:ok, res}
     end
 
-    # RSA
+    # CMS Codec KTRI: RSA+RSAES-OAEP
 
     def ktri(ktri, privateKeyBin, encOID, data, iv) do
         {:'KeyTransRecipientInfo',_vsn,_,{_,schemeOID,_},key} = ktri
@@ -100,10 +80,13 @@ defmodule CHAT.CRYPTO do
         {:ok, res}
     end
 
+    # CMS Codec KEKRI: KEK+AES-KW+CBC
+
     def kekri(kekri, privateKeyBin, encOID, data, iv) do
         {:'KEKRecipientInfo',_vsn,_,{_,kea,_},encryptedKey} = kekri
+        _ = CA.ALG.lookup(kea)
         {enc,_} = CA.ALG.lookup(encOID)
-        unwrap = :aes_kw.unwrap(encryptedKey,:binary.part(privateKeyBin,0,16))
+        unwrap = :aes_kw.unwrap(encryptedKey,privateKeyBin)
         res = decodeData(enc, data, unwrap, iv)
         {:ok, res}
     end
@@ -112,17 +95,13 @@ defmodule CHAT.CRYPTO do
         {:error, ["PWRI not implemented",pwri, privateKeyBin, encOID, data, iv]}
     end
 
-    def decryptCMS(cms, privateKeyBin, schemeOID) do
+    def decryptCMS(cms, {schemeOID, privateKeyBin}) do
         {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,y,_}}} = cms
         {:EncryptedContentInfo,_,{_,encOID,{_,<<_::16,iv::binary>>}},data} = y
         kari  = :proplists.get_value(:kari,  x, [])
         ktri  = :proplists.get_value(:ktri,  x, [])
         kekri = :proplists.get_value(:kekri, x, [])
         pwri  = :proplists.get_value(:pwri,  x, [])
-        :io.format  'KARI: ~p~n', [kari]
-        :io.format  'KTRI: ~p~n', [ktri]
-        :io.format 'KEKRI: ~p~n', [kekri]
-        :io.format  'PWRI: ~p~n', [pwri]
         case kari do
              [] -> case ktri do
                      [] -> case kekri do
@@ -138,10 +117,34 @@ defmodule CHAT.CRYPTO do
         end
     end
 
+    def testDecryptECC(), do: decryptCMS(testECC(), testPrivateKeyECC())
+    def testDecryptKEK(), do: decryptCMS(testKEK(), testPrivateKeyKEK())
+    def testDecryptRSA(), do: decryptCMS(testRSA(), testPrivateKeyRSA())
+    def test(),           do:
+       [
+          testDecryptECC(),
+          testDecryptKEK(),
+          testDecryptRSA(),
+          testCMS(),
+       ]
+
     def testPrivateKeyECC() do
-        privateKey = :public_key.pem_entry_decode(readPEM("priv/certs/client.key"))
+        privateKey = :public_key.pem_entry_decode(pem("priv/certs/client.key"))
         {:'ECPrivateKey',_,privateKeyBin,{:namedCurve,schemeOID},_,_} = privateKey
         {schemeOID,privateKeyBin}
+    end
+
+    def testPrivateKeyKEK() do
+        {:kek, :binary.decode_hex("0123456789ABCDEF0123456789ABCDEF")}
+    end
+
+    def testPrivateKeyRSA() do
+        {:ok,bin} = :file.read_file("priv/rsa-cms.key")
+        pki = :public_key.pem_decode(bin)
+        [{:PrivateKeyInfo,_,_}] = pki
+        rsa = :public_key.pem_entry_decode(hd(pki))
+        {:'RSAPrivateKey',:'two-prime',_n,_e,_d,_,_,_,_,_,_} = rsa
+        {:rsaEncryption,rsa}
     end
 
     def testECC() do
@@ -156,30 +159,21 @@ defmodule CHAT.CRYPTO do
         :'CryptographicMessageSyntax-2010'.decode(:ContentInfo, x)
     end
 
-    def testPrivateKeyRSA() do
-        {:ok,bin} = :file.read_file("priv/rsa-cms.key")
-        pki = :public_key.pem_decode(bin)
-        [{:PrivateKeyInfo,_,_}] = pki
-        rsa = :public_key.pem_entry_decode(hd(pki))
-        {:'RSAPrivateKey',:'two-prime',_n,_e,_d,_,_,_,_,_,_} = rsa
-        {rsa,rsa}
-    end
-
     def testRSA() do
         {:ok,x} = :file.read_file "priv/rsa-cms.bin"
         :'CryptographicMessageSyntax-2010'.decode(:ContentInfo, x)
     end
 
     def testCMS() do
-        privateKey = e(3,:public_key.pem_entry_decode(readPEM("priv/certs/client.key")))
+        privateKey = e(3,:public_key.pem_entry_decode(pem("priv/certs/client.key")))
         scheme = :secp384r1
-        {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,{_,_,{_,iv}},data},_}}} = testECC()
+        {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{_,_,{_,_,{_,<<_::16,iv::binary>>}},data},_}}} = testECC()
         [{:kari,{_,:v3,{_,{_,_,publicKey}},ukm,_,[{_,_,encryptedKey}]}}|_] = x
         sharedKey   = :crypto.compute_key(:ecdh,publicKey,privateKey,scheme)
         {_,content}  =  :'CMSECCAlgs-2009-02'.encode(:'ECC-CMS-SharedInfo', eccCMS(ukm,256))
         kdf          = KDF.derive(:sha256, sharedKey, 32, content)
         unwrap       = :aes_kw.unwrap(encryptedKey, kdf)
-        CA.AES.decrypt(:aes_256_cbc, data, unwrap, :binary.part(iv,2,16))
+        CA.AES.decrypt(:aes_256_cbc, data, unwrap, iv)
     end
 
 end
