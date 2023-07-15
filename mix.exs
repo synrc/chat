@@ -13,7 +13,7 @@ defmodule CHAT.Mixfile do
 
   def package() do
     [
-      files: ["src", "etc", "priv", "include", "LICENSE", "README.md", "rebar.config", "sys.config", "vm.args"],
+      files: ["src", "priv", "include", "LICENSE", "README.md" ],
       licenses: ["DHARMA"],
       maintainers: ["Namdak Tonpa"],
       name: :chat,
