@@ -23,7 +23,7 @@ defmodule CHAT.Mixfile do
 
   def deps() do
     [#{:ex_doc, ">= 0.0.0", only: :dev},
-      {:ca, "~> 4.7.13"},
+      {:ca, "~> 4.7.14"},
       {:ns, "~> 1.6.4"},
       {:ldap, "~> 8.6.3"},
       {:cowboy, "~> 2.5.0"},

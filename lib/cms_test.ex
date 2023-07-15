@@ -98,7 +98,7 @@ defmodule CMS.Test do
         {_,content}  =  :'CMSECCAlgs-2009-02'.encode(:'ECC-CMS-SharedInfo', CMS.sharedInfo(ukm,256))
         kdf          = KDF.derive(:sha256, sharedKey, 32, content)
         unwrap       = :aes_kw.unwrap(encryptedKey, kdf)
-        CA.AES.decrypt(:aes_256_cbc, data, unwrap, iv)
+        CA.AES.decrypt(:'id-aes256-CBC', data, unwrap, iv)
     end
 
 end
