@@ -13,7 +13,7 @@ defmodule CHAT.Mixfile do
 
   def package() do
     [
-      files: ["src", "priv", "include", "LICENSE", "README.md" ],
+      files: ["src", "include", "LICENSE", "README.md" ],
       licenses: ["DHARMA"],
       maintainers: ["Namdak Tonpa"],
       name: :chat,
@@ -22,7 +22,7 @@ defmodule CHAT.Mixfile do
   end
 
   def deps() do
-    [#{:ex_doc, ">= 0.0.0", only: :dev},
+    [ {:ex_doc, ">= 0.0.0", only: :dev},
       {:ca, "~> 4.7.14"},
       {:ns, "~> 1.6.4"},
       {:ldap, "~> 8.6.3"},
