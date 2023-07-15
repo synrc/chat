@@ -148,13 +148,15 @@ defmodule CMS do
     end
 
     def testECC() do
-        {:ok,base} = :file.read_file "priv/certs/encrypted.txt" ; [_,s] = :string.split base, "\n\n"
+        {:ok,base} = :file.read_file "priv/certs/encrypted.txt"
+        [_,s] = :string.split base, "\n\n"
         x = :base64.decode s
         :'CryptographicMessageSyntax-2010'.decode(:ContentInfo, x)
     end
 
     def testKEK() do
-        {:ok,base} = :file.read_file "priv/certs/encrypted2.txt" ; [_,s] = :string.split base, "\n\n"
+        {:ok,base} = :file.read_file "priv/certs/encrypted2.txt"
+        [_,s] = :string.split base, "\n\n"
         x = :base64.decode s
         :'CryptographicMessageSyntax-2010'.decode(:ContentInfo, x)
     end
