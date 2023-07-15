@@ -98,22 +98,15 @@ defmodule CMS do
     def decryptCMS(cms, {schemeOID, privateKeyBin}) do
         {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,y,_}}} = cms
         {:EncryptedContentInfo,_,{_,encOID,{_,<<_::16,iv::binary>>}},data} = y
-        kari  = :proplists.get_value(:kari,  x, [])
-        ktri  = :proplists.get_value(:ktri,  x, [])
-        kekri = :proplists.get_value(:kekri, x, [])
-        pwri  = :proplists.get_value(:pwri,  x, [])
-        case kari do
-             [] -> case ktri do
-                     [] -> case kekri do
-                             [] -> case pwri do
-                                      [] -> {:error, "Unknown Other Recepient Info"}
-                                      _ -> pwri(pwri, privateKeyBin, encOID, data, iv)
-                                   end
-                              _ -> kekri(kekri, privateKeyBin, encOID, data, iv)
-                           end
-                     _ -> ktri(ktri, privateKeyBin, encOID, data, iv)
-                   end
-              _ -> kari(kari, privateKeyBin, schemeOID, encOID, data, iv)
+        case :proplists.get_value(:kari, x, []) do
+          [] -> case :proplists.get_value(:ktri,  x, []) do
+          [] -> case :proplists.get_value(:kekri, x, []) do
+          [] -> case :proplists.get_value(:pwri,  x, []) do
+          [] -> {:error, "Unknown Other Recepient Info"}
+                pwri  -> pwri(pwri,   privateKeyBin, encOID, data, iv) end
+                kekri -> kekri(kekri, privateKeyBin, encOID, data, iv) end
+                ktri  -> ktri(ktri,   privateKeyBin, encOID, data, iv) end
+                kari  -> kari(kari,   privateKeyBin, schemeOID, encOID, data, iv)
         end
     end
 
