@@ -1,5 +1,26 @@
 defmodule CHAT.CRYPTO do
 
+#   Working Group: https://datatracker.ietf.org/wg/smime/documents/
+
+#   Implementations MUST support key transport, key agreement, and
+#   previously distributed symmetric key-encryption keys, as represented
+#   by ktri, kari, and kekri, respectively.  Implementations MAY support
+#   the password-based key management as represented by pwri.
+#   Implementations MAY support any other key management technique
+#   such as Boneh-Franklin and Boneh-Boyen Identity-Based Encryption (RFC 5409)
+#   or other SYNRC encryption techniques.
+
+#   IETF: 5990, 5911, 5750-5754, 5652, 5408, 5409, 5275, 5126, 5083, 5084,
+#   5035, 4853, 4490, 4262, 4134, 4056, 4010, 3850, 3851, 3852,
+#   3854, 3855, 3657, 3560, 3565, 3537, 3394, 3369, 3370, 3274,
+#   3114, 3278, 3218, 3211, 3217, 3183, 3185, 3125-3126, 3058,
+#   2984, 2876, 2785, 2630, 2631, 2632, 2633, 2634.
+
+    # ECC openssl cms support
+    # openssl cms -decrypt -in encrypted.txt -inkey client.key -recip client.pem
+    # openssl cms -encrypt -aes256 -in message.txt -out encrypted.txt \
+    #                      -recip client.pem -keyopt ecdh_kdf_md:sha256
+
     # RSA GnuPG S/MIME support
     # gpgsm --list-keys
     # gpgsm --list-secret-keys
@@ -8,11 +29,6 @@ defmodule CHAT.CRYPTO do
     # gpgsm --export-secret-key-p12 0xD3C8F78A > pfx-p12.bin
     # openssl pkcs12 -in pfx-p12.bin -nokeys -out public.pem
     # openssl pkcs12 -in pfx-p12.bin -nocerts -nodes -out private.pem
-
-    # ECC openssl cms support
-    # openssl cms -decrypt -in encrypted.txt -inkey client.key -recip client.pem
-    # openssl cms -encrypt -aes256 -in message.txt -out encrypted.txt \
-    #                      -recip client.pem -keyopt ecdh_kdf_md:sha256
 
     def e(x,y),       do: :erlang.element(x,y)
     def privat(name), do: e(3,:public_key.pem_entry_decode(readPEM("priv/certs/",name)))
