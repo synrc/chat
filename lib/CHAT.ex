@@ -31,6 +31,12 @@ defmodule CHAT.CRYPTO do
     # openssl pkcs12 -in key.bin -nokeys -out public.pem
     # openssl pkcs12 -in key.bin -nocerts -nodes -out private.pem
 
+    # KEK openssl cms support
+    # openssl cms -encrypt -secretkeyid 07 -secretkey 0123456789ABCDEF0123456789ABCDEF \
+    #             -aes256 -in message.txt -out encrypted2.txt
+    # openssl cms -decrypt -secretkeyid 07 -secretkey 0123456789ABCDEF0123456789ABCDEF \
+    #             -in encrypted2.txt
+
     def e(x,y),           do: :erlang.element(x,y)
     def readPEM(name),    do: hd(:public_key.pem_decode(e(2, :file.read_file(name))))
     def eccCMS(ukm, len), do: {:'ECC-CMS-SharedInfo',
@@ -46,7 +52,7 @@ defmodule CHAT.CRYPTO do
     def testDecryptKEK() do
         cms = testKEK()
         :io.format 'CMS KEK: ~p~n', [cms]
-        decryptCMS(cms, "", [])
+        decryptCMS(cms, :binary.decode_hex("0123456789ABCDEF0123456789ABCDEF"), [])
     end
 
     def testDecryptRSA() do
@@ -96,15 +102,10 @@ defmodule CHAT.CRYPTO do
 
     def kekri(kekri, privateKeyBin, encOID, data, iv) do
         {:'KEKRecipientInfo',_vsn,_,{_,kea,_},encryptedKey} = kekri
-        :io.format 'IV: ~p~n', [iv]
-        :io.format 'KEA: ~p~n', [e(1,CA.ALG.lookup kea)]
-        :io.format 'ENC: ~p~n', [e(1,CA.ALG.lookup encOID)]
-        :io.format 'KEK: (~p) ~p~n', [:erlang.size(encryptedKey), encryptedKey]
-        :io.format 'PK: (~p) ~p~n', [:erlang.size(privateKeyBin), privateKeyBin]
-#        unwrap = :aes_kw.unwrap("012345678ABCDEF012345678ABCDEF", :binary.part(encryptedKey,0,16))
-        unwrap = :aes_kw.unwrap(encryptedKey, "012345678ABCDEF012345678ABCDEF")
-        {:ok, unwrap}
-#        {:error, ["KEKRI not implemented",kekri, privateKeyBin, encOID, data, iv]}
+        {enc,_} = CA.ALG.lookup(encOID)
+        unwrap = :aes_kw.unwrap(encryptedKey,:binary.part(privateKeyBin,0,16))
+        res = decodeData(enc, data, unwrap, iv)
+        {:ok, res}
     end
 
     def pwri(pwri, privateKeyBin, encOID, data, iv) do
