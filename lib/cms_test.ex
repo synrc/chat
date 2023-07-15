@@ -95,7 +95,7 @@ defmodule CMS.Test do
         {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{_,_,{_,_,{_,<<_::16,iv::binary>>}},data},_}}} = testECC()
         [{:kari,{_,:v3,{_,{_,_,publicKey}},ukm,_,[{_,_,encryptedKey}]}}|_] = x
         sharedKey   = :crypto.compute_key(:ecdh,publicKey,privateKey,scheme)
-        {_,content}  =  :'CMSECCAlgs-2009-02'.encode(:'ECC-CMS-SharedInfo', CMS.eccCMS(ukm,256))
+        {_,content}  =  :'CMSECCAlgs-2009-02'.encode(:'ECC-CMS-SharedInfo', CMS.sharedInfo(ukm,256))
         kdf          = KDF.derive(:sha256, sharedKey, 32, content)
         unwrap       = :aes_kw.unwrap(encryptedKey, kdf)
         CA.AES.decrypt(:aes_256_cbc, data, unwrap, iv)
