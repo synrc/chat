@@ -95,7 +95,7 @@ defmodule CHAT.CRYPTO do
                      [] -> case kekri do
                              [] -> case pwri do
                                       [] -> {:error, "Unknown Other Recepient Info"}
-                                      _ -> pwri(kekri, privateKeyBin, encOID, data, iv)
+                                      _ -> pwri(pwri, privateKeyBin, encOID, data, iv)
                                    end
                               _ -> kekri(kekri, privateKeyBin, encOID, data, iv)
                            end
