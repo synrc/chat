@@ -27,31 +27,33 @@ defmodule CHAT.CRYPTO do
     # gpgsm --list-secret-keys
     # gpgsm -r 0xD3C8F78A -e CNAME > cms.bin
     # gpgsm -u 0xD3C8F78A -d cms.bin
-    # gpgsm --export-secret-key-p12 0xD3C8F78A > pfx-p12.bin
-    # openssl pkcs12 -in pfx-p12.bin -nokeys -out public.pem
-    # openssl pkcs12 -in pfx-p12.bin -nocerts -nodes -out private.pem
+    # gpgsm --export-secret-key-p12 0xD3C8F78A > key.bin
+    # openssl pkcs12 -in key.bin -nokeys -out public.pem
+    # openssl pkcs12 -in key.bin -nocerts -nodes -out private.pem
 
-    def e(x,y),       do: :erlang.element(x,y)
-    def privat(name), do: e(3,:public_key.pem_entry_decode(readPEM("priv/certs/",name)))
-    def public(name), do: e(3,e(8, e(2, :public_key.pem_entry_decode(readPEM("priv/certs/",name)))))
-    def readPEM(folder, name),     do: hd(:public_key.pem_decode(e(2, :file.read_file(folder <> name))))
-    def shared(pub, key, scheme),  do: :crypto.compute_key(:ecdh, pub, key, scheme)
+    def e(x,y),           do: :erlang.element(x,y)
+    def readPEM(name),    do: hd(:public_key.pem_decode(e(2, :file.read_file(name))))
     def eccCMS(ukm, len), do: {:'ECC-CMS-SharedInfo',
         {:'KeyWrapAlgorithm',{2,16,840,1,101,3,4,1,45},:asn1_NOVALUE}, ukm, <<len::32>>}
 
-    def testDecryptCMS() do
-        cms = testSMIME()
-        :io.format 'CMS: ~p~n', [cms]
-        {privateKey,_} = testPrivateKey()
-        {:'ECPrivateKey',_,privateKeyBin,{:namedCurve,schemeOID},_,_} = privateKey
-        decryptCMS(cms, privateKeyBin, schemeOID)
+    def testDecryptECC() do
+        cms = testECC()
+        :io.format 'CMS ECC: ~p~n', [cms]
+        {schemeOID,privateKey} = testPrivateKeyECC()
+        decryptCMS(cms, privateKey, schemeOID)
+    end
+
+    def testDecryptKEK() do
+        cms = testKEK()
+        :io.format 'CMS KEK: ~p~n', [cms]
+        decryptCMS(cms, "", [])
     end
 
     def testDecryptRSA() do
         cms = testRSA()
-        :io.format 'CMS: ~p~n', [cms]
-        {schemeOID,privateKeyBin} = testPrivateKeyRSA()
-        decryptCMS(cms, privateKeyBin, schemeOID)
+        :io.format 'CMS RSA: ~p~n', [cms]
+        {schemeOID,privateKey} = testPrivateKeyRSA()
+        decryptCMS(cms, privateKey, schemeOID)
     end
 
     def decodeData(enc, data, unwrap, iv) do
@@ -69,7 +71,7 @@ defmodule CHAT.CRYPTO do
         {scheme,_}  = CA.ALG.lookup(schemeOID)
         {kdf,_}     = CA.ALG.lookup(kdfOID)
         {enc,_}     = CA.ALG.lookup(encOID)
-        sharedKey   = shared(publicKey,privateKeyBin,scheme)
+        sharedKey   = :crypto.compute_key(:ecdh,publicKey,privateKeyBin,scheme)
         {_,payload} =  :'CMSECCAlgs-2009-02'.encode(:'ECC-CMS-SharedInfo', eccCMS(ukm,256))
         derivedKDF  = case kdf do
            :'dhSinglePass-stdDH-sha512kdf-scheme' -> KDF.derive(:sha512, sharedKey, 32, payload)
@@ -93,7 +95,16 @@ defmodule CHAT.CRYPTO do
     end
 
     def kekri(kekri, privateKeyBin, encOID, data, iv) do
-        {:error, ["KEKRI not implemented",kekri, privateKeyBin, encOID, data, iv]}
+        {:'KEKRecipientInfo',_vsn,_,{_,kea,_},encryptedKey} = kekri
+        :io.format 'IV: ~p~n', [iv]
+        :io.format 'KEA: ~p~n', [e(1,CA.ALG.lookup kea)]
+        :io.format 'ENC: ~p~n', [e(1,CA.ALG.lookup encOID)]
+        :io.format 'KEK: (~p) ~p~n', [:erlang.size(encryptedKey), encryptedKey]
+        :io.format 'PK: (~p) ~p~n', [:erlang.size(privateKeyBin), privateKeyBin]
+#        unwrap = :aes_kw.unwrap("012345678ABCDEF012345678ABCDEF", :binary.part(encryptedKey,0,16))
+        unwrap = :aes_kw.unwrap(encryptedKey, "012345678ABCDEF012345678ABCDEF")
+        {:ok, unwrap}
+#        {:error, ["KEKRI not implemented",kekri, privateKeyBin, encOID, data, iv]}
     end
 
     def pwri(pwri, privateKeyBin, encOID, data, iv) do
@@ -107,6 +118,10 @@ defmodule CHAT.CRYPTO do
         ktri  = :proplists.get_value(:ktri,  x, [])
         kekri = :proplists.get_value(:kekri, x, [])
         pwri  = :proplists.get_value(:pwri,  x, [])
+        :io.format  'KARI: ~p~n', [kari]
+        :io.format  'KTRI: ~p~n', [ktri]
+        :io.format 'KEKRI: ~p~n', [kekri]
+        :io.format  'PWRI: ~p~n', [pwri]
         case kari do
              [] -> case ktri do
                      [] -> case kekri do
@@ -122,10 +137,22 @@ defmodule CHAT.CRYPTO do
         end
     end
 
-    def testPrivateKey() do
-        privateKey = :public_key.pem_entry_decode(readPEM("priv/certs/","client.key"))
-        privateKeyBin = e(3, privateKey)
-        {privateKey,privateKeyBin}
+    def testPrivateKeyECC() do
+        privateKey = :public_key.pem_entry_decode(readPEM("priv/certs/client.key"))
+        {:'ECPrivateKey',_,privateKeyBin,{:namedCurve,schemeOID},_,_} = privateKey
+        {schemeOID,privateKeyBin}
+    end
+
+    def testECC() do
+        {:ok,base} = :file.read_file "priv/certs/encrypted.txt" ; [_,s] = :string.split base, "\n\n"
+        x = :base64.decode s
+        :'CryptographicMessageSyntax-2010'.decode(:ContentInfo, x)
+    end
+
+    def testKEK() do
+        {:ok,base} = :file.read_file "priv/certs/encrypted2.txt" ; [_,s] = :string.split base, "\n\n"
+        x = :base64.decode s
+        :'CryptographicMessageSyntax-2010'.decode(:ContentInfo, x)
     end
 
     def testPrivateKeyRSA() do
@@ -133,14 +160,8 @@ defmodule CHAT.CRYPTO do
         pki = :public_key.pem_decode(bin)
         [{:PrivateKeyInfo,_,_}] = pki
         rsa = :public_key.pem_entry_decode(hd(pki))
-        {:RSAPrivateKey,:'two-prime',_n,_e,_d,_,_,_,_,_,_} = rsa
+        {:'RSAPrivateKey',:'two-prime',_n,_e,_d,_,_,_,_,_,_} = rsa
         {rsa,rsa}
-    end
-
-    def testSMIME() do
-        {:ok,base} = :file.read_file "priv/certs/encrypted.txt" ; [_,s] = :string.split base, "\n\n"
-        x = :base64.decode s
-        :'CryptographicMessageSyntax-2010'.decode(:ContentInfo, x)
     end
 
     def testRSA() do
@@ -149,12 +170,11 @@ defmodule CHAT.CRYPTO do
     end
 
     def testCMS() do
-        privateKey = privat "client.key"
-        :io.format '~p~n', [:public_key.pem_entry_decode(readPEM("priv/certs/","client.key"))]
+        privateKey = e(3,:public_key.pem_entry_decode(readPEM("priv/certs/client.key")))
         scheme = :secp384r1
-        {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,{_,_,{_,iv}},data},_}}} = testSMIME()
+        {_,{:ContentInfo,_,{:EnvelopedData,_,_,x,{:EncryptedContentInfo,_,{_,_,{_,iv}},data},_}}} = testECC()
         [{:kari,{_,:v3,{_,{_,_,publicKey}},ukm,_,[{_,_,encryptedKey}]}}|_] = x
-        sharedKey    = shared(publicKey,privateKey,scheme)
+        sharedKey   = :crypto.compute_key(:ecdh,publicKey,privateKey,scheme)
         {_,content}  =  :'CMSECCAlgs-2009-02'.encode(:'ECC-CMS-SharedInfo', eccCMS(ukm,256))
         kdf          = KDF.derive(:sha256, sharedKey, 32, content)
         unwrap       = :aes_kw.unwrap(encryptedKey, kdf)
