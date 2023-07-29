@@ -1,0 +1,25 @@
++----------+-------------+------+------+---------+
+| Name     | Databases   | [1]  | [2]  | [3]     |
++----------+-------------+------+------+---------+
+| Signal   | SQLite      |      |      | gproto  |
+| Threema  | N/A         |      |      | gproto  |
+| WhatsApp | mnesia      | N/A  | XEP  | XMPP    |
+| Wire     | Cassandra   | MLS  | own  |         |
+| Elixxir  | own         | cmix |      |         |
+| Element  | matrix-db   |      |      |         |
+| Session  | N/A         | MLS  | own  |         |
+| Chat     | LDAP/SQLite | MLS  | CMS  | ASN.1   |
+| Teams    | LDAP        | N/A  |      | SDP/ICE |
+| Google   | bungle_db   | MLS  |      | RCS     |
+| iMessage | LDAP        |      | CMS  | ASN.1   |
++----------+-------------+------+------+---------+
+
+[1] --- Group Security
+[2] --- Message Media
+[3] --- Protocol Media
+
++----------+---------------------------------+
+| Name     | Key Agreement                   |
++----------+---------------------------------+
+| Chat     | X25519, x448, SECP384r1, RSA    |
++----------+---------------------------------+
