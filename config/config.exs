@@ -2,7 +2,7 @@ use Mix.Config
 
 config :chat,
   logger_level: :info,
-  logger: [{:handler, :default, :logger_std_h,
+  logger: [{:handler, :default3, :logger_std_h,
             %{level: :info,
               id: :synrc,
               max_size: 2000,

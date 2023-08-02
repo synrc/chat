@@ -8,7 +8,7 @@
 -record('header', { name = [], icons = []}.
 -record('footer', { modules = []}.
 -record('section', { name = [], rows = []}).
--record('row', { lico = [], rico = [], desc = [] }).
+-record('row', { no = [], lico = [], rico = [], desc = [] }).
 -record('screen', { hd = [], ft = [], sections = []}).
 
 -endif.
