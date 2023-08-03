@@ -26,6 +26,8 @@ defmodule CHAT.Client do
       [
         { CHAT.screen(welcome(), :name), welcome() },
         { CHAT.screen(reg(),     :name), reg() },
+        { CHAT.screen(privacy(), :name), privacy() },
+        { CHAT.screen(contact(), :name), contact() },
         { CHAT.screen(profile(), :name), profile() }
       ]
     end
@@ -76,12 +78,59 @@ defmodule CHAT.Client do
             CHAT.row(no: 5, desc: "Прив'язаний номер", rico: :more),
             CHAT.row(no: 6, desc: "Прив'язаний E-Mail", rico: :more),
             CHAT.row(no: 7, desc: "Блокування паролем", rico: :toggle),
-            CHAT.row(no: 8, desc: "Приватність", rico: :more),
+            CHAT.row(no: 8, desc: "Приватність", rico: {:more,"04-PRIVACY"}),
             CHAT.row(no: 9, desc: "Export ID", rico: :export),
             CHAT.row(no: 10, desc: "Сховище і дані", rico: :more),
             CHAT.row(no: 11, desc: "Видалити дані ID", rico: :bin),
             CHAT.row(no: 12, desc: "Видалити профіль", rico: :bin)
         ])])
     end
+
+    def privacy() do
+         CHAT.screen(no: 4, name: "04-PRIVACY", sections:
+           [CHAT.section(name: "Приватність", rows: [
+             CHAT.row(no: 1, desc: "Синхронізація контактів з iOS", rico: :toggle),
+             CHAT.row(no: 2, desc: "Блокування невідомих", rico: :toggle),
+             CHAT.row(no: 3, desc: "Ділитися контактами з iOS", rico: :toggle),
+             CHAT.row(no: 4, desc: "Заблоковані корістувачі", rico: :more),
+             CHAT.row(no: 5, desc: "Номер телефону", rico: :more),
+             CHAT.row(no: 6, desc: "Email", rico: :more),
+             CHAT.row(no: 7, desc: "Видимість в загальному каталозі", rico: :more),
+             CHAT.row(no: 8, desc: "Відвідини та стан мережі", rico: :more),
+             CHAT.row(no: 9, desc: "Фото профілю", rico: :more),
+             CHAT.row(no: 10, desc: "Виклики", rico: :more),
+             CHAT.row(no: 11, desc: "Голосові повідомлення", rico: :more),
+             CHAT.row(no: 12, desc: "Пересилання повідомлень", rico: :more),
+             CHAT.row(no: 13, desc: "Додавання мене в групах", rico: :more),
+             CHAT.row(no: 14, desc: "Звіт про прочитання", rico: :toggle),
+             CHAT.row(no: 15, desc: "Індикатор набору тексту", rico: :toggle),
+             CHAT.row(no: 16, desc: "Папки для чатів", rico: :more),
+             CHAT.row(no: 17, desc: "Таймер автовидалення", rico: :more)
+        ])])
+
+     end
+
+     def contact() do
+         CHAT.screen(no: 5, name: "05-CONTACT", sections:
+           [CHAT.section(name: "Контакт", rows: [
+             CHAT.row(no: 1, desc: "Синхронізація контактів з iOS", rico: :toggle),
+             CHAT.row(no: 2, desc: "Блокування невідомих", rico: :toggle),
+             CHAT.row(no: 3, desc: "Ділитися контактами з iOS", rico: :toggle),
+             CHAT.row(no: 4, desc: "Заблоковані корістувачі", rico: :more),
+             CHAT.row(no: 5, desc: "Номер телефону", rico: :more),
+             CHAT.row(no: 6, desc: "Email", rico: :more),
+             CHAT.row(no: 7, desc: "Видимість в загальному каталозі", rico: :more),
+             CHAT.row(no: 8, desc: "Відвідини та стан мережі", rico: :more),
+             CHAT.row(no: 9, desc: "Фото профілю", rico: :more),
+             CHAT.row(no: 10, desc: "Виклики", rico: :more),
+             CHAT.row(no: 11, desc: "Голосові повідомлення", rico: :more),
+             CHAT.row(no: 12, desc: "Пересилання повідомлень", rico: :more),
+             CHAT.row(no: 13, desc: "Додавання мене в групах", rico: :more),
+             CHAT.row(no: 14, desc: "Звіт про прочитання", rico: :toggle),
+             CHAT.row(no: 15, desc: "Індикатор набору тексту", rico: :toggle),
+             CHAT.row(no: 16, desc: "Папки для чатів", rico: :more),
+             CHAT.row(no: 17, desc: "Таймер автовидалення", rico: :more)
+        ])])
+     end
 
 end
