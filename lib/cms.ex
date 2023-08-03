@@ -1,4 +1,8 @@
 defmodule CMS do
+   require CA.CMS
+   require CA.ALG
+   require CA.AES
+   require CA.KDF
 
     def sharedInfo(ukm, len), do: {:'ECC-CMS-SharedInfo',
         {:'KeyWrapAlgorithm',{2,16,840,1,101,3,4,1,45},:asn1_NOVALUE}, ukm, <<len::32>>}
@@ -13,9 +17,9 @@ defmodule CMS do
         sharedKey   = :crypto.compute_key(:ecdh,publicKey,privateKeyBin,scheme)
         {_,payload} =  :'CMSECCAlgs-2009-02'.encode(:'ECC-CMS-SharedInfo', sharedInfo(ukm,256))
         derivedKDF  = case kdf do
-           :'dhSinglePass-stdDH-sha512kdf-scheme' -> KDF.derive(:sha512, sharedKey, 32, payload)
-           :'dhSinglePass-stdDH-sha384kdf-scheme' -> KDF.derive(:sha384, sharedKey, 32, payload)
-           :'dhSinglePass-stdDH-sha256kdf-scheme' -> KDF.derive(:sha256, sharedKey, 32, payload)
+           :'dhSinglePass-stdDH-sha512kdf-scheme' -> CA.KDF.derive(:sha512, sharedKey, 32, payload)
+           :'dhSinglePass-stdDH-sha384kdf-scheme' -> CA.KDF.derive(:sha384, sharedKey, 32, payload)
+           :'dhSinglePass-stdDH-sha256kdf-scheme' -> CA.KDF.derive(:sha256, sharedKey, 32, payload)
         end
         unwrap = :aes_kw.unwrap(encryptedKey, derivedKDF)
         res = CA.AES.decrypt(enc, data, unwrap, iv)

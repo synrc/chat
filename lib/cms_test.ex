@@ -1,4 +1,6 @@
 defmodule CMS.Test do
+   require CA.AES
+   require CA.KDF
 
 #   S/MIME Working Group: https://datatracker.ietf.org/wg/smime/documents/
 
@@ -96,7 +98,7 @@ defmodule CMS.Test do
         [{:kari,{_,:v3,{_,{_,_,publicKey}},ukm,_,[{_,_,encryptedKey}]}}|_] = x
         sharedKey   = :crypto.compute_key(:ecdh,publicKey,privateKey,scheme)
         {_,content}  =  :'CMSECCAlgs-2009-02'.encode(:'ECC-CMS-SharedInfo', CMS.sharedInfo(ukm,256))
-        kdf          = KDF.derive(:sha256, sharedKey, 32, content)
+        kdf          = CA.KDF.derive(:sha256, sharedKey, 32, content)
         unwrap       = :aes_kw.unwrap(encryptedKey, kdf)
         CA.AES.decrypt(:'id-aes256-CBC', data, unwrap, iv)
     end
