@@ -9,6 +9,6 @@
 -record('footer', { modules = []}.
 -record('section', { name = [], rows = []}).
 -record('row', { no = [], lico = [], rico = [], desc = [] }).
--record('screen', { hd = [], ft = [], sections = []}).
+-record('screen', { no = [], name = [], hd = [], ft = [], sections = []}).
 
 -endif.
