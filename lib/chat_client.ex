@@ -3,8 +3,23 @@ defmodule CHAT.Client do
 
     def ctx(),  do: :application.get_env(:chat, :ctx, [])
     def home(), do: :application.set_env(:chat, :ctx, ["01-WELCOME"])
+
+    def back() do
+        case ctx() do
+             [] -> home()
+             [ctx] -> :skip
+             ctx -> :application.set_env(:chat, :ctx, tl(ctx))
+        end
+    end
+
+    def push(name) do
+        ctx = ctx()
+        newCtx = [name|ctx]
+        :application.set_env(:chat, :ctx, newCtx)
+    end
+
     def findScreen(name) do
-        {name,screen} = :lists.keyfind(name, 1, list())
+        {_name,screen} = :lists.keyfind(name, 1, list())
         screen
     end
     def list() do
@@ -14,8 +29,17 @@ defmodule CHAT.Client do
         { CHAT.screen(profile(), :name), profile() }
       ]
     end
+
+    def next(no) do
+        [ctx|_] = ctx()
+        CHAT.screen(sections: [CHAT.section(name: name, rows: rows)]) = findScreen(ctx)
+        CHAT.row(rico: {:more, nextName}) = :lists.keyfind(no,2,rows)
+        push(nextName)
+        show()
+    end
+
     def show() do
-        [ctx] = ctx()
+        [ctx|_] = ctx()
         CHAT.screen(sections: [CHAT.section(name: name, rows: rows)]) = findScreen(ctx)
         :io.format '\e[0m\e[1;97m\e[45m    \e[0;97m\e[1;104m ~ts ~n\e[0m\e[0K', [name]
         :lists.map(fn CHAT.row(no: no, desc: desc, rico: _rico) ->
