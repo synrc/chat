@@ -1,4 +1,4 @@
-defmodule CHAT.Client do
+defmodule CHAT.X509 do
     require CHAT
 
     def ctx(),  do: :application.get_env(:chat, :ctx, [])

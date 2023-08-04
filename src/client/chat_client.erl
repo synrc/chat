@@ -10,7 +10,8 @@
          set_filer/2, start_connect/3, write_log/2,  wait_for_last_res/2
        ]).
 -include_lib("n2o/include/n2o.hrl").
--include_lib("chat/include/roster.hrl").
+-include_lib("chat/include/chat.hrl").
+-include_lib("chat/include/push.hrl").
 
 -record(mqttc, {client :: pid(),
                 status :: connected,
@@ -132,9 +133,9 @@ gen_anylist(N) -> gen_anylist(N, <<"DevKey">>).
 gen_anylist(N, Prefix) -> [iolist_to_binary([Prefix, integer_to_binary(D)]) || D <- lists:seq(1, N)].
 
 rosters(_ClientId, Phone) ->
-	{ok, #'Profile'{rosters = RosterIds}} = kvs:get('Profile', Phone),
+	{ok, #'Profile'{roster = RosterIds}} = kvs:get('Profile', Phone),
 	[roster:phone_id(Phone, Id) || Id <- RosterIds].
-rosters(#'Profile'{rosters = Rosters, phone = Phone}) ->
+rosters(#'Profile'{roster = Rosters, phone = Phone}) ->
 	[roster:phone_id(Phone, Id) || #'Roster'{id = Id} <- Rosters].
 
 reg_fake_user(Phone) -> reg_fake_user(Phone, <<"DevKey_", Phone/binary>>, 1000, []).
@@ -154,16 +155,16 @@ reg_fake_user(Phone, DevKey, Sleep, Opts, Features) ->
     receive_drop(),
     {ClientId, Token}.
 
-client_ids(Phone) -> [ClientId || #'Auth'{client_id = ClientId} <- kvs:index('Auth', user_id, roster:phone_id(Phone))].
+client_ids(Phone) -> [ClientId || #'Auth'{session = ClientId} <- kvs:index('Auth', user_id, roster:phone_id(Phone))].
 client_id(Phone) -> hd(client_ids(Phone)).
 
 test_info(Module, Term, #cx{} = State) -> Module:info(Term, [], State);
 test_info(Module, Term, Phone) -> test_info(Module, Term, #cx{params = client_id(Phone)}).
 
-test_info(#'History'{roster_id = Phone, feed = Feed, data = Data} = History) ->
+test_info(#'History'{roster = Phone, feed = Feed, data = Data} = History) ->
 	test_info(roster_history,
 		History#'History'{
-			roster_id = roster:phone_id(Phone),
+			roster = roster:phone_id(Phone),
 			feed = feed(Feed),
 			data = [Msg#'Message'{feed_id = feed(MsgFeed), from = roster:phone_id(From), to = roster:phone_id(To)}
 				|| #'Message'{feed_id = MsgFeed, from = From, to = To} = Msg <- Data]}, Phone);
@@ -189,7 +190,6 @@ receive_test(ClientId, Term, Counter, Timeout) ->
             {#'History'{}, #'Room'{}} -> receive_drop(), R;
             {#'Message'{status = []}, #'Message'{status = []}} when Counter > 0 -> receive_test(ClientId, Term, Counter - 1);
             {#'Message'{status = []}, #'Message'{status = []}} -> R;
-            {#'Link'{}, _} -> R;
             {#'Message'{},#'Ack'{}} -> R;
             {#'Message'{status = []}, #io{code = #error{}} = IO} -> IO;
             {#'Message'{status = []}, #errors{} = IO} -> IO;
@@ -230,7 +230,7 @@ start_connect(Host, CurrentId, Count, MaxConnect) ->
 	case mnesia:dirty_next('Auth', CurrentId) of
 		'$end_of_table' -> {CurrentId, Count};
 		NextId when Count =< MaxConnect ->
-			{ok, #'Auth'{client_id = ClientId, token = Token}} = kvs:get('Auth', NextId),
+			{ok, #'Auth'{session = ClientId, token = Token}} = kvs:get('Auth', NextId),
 			spawn(?MODULE, start_client, [ClientId, Token, [{host, Host}]]),
 			start_connect(Host, NextId, Count+1, MaxConnect);
 		_ -> {CurrentId, Count}
@@ -243,7 +243,7 @@ stop_connect(Host, CurrentId, Count, MaxCount) ->
 	case mnesia:dirty_next('Auth', CurrentId) of
 		'$end_of_table' -> {CurrentId, Count};
 		NextId when Count =< MaxCount ->
-			{ok, #'Auth'{client_id = ClientId}} = kvs:get('Auth', NextId),
+			{ok, #'Auth'{session = ClientId}} = kvs:get('Auth', NextId),
 			stop_client(ClientId),
 			roster:info(?MODULE, "stop connect. Number of connects is ~p", [MaxCount -Count-1]),
 			stop_connect(Host, NextId, Count+1, MaxCount);

@@ -1,12 +1,12 @@
 defmodule CHAT.Mixfile do
   use Mix.Project
 
-  def application(), do: [mod: {CHAT, []}, applications: [:n2o,:kvs,:ca]]
+  def application(), do: [mod: {CHAT, []}, applications: [:n2o,:kvs,:ca,:emqtt]]
 
   def project do
     [app: :chat,
-     version: "6.8.2",
-     description: "CHAT X.509 CMS Instant Messenger mqtt://chat.synrc.com",
+     version: "6.8.5",
+     description: "CHAT  CXC 138 25 X.509 CMS Instant Messenger",
      package: package(),
      deps: deps()]
   end
