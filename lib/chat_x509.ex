@@ -89,7 +89,7 @@ defmodule CHAT.X509 do
             CHAT.row(no: 16, desc: "Політика конфіденційності", rico: :more),
             CHAT.row(no: 17, desc: "Умови використання", rico: :more),
             CHAT.row(no: 18, desc: "Ліцензії", rico: :more),
-            CHAT.row(no: 19, desc: "FAQ", rico: :more),
+            CHAT.row(no: 19, desc: "Довідка", rico: :more),
         ])])
     end
     def privacy() do
