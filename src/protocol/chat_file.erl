@@ -1,5 +1,5 @@
 -module(chat_file).
--include_lib("chat/include/roster.hrl").
+-include_lib("chat/include/chat.hrl").
 -include_lib("n2o/include/n2o.hrl").
 -include_lib("kernel/include/file.hrl").
 -export([start/0,info/3, proc/2]).

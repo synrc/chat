@@ -1,7 +1,7 @@
-defmodule CHAT.Client do
+defmodule CHAT.X509 do
     require CHAT
 
-    def ctx(),  do: :application.get_env(:chat, :ctx, [])
+    def ctx(),  do: :application.get_env(:chat, :ctx, ["01-WELCOME"])
     def home(), do: :application.set_env(:chat, :ctx, ["01-WELCOME"])
 
     def back() do

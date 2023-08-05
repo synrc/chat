@@ -1,5 +1,5 @@
 -module(chat_push).
--include("roster.hrl").
+-include_lib("chat/include/chat.hrl").
 -include_lib("n2o/include/n2o.hrl").
 -include_lib("kvs/include/kvs.hrl").
 -export([start/0, proc/2, push/6, notify/3, notify/5]).
@@ -8,10 +8,10 @@ start() -> n2o_pi:start(#pi{module = ?MODULE, table = system, sup = roster, name
 proc(init, #pi{name = <<"Push Service">>} = Async) -> {ok, Async};
 proc({async_push, Session, Payload, PushAlert, PushType}, #pi{} = H) -> push(Session, Payload, PushAlert, PushType), {reply, [], H}.
 
-authToSend(#'Auth'{os = OS, push = PushToken, user_id = PhoneId, settings = AuthSettings}, Payload, PushAlert, PushType) -> push(OS, PushToken, Payload, PushAlert, PushType, AuthSettings).
+authToSend(#'Auth'{os = OS, push = PushToken, nickname = PhoneId, settings = AuthSettings}, Payload, PushAlert, PushType) -> push(OS, PushToken, Payload, PushAlert, PushType, AuthSettings).
 
-push(#'Auth'{os = OS, push = [], user_id = PhoneId, settings = AuthSettings}, Payload, PushAlert, PushType) -> skip;
-push(#'Auth'{os = OS, push = PushToken, user_id = PhoneId, settings = AuthSettings}, Payload, PushAlert, PushType) ->
+push(#'Auth'{os = OS, push = [], nickname = PhoneId, settings = AuthSettings}, Payload, PushAlert, PushType) -> skip;
+push(#'Auth'{os = OS, push = PushToken, nickname = PhoneId, settings = AuthSettings}, Payload, PushAlert, PushType) ->
     push(OS, PushToken, Payload, PushAlert, PushType, AuthSettings),
     [PhoneId, OS, binary:part(PushToken, 0, erlang:min(25, size(PushToken))), PushAlert, PushToken].
 

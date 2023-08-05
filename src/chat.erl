@@ -1,7 +1,7 @@
 -module(chat).
 -behaviour(application).
 -export([start/2, stop/1, init/1, connect/0, pub/1, sub/1, tables/0, metainfo/0, phone_id/1, hex/1, unhex/1]).
--include_lib("chat/include/roster.hrl").
+-include_lib("chat/include/chat.hrl").
 -include_lib("n2o/include/n2o.hrl").
 -include_lib("kvs/include/metainfo.hrl").
 -include_lib("mnesia/src/mnesia.hrl").
@@ -42,18 +42,12 @@ init([]) -> {ok, {{one_for_one, 5, 10}, []}}.
 start(_, _) -> supervisor:start_link({local, chat}, chat, []).
 metainfo() ->  #schema{name = kvs, tables = tables()}.
 
-tables()  -> [ #table{name = writer, fields = record_info(fields, writer)},
-               #table{name = reader, fields = record_info(fields, reader)},
-               #table{name = reader, fields = record_info(fields, reader)},
-               #table{name = 'Auth',  fields = record_info(fields, 'Auth'), keys = [dev_key, user_id, phone, push]},
+tables()  -> [ #table{name = 'Auth',  fields = record_info(fields, 'Auth'), keys = [nickname, phone, push]},
                #table{name = 'Roster', fields = record_info(fields, 'Roster')},
-               #table{name = 'Message', container = chain, fields = record_info(fields, 'Message'), keys = [from, to, msg_id]},
+               #table{name = 'Message', container = chain, fields = record_info(fields, 'Message'), keys = [from, to, id]},
                #table{name = 'Room', fields = record_info(fields, 'Room')},
-               #table{name = 'Link', fields = record_info(fields, 'Link'), keys = [room_id]},
                #table{name = 'Member', container = chain, fields = record_info(fields, 'Member')},
-               #table{name = 'Profile',  fields = record_info(fields, 'Profile')},
-               #table{name = 'Index',  fields = record_info(fields, 'Index')},
-               #table{name = 'StickerPack', fields = record_info(fields, 'StickerPack')}
+               #table{name = 'Profile',  fields = record_info(fields, 'Profile')}
              ].
 
 
