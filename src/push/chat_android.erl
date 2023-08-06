@@ -1,5 +1,5 @@
 -module(chat_android).
--include_lib("chat/include/chat.hrl").
+-include_lib("chat/include/CHAT.hrl").
 -export([description/0, notify/3, headers/0, test_push_notification/0]).
 
 -define(FCM_SERVER_KEY, proplists:get_value(fcm_server_key, application:get_env(chat, push_api, []))).

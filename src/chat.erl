@@ -1,7 +1,7 @@
 -module(chat).
 -behaviour(application).
 -export([start/2, stop/1, init/1, connect/0, pub/1, sub/1, tables/0, metainfo/0, phone_id/1, hex/1, unhex/1]).
--include_lib("chat/include/chat.hrl").
+-include_lib("chat/include/CHAT.hrl").
 -include_lib("n2o/include/n2o.hrl").
 -include_lib("kvs/include/metainfo.hrl").
 -include_lib("mnesia/src/mnesia.hrl").

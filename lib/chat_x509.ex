@@ -137,5 +137,13 @@ defmodule CHAT.X509 do
         ])])
      end
 
+     def test do
+         :CHAT.encode(:CHATMessage,
+         CHAT."CHATMessage"(no: 1, headers: [], body: {:message,
+         CHAT."Message"(id: "5HT", feed: {:muc,CHAT."MUC"(room: "1")},
+                        signature: "", from: "sys", to: "5HT", created: 1,
+                        files: [], type: :sys, link: {:empty,"NULL"},
+                        seenby: "", repliedby: "", mentioned: [])}))
+     end
 
 end

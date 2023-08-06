@@ -1,5 +1,5 @@
 -module(chat_proto).
--include_lib("chat/include/chat.hrl").
+-include_lib("chat/include/CHAT.hrl").
 -include_lib("n2o/include/n2o.hrl").
 -export([info/3]).
 
