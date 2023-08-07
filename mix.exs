@@ -1,7 +1,7 @@
 defmodule CHAT.Mixfile do
   use Mix.Project
 
-  def application(), do: [mod: {CHAT, []}, applications: [:n2o,:kvs,:ca,:emqtt]]
+  def application(), do: [mod: {CHAT, []}, applications: [:n2o,:kvs,:ca,:emqtt,:ldap,:ns]]
 
   def project do
     [app: :chat,
