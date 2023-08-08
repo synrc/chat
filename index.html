@@ -222,14 +222,6 @@
     <p><b>Протоколи ключів</b>. ED-25519, X25519, X448,
        SECP-384r1, SECP-571r1, ДСТУ-ГАЛУА-GF(2^431), GF(2^509).</p>
 
-     <p><figure ><code style="text-align: center;"> roccoK := privat(32)
- roccoP := public(roccoK)
- tonpaK := privat(32)
- tonpaP := public(tonpaK)
- tonpaS := shared(tonpaK,roccoP)
- roccoS := shared(roccoK,tonpaP)
- roccoS == tonpaS</code></figure></p>
-
        <p>Схема ED-25519 поліноміальної репрезентації Монтгомері B⋅y²=x³+A⋅x²+x () і редукційного
           многочлена x²⁵⁵-19 з порядком циклічної групи &mdash; 2^252 + 27742317777372353535851937790883648493,
           А=486662, B=1.</p>
