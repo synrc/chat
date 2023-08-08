@@ -34,7 +34,7 @@ SEARCH, AUTH. For full specification follow `priv/design` folder.
 The CHAT server implementation relies only on ISO/IETF connections
 such as DNSSEC, X.509 CSR, LDAP, QUIC, WebSocket, MQTT.
 
-* [CHAT N2O PROTO SPEC](priv/proto) Erlang Term Format ETF/BERT over MQTT/QUIC
+* [CHAT N2O PROTO SPEC](priv/proto/CHAT.asn1) Erlang Term Format ETF/BERT over MQTT/QUIC
 
 CHAT is a simple instant messaging server based on ISO standards.
 It uses MQTT protocol and ETF binary serialization from Erlang/OTP
