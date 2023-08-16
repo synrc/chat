@@ -1,8 +1,8 @@
 defmodule CHAT.X509 do
     require CHAT
 
-    def ctx(),  do: :application.get_env(:chat, :ctx, ["01-WELCOME"])
-    def home(), do: :application.set_env(:chat, :ctx, ["01-WELCOME"])
+    def ctx(),  do: :application.get_env(:chat, :ctx, ["010-WELCOME"])
+    def home(), do: :application.set_env(:chat, :ctx, ["010-WELCOME"])
 
     def back() do
         case ctx() do
@@ -87,16 +87,16 @@ defmodule CHAT.X509 do
         CHAT.screen(no: 1, name: "010-WELCOME", sections:
          [CHAT.section(name: "Запрошення", rows: [
            CHAT.row(no: 1, desc: "Реєстрація", rico: {:more, "040-REG"}),
-           CHAT.row(no: 1, desc: "Реєстрація на мобільний", rico: {:more, "050-MOBILE"}),
-           CHAT.row(no: 2, desc: "Авторизація", rico: :more),
-           CHAT.row(no: 3, desc: "Імпорт", rico: :more)
-           CHAT.row(no: 3, desc: "Ліцензії", rico: {:more, "020-LICENSE"}),
-           CHAT.row(no: 3, desc: "Угода користувача", rico: {:more, "030-EULA"})
+           CHAT.row(no: 2, desc: "Реєстрація на мобільний", rico: {:more, "050-MOBILE"}),
+           CHAT.row(no: 3, desc: "Авторизація", rico: :more),
+           CHAT.row(no: 4, desc: "Імпорт", rico: :more),
+           CHAT.row(no: 5, desc: "Ліцензії", rico: {:more, "020-LICENSE"}),
+           CHAT.row(no: 6, desc: "Угода користувача", rico: {:more, "030-EULA"})
          ])])
     end
 
     def reg() do
-        CHAT.screen(no: 2, name: "040-REG", sections:
+        CHAT.screen(no: 4, name: "040-REG", sections:
          [CHAT.section(name: "Реєстрація", rows: [
            CHAT.row(no: 1, desc: "Позивний", rico: :text),
            CHAT.row(no: 2, desc: "Пароль", rico: :pin),
@@ -105,7 +105,7 @@ defmodule CHAT.X509 do
     end
 
     def profile() do
-        CHAT.screen(no: 3, name: "090-PROFILE", sections:
+        CHAT.screen(no: 9, name: "090-PROFILE", sections:
           [CHAT.section(name: "Налаштування профілю", rows: [
             CHAT.row(no: 1, desc: "Profile ID", rico: :export),
             CHAT.row(no: 2, desc: "Відкритий ключ", rico: :search),
@@ -114,7 +114,7 @@ defmodule CHAT.X509 do
             CHAT.row(no: 5, desc: "Прив'язаний номер", rico: :more),
             CHAT.row(no: 6, desc: "Прив'язаний E-Mail", rico: :more),
             CHAT.row(no: 7, desc: "Блокування паролем", rico: :toggle),
-            CHAT.row(no: 8, desc: "Приватність", rico: {:more,"04-PRIVACY"}),
+            CHAT.row(no: 8, desc: "Приватність", rico: {:more,"100-PRIVACY"}),
             CHAT.row(no: 9, desc: "Export ID", rico: :export),
             CHAT.row(no: 10, desc: "Сховище і дані", rico: :more),
             CHAT.row(no: 11, desc: "Видалити дані ID", rico: :bin),
@@ -148,14 +148,14 @@ defmodule CHAT.X509 do
              CHAT.row(no: 14, desc: "Чат", rico: :toggle),
              CHAT.row(no: 15, desc: "Звіт про прочитання", rico: :toggle),
              CHAT.row(no: 16, desc: "Індикатор набору тексту", rico: :toggle),
-             CHAT.row(no: 17, desc: "Папки для чатів", rico: {:more,"05-CONTACT"}),
+             CHAT.row(no: 17, desc: "Папки для чатів", rico: {:more,"110-CONTACT"}),
              CHAT.row(no: 18, desc: "Таймер автовидалення", rico: :more)
         ])])
 
      end
 
      def contact() do
-         CHAT.screen(no: 5, name: "110-CONTACT", sections:
+         CHAT.screen(no: 11, name: "110-CONTACT", sections:
            [CHAT.section(name: "Контакт", rows: [
              CHAT.row(no: 1, desc: "Показати всі", rico: :more),
              CHAT.row(no: 2, desc: "Статус верифікації", rico: :more),
