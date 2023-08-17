@@ -10,7 +10,7 @@
          set_filer/2, start_connect/3, write_log/2,  wait_for_last_res/2
        ]).
 -include_lib("n2o/include/n2o.hrl").
--include_lib("chat/include/chat.hrl").
+-include_lib("chat/include/CHAT.hrl").
 -include_lib("chat/include/push.hrl").
 
 -record(mqttc, {client :: pid(),

@@ -19,7 +19,7 @@ defmodule CHAT.X509 do
     end
 
     def findScreen(name) do
-        {name,screen} = :lists.keyfind(name, 1, list())
+        {_,screen} = :lists.keyfind(name, 1, list())
         screen
     end
 
