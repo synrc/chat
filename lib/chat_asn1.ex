@@ -2,7 +2,7 @@ defmodule CHAT.ASN1 do
 
   def dir(), do: :application.get_env(:ca, :bundle, "priv/apple/")
 
-  def emitDecoder(body), do:
+  def emitSequenceDecoder(body), do:
     """
     @inlinable
     init(derEncoded root: ASN1Node, withIdentifier identifier: ASN1Identifier) throws {
@@ -12,7 +12,7 @@ defmodule CHAT.ASN1 do
     }
     """
 
-  def emitEncoder(body), do:
+  def emitSequenceEncoder(body), do:
     """
     @inlinable
     func serialize(into coder: inout DER.Serializer, withIdentifier identifier: ASN1Identifier) throws {
@@ -41,40 +41,40 @@ defmodule CHAT.ASN1 do
   end
 
   def dumpType(pos, name, type) do
-      :logger.info '~p~n', [type]
-      :logger.info 'name: ~p~n', [name]
-      :logger.info 'pos: ~p~n', [pos]
+      :logger.info 'type ~p', [type]
+      :logger.info 'type name: ~p', [name]
+      :logger.info 'type pos: ~p', [pos]
   end
 
   def dumpValue(pos, name, type, value, mod) do
-      :logger.info '~p~n', [type]
-      :logger.info 'name: ~p~n', [name]
-      :logger.info 'value: ~p~n', [value]
-      :logger.info 'mod: ~p~n', [mod]
-      :logger.info 'pos: ~p~n', [pos]
+      :logger.info 'value ~p', [type]
+      :logger.info 'value name: ~p', [name]
+      :logger.info 'value value: ~p', [value]
+      :logger.info 'value mod: ~p', [mod]
+      :logger.info 'value pos: ~p', [pos]
   end
 
   def dumpClass(pos, name, mod, type) do
-      :logger.info '~p~n', [type]
-      :logger.info 'name: ~p~n', [name]
-      :logger.info 'mod: ~p~n', [mod]
-      :logger.info 'pos: ~p~n', [pos]
+      :logger.info 'class ~p', [type]
+      :logger.info 'class name: ~p', [name]
+      :logger.info 'class mod: ~p', [mod]
+      :logger.info 'class pos: ~p', [pos]
   end
 
   def dumpPType(pos, name, args, type) do
-      :logger.info '~p~n', [type]
-      :logger.info 'name: ~p~n', [name]
-      :logger.info 'args: ~p~n', [args]
-      :logger.info 'pos: ~p~n', [pos]
+      :logger.info 'ptype ~p', [type]
+      :logger.info 'ptype name: ~p', [name]
+      :logger.info 'ptype args: ~p', [args]
+      :logger.info 'ptype pos: ~p', [pos]
   end
 
   def dumpModule(pos, name, defid, tagdefault, exports, imports) do
-      :logger.info 'pos: ~p~n', [pos]
-      :logger.info 'name: ~p~n', [name]
-      :logger.info 'defid: ~p~n', [defid]
-      :logger.info 'tagdefault: ~p~n', [tagdefault]
-      :logger.info 'exports: ~p~n', [exports]
-      :logger.info 'imports: ~p~n', [imports]
+      :logger.info 'module pos: ~p', [pos]
+      :logger.info 'module name: ~p', [name]
+      :logger.info 'module defid: ~p', [defid]
+      :logger.info 'module tagdefault: ~p', [tagdefault]
+      :logger.info 'module exports: ~p', [exports]
+      :logger.info 'module imports: ~p', [imports]
   end
 
   def parse(file \\ "priv/proto/CHAT.asn1") do

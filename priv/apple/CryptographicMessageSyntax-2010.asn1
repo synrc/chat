@@ -1,0 +1,6 @@
+CryptographicMessageSyntax-2010 DEFINITIONS IMPLICIT TAGS ::= BEGIN
+  ContentInfo ::= SEQUENCE {
+    contentType ContentType,
+    content [0] EXPLICIT ANY DEFINED BY contentType }
+  ContentType ::= OBJECT IDENTIFIER
+END
