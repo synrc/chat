@@ -40,6 +40,28 @@ defmodule CHAT.X509 do
         show()
     end
 
+    def rico(:more), do: "[]"
+    def rico(:text), do: "text"
+    def rico(:pin), do: "pin"
+    def rico(:bin), do: "bin"
+    def rico(:search), do: "search"
+    def rico(:toggle), do: "toggle"
+    def rico(:export), do: "export"
+    def rico({:more,name}), do: name
+
+    def save() do
+        bin = :lists.foldl(fn {name,CHAT.screen(sections: sections)}, acc ->
+            acc <> "#{name}\n"
+                <> :lists.foldl(fn CHAT.section(name: secName,rows: rows), acc2 ->
+                       acc2 <> "- #{secName}\n"
+                            <> :lists.foldl(fn CHAT.row(no: no, desc: desc, rico: rico), acc3 ->
+                                  acc3 <> "#{no} #{desc} #{rico(rico)}\n"
+                               end, <<>>, rows)
+                   end, <<>>, sections) <> "\n"
+        end, <<>>, list()) 
+        :file.write_file "forms.txt", bin
+    end
+
     def show() do
         [ctx|_] = ctx()
         CHAT.screen(sections: [CHAT.section(name: name, rows: rows)]) = findScreen(ctx)
@@ -165,13 +187,13 @@ defmodule CHAT.X509 do
              CHAT.row(no: 6, desc: "Очистити бесіди", rico: :bin),
              CHAT.row(no: 7, desc: "Заблокувати контакт", rico: :toggle),
              CHAT.row(no: 8, desc: "Рівень підтверження", rico: :more),
-             CHAT.row(no: 9, desc: "Відкритий ключ", rico: :searth),
+             CHAT.row(no: 9, desc: "Відкритий ключ", rico: :search),
              CHAT.row(no: 10, desc: "Контактна інформація", rico: :more),
              CHAT.row(no: 11, desc: "Вимкнути сповіщення", rico: :toggle),
              CHAT.row(no: 12, desc: "Зникаючі повідомлення", rico: :toggle),
              CHAT.row(no: 13, desc: "Pin Chat", rico: :toggle),
              CHAT.row(no: 14, desc: "Папки", rico: :more),
-             CHAT.row(no: 15, desc: "Файли контакту", rico: :searth)
+             CHAT.row(no: 15, desc: "Файли контакту", rico: :search)
         ])])
      end
 
