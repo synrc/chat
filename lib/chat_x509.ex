@@ -49,19 +49,6 @@ defmodule CHAT.X509 do
     def rico(:export), do: "export"
     def rico({:more,name}), do: name
 
-    def save() do
-        bin = :lists.foldl(fn {name,CHAT.screen(sections: sections)}, acc ->
-            acc <> "#{name}\n"
-                <> :lists.foldl(fn CHAT.section(name: secName,rows: rows), acc2 ->
-                       acc2 <> "- #{secName}\n"
-                            <> :lists.foldl(fn CHAT.row(no: no, desc: desc, rico: rico), acc3 ->
-                                  acc3 <> "#{no} #{desc} #{rico(rico)}\n"
-                               end, <<>>, rows)
-                   end, <<>>, sections) <> "\n"
-        end, <<>>, list()) 
-        :file.write_file "forms.txt", bin
-    end
-
     def show() do
         [ctx|_] = ctx()
         CHAT.screen(sections: [CHAT.section(name: name, rows: rows)]) = findScreen(ctx)
