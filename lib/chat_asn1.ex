@@ -25,7 +25,7 @@ import Crypto
   def parseFieldType({:pt, {_,_,_,fieldType}, _}) when is_atom(fieldType),              do: "#{fieldType}"
   def parseFieldType({:"BIT STRING", _}),                                               do: "ASN1BitString"
   def parseFieldType({:"SEQUENCE OF", _}),                                              do: "ASN1SequenceOf"
-  def parseFieldType({:ANY_DEFINED_BY, fieldType}) when is_atom(fieldType),             do: "#{fieldType}"
+  def parseFieldType({:ANY_DEFINED_BY, fieldType}) when is_atom(fieldType),             do: "ASN1Any"
   def parseFieldType({:contentType, {:Externaltypereference,_,moduleFile, fieldType}}), do: "#{fieldType}"
   def parseFieldType({:Externaltypereference,_,moduleFile, fieldType}),                 do: "#{fieldType}"
   def parseFieldType({:ObjectClassFieldType,_,_,[{_,fieldType}],_}),                    do: "#{fieldType}"
@@ -158,6 +158,8 @@ import Crypto
       case typeDefinition do
            {:type, _, {typeASN1, _, _, _, fields}, _, _, :no} -> 
                res = case typeASN1 do
+                 :ObjectClassFieldType ->
+                    :logger.info('ASN.1 name ~p type ~p is not supported.', [name, typeDefinition])
                  :SEQUENCE ->
                     emitSequenceDefinition(
                        normalizeName(name),
@@ -165,7 +167,7 @@ import Crypto
                        emitCtor(emitParams(fields), emitCtorBody(fields)),
                        emitSequenceDecoder(emitDecoderBody(fields), name, emitArgs(fields)),
                        emitSequenceEncoder(emitEncoderBody(fields)))
-                 _ -> :logger.info('ASN.1 type ~p is not supported.', [typeASN1])
+                 _ -> :logger.info('ASN.1 name ~p type ~p is not supported.', [name, fields])
                end
                save(save, name, res)
            {:type, _, {:"SEQUENCE OF", type}, [], [], :no} ->
@@ -200,7 +202,7 @@ import Crypto
            {:Object, _, _, _} -> 
                :skip
            file ->
-               :logger.info 'unknown: ~p', [file]
+               :logger.info 'unknown: ~p ~p', [name, file]
                :skip
       end 
   end
@@ -215,6 +217,7 @@ import Crypto
   def compile(save, file \\ "priv/proto/CHAT.asn1") do
       tokens = :asn1ct_tok.file file
       {:ok, mod} = :asn1ct_parser2.parse file, tokens
+#      :io.format '~p', [mod]
       {:module, pos, name, defid, tagdefault, exports, imports, _, typeorval} = mod
       :lists.map(fn
          {:typedef,  _, pos, name, type} -> compileType(pos, name, type, save)
