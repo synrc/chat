@@ -7,7 +7,7 @@ List DEFINITIONS EXPLICIT TAGS ::= BEGIN
     d SEQUENCE { d1 BOOLEAN, d2 BOOLEAN } }
 
   List ::= SEQUENCE {
-    data Data,
-    next CHOICE { linked-list LinkedList, end NULL } }
+    data OCTET STRING,
+    next CHOICE { linked-list List, end NULL } }
 
 END
