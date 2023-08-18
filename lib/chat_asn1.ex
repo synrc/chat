@@ -11,8 +11,7 @@ import SwiftASN1
 import Crypto
 
 @usableFromInline struct #{name}: DERImplicitlyTaggable, Hashable, Sendable {
-    @inlinable static var defaultIdentifier: ASN1Identifier { .sequence }
-#{fields}
+    @inlinable static var defaultIdentifier: ASN1Identifier { .sequence }\n#{fields}
     #{ctor}
     #{decoder}
     #{encoder}
@@ -20,27 +19,50 @@ import Crypto
 """
   end
 
+  def emitSequenceDecoder(fields, name, args), do:
+"""
+@inlinable init(derEncoded root: ASN1Node, withIdentifier identifier: ASN1Identifier) throws {
+        self = try DER.sequence(root, identifier: identifier) { nodes in\n#{fields}
+            return #{normalizeName(name)}(#{args})
+        }
+    }
+"""
+
+  def emitSequenceEncoder(fields), do:
+"""
+@inlinable func serialize(into coder: inout DER.Serializer, withIdentifier identifier: ASN1Identifier) throws {
+        try coder.appendConstructedNode(identifier: identifier) { coder in\n#{fields}
+        }
+    }
+"""
+
   def parseFieldName({:contentType, {:Externaltypereference,_,moduleFile, fieldName}}), do: "#{fieldName}"
   def parseFieldName(fieldName),                                                        do: "#{fieldName}"
-  def parseFieldType({:pt, {_,_,_,fieldType}, _}) when is_atom(fieldType),              do: "#{fieldType}"
-  def parseFieldType({:"BIT STRING", _}),                                               do: "ASN1BitString"
-  def parseFieldType({:"SEQUENCE OF", _}),                                              do: "ASN1SequenceOf"
-  def parseFieldType({:ANY_DEFINED_BY, fieldType}) when is_atom(fieldType),             do: "ASN1Any"
-  def parseFieldType({:contentType, {:Externaltypereference,_,moduleFile, fieldType}}), do: "#{fieldType}"
-  def parseFieldType({:Externaltypereference,_,moduleFile, fieldType}),                 do: "#{fieldType}"
-  def parseFieldType({:ObjectClassFieldType,_,_,[{_,fieldType}],_}),                    do: "#{fieldType}"
-  def parseFieldType({:ComponentType,_,_,{:type,_,objectClass,elementSet,[],:no},optional,_,_}), do: parseFieldType(objectClass)
-  def parseFieldType({:"SET OF",{:type,_,{:"SEQUENCE", _, _, _,fieldTypes},_,_,_}}),    do: 
-      Enum.join(:lists.map(fn x -> parseFieldType(x) end, fieldTypes), "->")
-  def parseFieldType({:"SET OF",{:type,_,external,_,_,_}}),                             do: parseFieldType(external)
-  def parseFieldType({:CHOICE,choices}),                                                do: "Choice"
-  def parseFieldType(:BOOLEAN),                                                         do: "Bool"
-  def parseFieldType(fieldType) when is_atom(fieldType),                                do: "#{fieldType}"
 
-  def emitFields(pad, fields) when is_list(fields) do
+  def parseFieldType(name,fieldName,{:pt, {_,_,_,fieldType}, _}) when is_atom(fieldType),              do: "#{fieldType}"
+  def parseFieldType(name,fieldName,{:"BIT STRING", _}),                                               do: "ASN1BitString"
+  def parseFieldType(name,fieldName,{:"SEQUENCE", _, _, _, _}),                                        do: bin(name) <> "_" <> bin(fieldName) <> "_Sequence"
+  def parseFieldType(name,fieldName,{:"SEQUENCE OF", _}),                                              do: "ASN1SequenceOf"
+  def parseFieldType(name,fieldName,{:ANY_DEFINED_BY, fieldType}) when is_atom(fieldType),             do: "ASN1Any"
+  def parseFieldType(name,fieldName,{:contentType, {:Externaltypereference,_,moduleFile, fieldType}}), do: "#{fieldType}"
+  def parseFieldType(name,fieldName,{:Externaltypereference,_,moduleFile, fieldType}),                 do: "#{fieldType}"
+  def parseFieldType(name,fieldName,{:ObjectClassFieldType,_,_,[{_,fieldType}],_}),                    do: "#{fieldType}"
+  def parseFieldType(name,fieldName,{:ComponentType,_,_,{:type,_,objectClass,elementSet,[],:no},optional,_,_}), do: parseFieldType(name, fieldName, objectClass)
+  def parseFieldType(name,fieldName,{:"SET OF",{:type,_,{:"SEQUENCE", _, _, _,fieldTypes},_,_,_}}),    do: 
+      Enum.join(:lists.map(fn x -> parseFieldType(name, fieldName, x) end, fieldTypes), "->")
+  def parseFieldType(name,fieldName,{:"SET OF",{:type,_,external,_,_,_}}),                             do: parseFieldType(name, fieldName, external)
+  def parseFieldType(name,fieldName,{:CHOICE,choices}),                                                do: bin(name) <> "_" <> bin(fieldName) <> "_Choice"
+  def parseFieldType(name,fieldName,:BOOLEAN),                                                         do: "Bool"
+  def parseFieldType(name,fieldName,fieldType) when is_atom(fieldType),                                do: "#{fieldType}"
+  def parseFieldType(name,fieldName,fieldType) do
+      :io.format 'unknown: ~p',[{name, fieldType}]
+      "#{name}"
+  end
+
+  def emitFields(name, pad, fields) when is_list(fields) do
       Enum.join(:lists.map(fn 
        {:ComponentType,_,fieldName,{:type,_,fieldType,elementSet,[],:no},optional,_,_} ->
-         field = parseFieldType(fieldType)
+         field = parseFieldType(name, fieldName, fieldType)
          String.duplicate(" ", pad) <>
          emitSequenceElement(parseFieldName(fieldName),
                              substituteType(lookup(field)))
@@ -67,31 +89,7 @@ import Crypto
   def emitArg(name),                      do: "#{name}: #{name}"
   def emitSequenceElement(name, type),    do: "@usableFromInline var #{name}: #{type}\n"
 
-  def emitSequenceDecoder(fields, name, args), do:
-"""
-@inlinable init(derEncoded root: ASN1Node, withIdentifier identifier: ASN1Identifier) throws {
-        self = try DER.sequence(root, identifier: identifier) { nodes in
-#{fields}
-            return #{normalizeName(name)}(#{args})
-        }
-    }
-"""
-
-  def emitSequenceEncoder(fields), do:
-"""
-@inlinable func serialize(into coder: inout DER.Serializer, withIdentifier identifier: ASN1Identifier) throws {
-        try coder.appendConstructedNode(identifier: identifier) { coder in
-#{fields}
-        }
-    }
-"""
-
-  def emitCtor(params,fields), do:
-"""
-@inlinable init(#{params}) {
-#{fields}
-    }
-"""
+  def emitCtor(params,fields), do: "@inlinable init(#{params}) {\n#{fields}\n    }"
 
   def emitCtorBody(fields), do:
       Enum.join(:lists.map(fn 
@@ -107,20 +105,20 @@ import Crypto
        _ ->  ""
       end, fields), "\n")
 
-  def emitDecoderBody(fields), do:
+  def emitDecoderBody(name,fields), do:
       Enum.join(:lists.map(fn 
        {:ComponentType,_,fieldName,{:type,_,fieldType,elementSet,[],:no},optional,_,_} ->
          String.duplicate(" ", 12) <>
          emitDecoderBodyElement(parseFieldName(fieldName),
-                                substituteType(lookup(parseFieldType(fieldType))))
+                                substituteType(lookup(parseFieldType(name,fieldName,fieldType))))
        _ ->  ""
       end, fields), "\n")
 
-  def emitParams(fields) when is_list(fields) do
+  def emitParams(name,fields) when is_list(fields) do
       Enum.join(:lists.map(fn 
        {:ComponentType,_,fieldName,{:type,_,fieldType,elementSet,[],:no},optional,_,_} ->
          emitCtorParam(parseFieldName(fieldName),
-                       substituteType(lookup(parseFieldType(fieldType))))
+                       substituteType(lookup(parseFieldType(name,fieldName,fieldType))))
        _ ->  ""
       end, fields), ", ")
   end
@@ -163,9 +161,9 @@ import Crypto
                  :SEQUENCE ->
                     emitSequenceDefinition(
                        normalizeName(name),
-                       emitFields(4, fields),
-                       emitCtor(emitParams(fields), emitCtorBody(fields)),
-                       emitSequenceDecoder(emitDecoderBody(fields), name, emitArgs(fields)),
+                       emitFields(name, 4, fields),
+                       emitCtor(emitParams(name,fields), emitCtorBody(fields)),
+                       emitSequenceDecoder(emitDecoderBody(name, fields), name, emitArgs(fields)),
                        emitSequenceEncoder(emitEncoderBody(fields)))
                  _ -> :logger.info('ASN.1 name ~p type ~p is not supported.', [name, fields])
                end
@@ -178,6 +176,7 @@ import Crypto
                :application.set_env(:asn1scg, bin(name), "INTEGER")
                :skip
            {:type, _, {:INTEGER, file}, [], [], :no} ->
+               :logger.info 'INT ENUM: ~p ~p', [name, file]
                :skip
            {:type, _, :"OCTET STRING", [], [], :no} ->
                :application.set_env(:asn1scg, bin(name), "OCTET STRING")
