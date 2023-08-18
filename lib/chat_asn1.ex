@@ -52,7 +52,7 @@ import Crypto
       Enum.join(:lists.map(fn x -> parseFieldType(name, fieldName, x) end, fieldTypes), "->")
   def parseFieldType(name,fieldName,{:"SET OF",{:type,_,external,_,_,_}}),                             do: parseFieldType(name, fieldName, external)
   def parseFieldType(name,fieldName,{:CHOICE,choices}),                                                do: bin(name) <> "_" <> bin(fieldName) <> "_Choice"
-  def parseFieldType(name,fieldName,:BOOLEAN),                                                         do: "Bool"
+  def parseFieldType(name,fieldName,"BOOLEAN"),                                                        do: "Bool"
   def parseFieldType(name,fieldName,fieldType) when is_atom(fieldType),                                do: "#{fieldType}"
   def parseFieldType(name,fieldName,fieldType) do
       :io.format 'unknown: ~p',[{name, fieldType}]
@@ -72,7 +72,6 @@ import Crypto
 
   def lookup(name) do
       x = :application.get_env(:asn1scg, bin(name), bin(name))
-      :logger.info 'lookup: ~p', [name, x]
       bin(x)
   end
 
@@ -135,7 +134,7 @@ import Crypto
   def bin(x) when is_list(x), do: :erlang.list_to_binary x
   def bin(x), do: x
 
-  def compile_all() do
+  def compile_all() do # 2-passes for name resolving
       {:ok, files} = :file.list_dir dir()
       :lists.map(fn file -> compile(false, dir() <> :erlang.list_to_binary(file))  end, files)
       :lists.map(fn file -> compile(true,  dir() <> :erlang.list_to_binary(file))  end, files)
@@ -171,6 +170,8 @@ import Crypto
            {:type, _, {:"SEQUENCE OF", type}, [], [], :no} ->
                :skip
            {:type, _, {:CHOICE, type}, [], [], :no} ->
+               :skip
+           {:type, _, {:ENUMERATED, type}, [], [], :no} ->
                :skip
            {:type, x, :INTEGER, [], [], :no} ->
                :application.set_env(:asn1scg, bin(name), "INTEGER")
