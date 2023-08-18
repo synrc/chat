@@ -20,26 +20,30 @@ import Crypto
 """
   end
 
-  def parseFieldType(fieldType) when is_atom(fieldType), do: "#{fieldType}"
-  def parseFieldType({:ANY_DEFINED_BY, fieldType}) when is_atom(fieldType), do: "#{fieldType}"
+  def parseFieldType(fieldType) when is_atom(fieldType),                                do: "#{fieldType}"
+  def parseFieldType({:ANY_DEFINED_BY, fieldType}) when is_atom(fieldType),             do: "#{fieldType}"
   def parseFieldType({:contentType, {:Externaltypereference,_,moduleFile, fieldType}}), do: "#{fieldType}"
-  def parseFieldType({:Externaltypereference,_,moduleFile, fieldType}), do: "#{fieldType}"
+  def parseFieldType({:Externaltypereference,_,moduleFile, fieldType}),                 do: "#{fieldType}"
+  def parseFieldType({:ObjectClassFieldType,_,_,[{_,fieldType}],_}),                    do: "#{fieldType}"
+  def parseFieldType({:ComponentType,_,_,{:type,_,objectClass,elementSet,[],:no},optional,_,_}), do: parseFieldType(objectClass)
+  def parseFieldType({:"SET OF",{:type,_,{:"SEQUENCE", _, _, _,fieldTypes},_,_,_}}),    do: 
+      Enum.join(:lists.map(fn x -> parseFieldType(x) end, fieldTypes), "\n")
+  def parseFieldType({:"SET OF",{:type,_,external,_,_,_}}), do: parseFieldType(external)
 
   def parseFieldName({:contentType, {:Externaltypereference,_,moduleFile, fieldName}}), do: "#{fieldName}"
-  def parseFieldName(fieldName), do: "#{fieldName}"
+  def parseFieldName(fieldName),                                                        do: "#{fieldName}"
 
   def emitFields(pad, fields) when is_list(fields) do
       Enum.join(:lists.map(fn 
-       {:ComponentType,_,fieldName,{:type,_,fieldType,[],[],:no},optional,_,_} ->
-         String.duplicate(" ", pad) <> emitSequenceElement(parseFieldName(fieldName), substituteType(parseFieldType(fieldType)))
+       {:ComponentType,_,fieldName,{:type,_,fieldType,elementSet,[],:no},optional,_,_} ->
+         String.duplicate(" ", pad) <>
+         emitSequenceElement(parseFieldName(fieldName),
+                             substituteType(parseFieldType(fieldType)))
       end, fields), "")
   end
 
-
   def substituteType("INTEGER"), do: "ArraySlice<UInt8>"
-  def substituteType(t), do: t
-
-#            let r = try ArraySlice<UInt8>(derEncoded: &nodes)
+  def substituteType(t),         do: t
 
   def emitDecoderBodyElement(name, type), do: "let #{name} = try #{type}(derEncoded: &nodes)"
   def emitEncoderBodyElement(name),       do: "try coder.serialize(self.#{name})"
@@ -76,53 +80,67 @@ import Crypto
 
   def emitCtorBody(fields), do:
       Enum.join(:lists.map(fn 
-       {:ComponentType,_,fieldName,{:type,_,fieldType,[],[],:no},optional,_,_} ->
+       {:ComponentType,_,fieldName,{:type,_,fieldType,elementSet,[],:no},optional,_,_} ->
          String.duplicate(" ", 8) <> emitCtorBodyElement(parseFieldName(fieldName))
       end, fields), "\n")
 
   def emitEncoderBody(fields), do:
       Enum.join(:lists.map(fn 
-       {:ComponentType,_,fieldName,{:type,_,fieldType,[],[],:no},optional,_,_} ->
+       {:ComponentType,_,fieldName,{:type,_,fieldType,elementSet,[],:no},optional,_,_} ->
          String.duplicate(" ", 12) <> emitEncoderBodyElement(parseFieldName(fieldName))
       end, fields), "\n")
 
   def emitDecoderBody(fields), do:
       Enum.join(:lists.map(fn 
-       {:ComponentType,_,fieldName,{:type,_,fieldType,[],[],:no},optional,_,_} ->
-         String.duplicate(" ", 12) <> emitDecoderBodyElement(parseFieldName(fieldName), substituteType(parseFieldType(fieldType)))
+       {:ComponentType,_,fieldName,{:type,_,fieldType,elementSet,[],:no},optional,_,_} ->
+         String.duplicate(" ", 12) <>
+         emitDecoderBodyElement(parseFieldName(fieldName),
+                                substituteType(parseFieldType(fieldType)))
       end, fields), "\n")
 
   def emitParams(fields) when is_list(fields) do
       Enum.join(:lists.map(fn 
-       {:ComponentType,_,fieldName,{:type,_,fieldType,[],[],:no},optional,_,_} ->
-         emitCtorParam(parseFieldName(fieldName), substituteType(parseFieldType(fieldType)))
+       {:ComponentType,_,fieldName,{:type,_,fieldType,elementSet,[],:no},optional,_,_} ->
+         emitCtorParam(parseFieldName(fieldName),
+                       substituteType(parseFieldType(fieldType)))
       end, fields), ", ")
   end
 
   def emitArgs(fields) when is_list(fields) do
       Enum.join(:lists.map(fn 
-       {:ComponentType,_,fieldName,{:type,_,fieldType,[],[],:no},optional,_,_} ->
+       {:ComponentType,_,fieldName,{:type,_,fieldType,elementSet,[],:no},optional,_,_} ->
          emitArg(parseFieldName(fieldName))
       end, fields), ", ")
   end
 
   def compile_all() do
       {:ok, files} = :file.list_dir dir()
-      :lists.map(fn file ->
-         parse(dir() <> :erlang.list_to_binary(file))
-      end, files)
+      :lists.map(fn file -> compile(dir() <> :erlang.list_to_binary(file))  end, files)
       :ok
   end
 
   def compileType(pos, name, typeDefinition) do
       case typeDefinition do
+           {:type, _, {:"SEQUENCE OF", type}, [], [], :no} ->
+               :skip
+           {:type, _, {:"SET OF", type}, elementSet, [], :no} ->
+               :skip
+           {:type, _, {:Externaltypereference, _, _, name}, [], [], _} ->
+               :skip
+           {:ObjectSet, _, _, _, elementSet} ->
+               :skip
            {:type, _, :"OBJECT IDENTIFIER", _, _, :no} -> 
                :skip
            {:type, _, {typeASN1, _, _, _, fields}, _, _, :no} -> 
                :io.format 'args: ~p', [fields]
                res = case typeASN1 do
-                 :SEQUENCE -> emitSequenceDefinition(normalizeName(name), emitFields(4, fields), emitCtor(emitParams(fields),emitCtorBody(fields)),
-                       emitSequenceDecoder(emitDecoderBody(fields), name, emitArgs(fields)), emitSequenceEncoder(emitEncoderBody(fields)) )
+                 :SEQUENCE ->
+                    emitSequenceDefinition(
+                       normalizeName(name),
+                       emitFields(4, fields),
+                       emitCtor(emitParams(fields), emitCtorBody(fields)),
+                       emitSequenceDecoder(emitDecoderBody(fields), name, emitArgs(fields)),
+                       emitSequenceEncoder(emitEncoderBody(fields)))
                  _ -> :logger.info('ASN.1 type ~p is not supported.', [typeASN1])
                end
                file = normalizeName(name)
@@ -163,7 +181,7 @@ import Crypto
       :logger.info 'module imports: ~p', [imports]
   end
 
-  def parse(file \\ "priv/proto/CHAT.asn1") do
+  def compile(file \\ "priv/proto/CHAT.asn1") do
       tokens = :asn1ct_tok.file file
       {:ok, mod} = :asn1ct_parser2.parse file, tokens
       :io.format '~p~n', [mod]

@@ -1,10 +1,10 @@
 InformationFramework DEFINITIONS IMPLICIT TAGS ::= BEGIN
 
-  SupportedAttributes ATTRIBUTE ::=  {objectClass | aliasedEntryName, ...}
-  SupportedContexts CONTEXT ::=  {...}
-  Name ::= CHOICE { }
-  RDNSequence ::= SEQUENCE OF RelativeDistinguishedName
+  SupportedAttributes ATTRIBUTE ::= { objectClass | aliasedEntryName, ... }
+  SupportedContexts CONTEXT ::= {...}
+--  Name ::= CHOICE { }
   DistinguishedName ::= RDNSequence
+  RDNSequence ::= SEQUENCE OF RelativeDistinguishedName
   RelativeDistinguishedName ::= SET SIZE (1..MAX) OF AttributeTypeAndDistinguishedValue
   AttributeTypeAndDistinguishedValue ::= SEQUENCE {
     type                   ATTRIBUTE.&id({SupportedAttributes}),
@@ -12,6 +12,6 @@ InformationFramework DEFINITIONS IMPLICIT TAGS ::= BEGIN
     primaryDistinguished   BOOLEAN DEFAULT TRUE,
     valuesWithContext      SET SIZE (1..MAX) OF SEQUENCE {
       distingAttrValue [0] ATTRIBUTE.&Type({SupportedAttributes}{@type}) OPTIONAL,
-      contextList          SET SIZE (1..MAX) OF Context} OPTIONAL }
+      contextList          SET SIZE (1..MAX) OF Context } OPTIONAL }
 
 END
