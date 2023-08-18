@@ -22,7 +22,6 @@ import Crypto
 
   def parseFieldName({:contentType, {:Externaltypereference,_,moduleFile, fieldName}}), do: "#{fieldName}"
   def parseFieldName(fieldName),                                                        do: "#{fieldName}"
-  def parseFieldType(fieldType) when is_atom(fieldType),                                do: "#{fieldType}"
   def parseFieldType({:pt, {_,_,_,fieldType}, _}) when is_atom(fieldType),              do: "#{fieldType}"
   def parseFieldType({:"BIT STRING", _}),                                               do: "ASN1BitString"
   def parseFieldType({:"SEQUENCE OF", _}),                                              do: "ASN1SequenceOf"
@@ -33,8 +32,10 @@ import Crypto
   def parseFieldType({:ComponentType,_,_,{:type,_,objectClass,elementSet,[],:no},optional,_,_}), do: parseFieldType(objectClass)
   def parseFieldType({:"SET OF",{:type,_,{:"SEQUENCE", _, _, _,fieldTypes},_,_,_}}),    do: 
       Enum.join(:lists.map(fn x -> parseFieldType(x) end, fieldTypes), "->")
-  def parseFieldType({:"SET OF",{:type,_,external,_,_,_}}), do: parseFieldType(external)
-  def parseFieldType({:CHOICE,choices}), do: "Choice"
+  def parseFieldType({:"SET OF",{:type,_,external,_,_,_}}),                             do: parseFieldType(external)
+  def parseFieldType({:CHOICE,choices}),                                                do: "Choice"
+  def parseFieldType(:BOOLEAN),                                                         do: "Bool"
+  def parseFieldType(fieldType) when is_atom(fieldType),                                do: "#{fieldType}"
 
   def emitFields(pad, fields) when is_list(fields) do
       Enum.join(:lists.map(fn 
@@ -42,13 +43,22 @@ import Crypto
          field = parseFieldType(fieldType)
          String.duplicate(" ", pad) <>
          emitSequenceElement(parseFieldName(fieldName),
-                             substituteType(field))
+                             substituteType(lookup(field)))
        _ ->  ""
       end, fields), "")
   end
 
-  def substituteType("INTEGER"), do: "ArraySlice<UInt8>"
-  def substituteType(t),         do: t
+  def lookup(name) do
+      x = :application.get_env(:asn1scg, bin(name), bin(name))
+      :logger.info 'lookup: ~p', [name, x]
+      bin(x)
+  end
+
+  def substituteType("INTEGER"),      do: "ArraySlice<UInt8>"
+  def substituteType("OCTET STRING"), do: "ASN1OctetString"
+  def substituteType("BIT STRING"),   do: "ASN1BitString"
+  def substituteType("BOOLEAN"),      do: "Bool"
+  def substituteType(t),              do: t
 
   def emitDecoderBodyElement(name, type), do: "let #{name} = try #{type}(derEncoded: &nodes)"
   def emitEncoderBodyElement(name),       do: "try coder.serialize(self.#{name})"
@@ -102,7 +112,7 @@ import Crypto
        {:ComponentType,_,fieldName,{:type,_,fieldType,elementSet,[],:no},optional,_,_} ->
          String.duplicate(" ", 12) <>
          emitDecoderBodyElement(parseFieldName(fieldName),
-                                substituteType(parseFieldType(fieldType)))
+                                substituteType(lookup(parseFieldType(fieldType))))
        _ ->  ""
       end, fields), "\n")
 
@@ -110,7 +120,7 @@ import Crypto
       Enum.join(:lists.map(fn 
        {:ComponentType,_,fieldName,{:type,_,fieldType,elementSet,[],:no},optional,_,_} ->
          emitCtorParam(parseFieldName(fieldName),
-                       substituteType(parseFieldType(fieldType)))
+                       substituteType(lookup(parseFieldType(fieldType))))
        _ ->  ""
       end, fields), ", ")
   end
@@ -123,13 +133,28 @@ import Crypto
       end, fields), ", ")
   end
 
+  def bin(x) when is_atom(x), do: :erlang.atom_to_binary x
+  def bin(x) when is_list(x), do: :erlang.list_to_binary x
+  def bin(x), do: x
+
   def compile_all() do
       {:ok, files} = :file.list_dir dir()
-      :lists.map(fn file -> compile(dir() <> :erlang.list_to_binary(file))  end, files)
+      :lists.map(fn file -> compile(false, dir() <> :erlang.list_to_binary(file))  end, files)
+      :lists.map(fn file -> compile(true,  dir() <> :erlang.list_to_binary(file))  end, files)
       :ok
   end
 
-  def compileType(pos, name, typeDefinition) do
+  def save(flag, name, res) do
+      case flag do
+           true -> 
+               file = normalizeName(name) <> ".swift"
+               :logger.info 'write: ~p', [file]
+               :file.write_file file, res
+           false -> []
+      end
+  end
+
+  def compileType(pos, name, typeDefinition, save \\ true) do
       case typeDefinition do
            {:type, _, {typeASN1, _, _, _, fields}, _, _, :no} -> 
                res = case typeASN1 do
@@ -142,22 +167,23 @@ import Crypto
                        emitSequenceEncoder(emitEncoderBody(fields)))
                  _ -> :logger.info('ASN.1 type ~p is not supported.', [typeASN1])
                end
-               file = normalizeName(name) <> ".swift"
-               :logger.info 'write: ~p', [file]
-               :file.write_file file, res
+               save(save, name, res)
            {:type, _, {:"SEQUENCE OF", type}, [], [], :no} ->
                :skip
            {:type, _, {:CHOICE, type}, [], [], :no} ->
                :skip
-           {:type, _, :INTEGER, [], [], :no} ->
+           {:type, x, :INTEGER, [], [], :no} ->
+               :application.set_env(:asn1scg, bin(name), "INTEGER")
                :skip
-           {:type, _, {:INTEGER, _}, [], [], :no} ->
+           {:type, _, {:INTEGER, file}, [], [], :no} ->
                :skip
            {:type, _, :"OCTET STRING", [], [], :no} ->
+               :application.set_env(:asn1scg, bin(name), "OCTET STRING")
                :skip
            {:type, _, :"BIT STRING", [], [], :no} ->
                :skip
            {:type, _, {:"BIT STRING",_}, [], [], :no} ->
+               :application.set_env(:asn1scg, bin(name), "BIT STRING")
                :skip
            {:type, _, {:"SET OF", type}, elementSet, [], :no} ->
                :skip
@@ -186,12 +212,12 @@ import Crypto
   def dumpPType(pos, name, args, type), do: []
   def dumpModule(pos, name, defid, tagdefault, exports, imports), do: []
 
-  def compile(file \\ "priv/proto/CHAT.asn1") do
+  def compile(save, file \\ "priv/proto/CHAT.asn1") do
       tokens = :asn1ct_tok.file file
       {:ok, mod} = :asn1ct_parser2.parse file, tokens
       {:module, pos, name, defid, tagdefault, exports, imports, _, typeorval} = mod
       :lists.map(fn
-         {:typedef,  _, pos, name, type} -> compileType(pos, name, type)
+         {:typedef,  _, pos, name, type} -> compileType(pos, name, type, save)
          {:ptypedef, _, pos, name, args, type} -> dumpPType(pos, name, args, type)
          {:classdef, _, pos, name, mod, type} -> dumpClass(pos, name, mod, type)
          {:valuedef, _, pos, name, type, value, mod} -> dumpValue(pos, name, type, value, mod)
