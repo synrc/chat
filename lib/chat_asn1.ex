@@ -23,6 +23,9 @@ import Crypto
   def parseFieldName({:contentType, {:Externaltypereference,_,moduleFile, fieldName}}), do: "#{fieldName}"
   def parseFieldName(fieldName),                                                        do: "#{fieldName}"
   def parseFieldType(fieldType) when is_atom(fieldType),                                do: "#{fieldType}"
+  def parseFieldType({:pt, {_,_,_,fieldType}, _}) when is_atom(fieldType),              do: "#{fieldType}"
+  def parseFieldType({:"BIT STRING", _}),                                               do: "ASN1BitString"
+  def parseFieldType({:"SEQUENCE OF", _}),                                              do: "ASN1SequenceOf"
   def parseFieldType({:ANY_DEFINED_BY, fieldType}) when is_atom(fieldType),             do: "#{fieldType}"
   def parseFieldType({:contentType, {:Externaltypereference,_,moduleFile, fieldType}}), do: "#{fieldType}"
   def parseFieldType({:Externaltypereference,_,moduleFile, fieldType}),                 do: "#{fieldType}"
@@ -31,13 +34,16 @@ import Crypto
   def parseFieldType({:"SET OF",{:type,_,{:"SEQUENCE", _, _, _,fieldTypes},_,_,_}}),    do: 
       Enum.join(:lists.map(fn x -> parseFieldType(x) end, fieldTypes), "->")
   def parseFieldType({:"SET OF",{:type,_,external,_,_,_}}), do: parseFieldType(external)
+  def parseFieldType({:CHOICE,choices}), do: "Choice"
 
   def emitFields(pad, fields) when is_list(fields) do
       Enum.join(:lists.map(fn 
        {:ComponentType,_,fieldName,{:type,_,fieldType,elementSet,[],:no},optional,_,_} ->
+         field = parseFieldType(fieldType)
          String.duplicate(" ", pad) <>
          emitSequenceElement(parseFieldName(fieldName),
-                             substituteType(parseFieldType(fieldType)))
+                             substituteType(field))
+       _ ->  ""
       end, fields), "")
   end
 
@@ -81,12 +87,14 @@ import Crypto
       Enum.join(:lists.map(fn 
        {:ComponentType,_,fieldName,{:type,_,fieldType,elementSet,[],:no},optional,_,_} ->
          String.duplicate(" ", 8) <> emitCtorBodyElement(parseFieldName(fieldName))
+       _ ->  ""
       end, fields), "\n")
 
   def emitEncoderBody(fields), do:
       Enum.join(:lists.map(fn 
        {:ComponentType,_,fieldName,{:type,_,fieldType,elementSet,[],:no},optional,_,_} ->
          String.duplicate(" ", 12) <> emitEncoderBodyElement(parseFieldName(fieldName))
+       _ ->  ""
       end, fields), "\n")
 
   def emitDecoderBody(fields), do:
@@ -95,6 +103,7 @@ import Crypto
          String.duplicate(" ", 12) <>
          emitDecoderBodyElement(parseFieldName(fieldName),
                                 substituteType(parseFieldType(fieldType)))
+       _ ->  ""
       end, fields), "\n")
 
   def emitParams(fields) when is_list(fields) do
@@ -102,6 +111,7 @@ import Crypto
        {:ComponentType,_,fieldName,{:type,_,fieldType,elementSet,[],:no},optional,_,_} ->
          emitCtorParam(parseFieldName(fieldName),
                        substituteType(parseFieldType(fieldType)))
+       _ ->  ""
       end, fields), ", ")
   end
 
@@ -109,6 +119,7 @@ import Crypto
       Enum.join(:lists.map(fn 
        {:ComponentType,_,fieldName,{:type,_,fieldType,elementSet,[],:no},optional,_,_} ->
          emitArg(parseFieldName(fieldName))
+       _ ->  ""
       end, fields), ", ")
   end
 
@@ -120,16 +131,6 @@ import Crypto
 
   def compileType(pos, name, typeDefinition) do
       case typeDefinition do
-           {:type, _, {:"SEQUENCE OF", type}, [], [], :no} ->
-               :skip
-           {:type, _, {:"SET OF", type}, elementSet, [], :no} ->
-               :skip
-           {:type, _, {:Externaltypereference, _, _, name}, [], [], _} ->
-               :skip
-           {:ObjectSet, _, _, _, elementSet} ->
-               :skip
-           {:type, _, :"OBJECT IDENTIFIER", _, _, :no} -> 
-               :skip
            {:type, _, {typeASN1, _, _, _, fields}, _, _, :no} -> 
                res = case typeASN1 do
                  :SEQUENCE ->
@@ -144,6 +145,37 @@ import Crypto
                file = normalizeName(name) <> ".swift"
                :logger.info 'write: ~p', [file]
                :file.write_file file, res
+           {:type, _, {:"SEQUENCE OF", type}, [], [], :no} ->
+               :skip
+           {:type, _, {:CHOICE, type}, [], [], :no} ->
+               :skip
+           {:type, _, :INTEGER, [], [], :no} ->
+               :skip
+           {:type, _, {:INTEGER, _}, [], [], :no} ->
+               :skip
+           {:type, _, :"OCTET STRING", [], [], :no} ->
+               :skip
+           {:type, _, :"BIT STRING", [], [], :no} ->
+               :skip
+           {:type, _, {:"BIT STRING",_}, [], [], :no} ->
+               :skip
+           {:type, _, {:"SET OF", type}, elementSet, [], :no} ->
+               :skip
+           {:type, _, {:Externaltypereference, _, _, name}, [], [], _} ->
+               :skip
+           {:type, _, {:pt, _, _}, [], [], _} ->
+               :skip
+           {:ObjectSet, _, _, _, elementSet} ->
+               :skip
+           {:type, _, :"OBJECT IDENTIFIER", _, _, :no} -> 
+               :skip
+           {:Object, _, val} -> 
+               :skip
+           {:Object, _, _, _} -> 
+               :skip
+           file ->
+               :logger.info 'unknown: ~p', [file]
+               :skip
       end 
   end
 
