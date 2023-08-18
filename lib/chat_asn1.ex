@@ -28,12 +28,12 @@ defmodule CHAT.ASN1 do
   def substituteType("BOOLEAN"),      do: "Bool"
   def substituteType(t),              do: t
 
+  def emitSequenceElement(name, type),    do: "@usableFromInline var #{name}: #{type}\n"
   def emitDecoderBodyElement(name, type), do: "let #{name} = try #{type}(derEncoded: &nodes)"
   def emitEncoderBodyElement(name),       do: "try coder.serialize(self.#{name})"
   def emitCtorBodyElement(name),          do: "self.#{name} = #{name}"
   def emitCtorParam(name, type),          do: "#{name}: #{type}"
   def emitArg(name),                      do: "#{name}: #{name}"
-  def emitSequenceElement(name, type),    do: "@usableFromInline var #{name}: #{type}\n"
 
   def emitFields(name, pad, fields) when is_list(fields) do
       Enum.join(:lists.map(fn 
@@ -133,18 +133,10 @@ import Crypto
       :ok
   end
 
-  def save(flag, name, res) do
-      case flag do
-           true -> 
-               file = normalizeName(name) <> ".swift"
-               :logger.info 'write: ~p', [file]
-               :file.write_file file, res
-           false -> []
-      end
-  end
+  def save(true, name, res), do: [:logger.info('write: ~p', [name]),:file.write_file(normalizeName(name) <> ".swift",res)]
+  def save(_, _, _), do: []
 
   def sequence(name, fields, saveFlag) do
-      :io.format 'SEQ ~p~n', [name]
       save(saveFlag, name, emitSequenceDefinition(normalizeName(name),
           emitFields(name, 4, fields), emitCtor(emitParams(name,fields), emitCtorBody(fields)),
           emitSequenceDecoder(emitDecoderBody(name, fields), name, emitArgs(fields)),
