@@ -27,7 +27,7 @@ import Crypto
   def parseFieldType({:ObjectClassFieldType,_,_,[{_,fieldType}],_}),                    do: "#{fieldType}"
   def parseFieldType({:ComponentType,_,_,{:type,_,objectClass,elementSet,[],:no},optional,_,_}), do: parseFieldType(objectClass)
   def parseFieldType({:"SET OF",{:type,_,{:"SEQUENCE", _, _, _,fieldTypes},_,_,_}}),    do: 
-      Enum.join(:lists.map(fn x -> parseFieldType(x) end, fieldTypes), "\n")
+      Enum.join(:lists.map(fn x -> parseFieldType(x) end, fieldTypes), "->")
   def parseFieldType({:"SET OF",{:type,_,external,_,_,_}}), do: parseFieldType(external)
 
   def parseFieldName({:contentType, {:Externaltypereference,_,moduleFile, fieldName}}), do: "#{fieldName}"
