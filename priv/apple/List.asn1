@@ -6,7 +6,7 @@ List DEFINITIONS EXPLICIT TAGS ::= BEGIN
     c INTEGER (0..3),
     d SEQUENCE { d1 BOOLEAN, d2 BOOLEAN } }
 
-  A ::= CHOICE { v V, list List }
+  A ::= CHOICE { v [0] V, list-x [1] List }
 
   List ::= SEQUENCE {
     data OCTET STRING,
