@@ -2,38 +2,53 @@ defmodule CHAT.ASN1 do
 
   def dir(), do: :application.get_env(:ca, :bundle, "priv/apple/")
 
-  def fieldName({:contentType, {:Externaltypereference,_,_mod, name}}), do: "#{name}"
-  def fieldName(name), do: "#{name}"
+  def fieldName({:contentType, {:Externaltypereference,_,_mod, name}}), do: normalizeName("#{name}")
+  def fieldName(name), do: normalizeName("#{name}")
 
   def fieldType(name,field,{:ComponentType,_,_,{:type,_,oc,_,[],:no},_opt,_,_}), do: fieldType(name, field, oc)
   def fieldType(name,field,{:SEQUENCE, _, _, _, _}), do: bin(name) <> "_" <> bin(field) <> "_Sequence"
-  def fieldType(name,field,{:CHOICE,_choices}), do: bin(name) <> "_" <> bin(field) <> "_Choice"
-  def fieldType(_name,_field,{:pt, {_,_,_,type}, _}) when is_atom(type), do: "#{type}"
-  def fieldType(_name,_field,{:ANY_DEFINED_BY, type}) when is_atom(type), do: "ASN1Any"
-  def fieldType(_name,_field,{:contentType, {:Externaltypereference,_,_mod, type}}), do: "#{type}"
-  def fieldType(_name,_field,{:Externaltypereference,_,_mod, type}), do: "#{type}"
-  def fieldType(_name,_field,{:ObjectClassFieldType,_,_,[{_,type}],_}), do: "#{type}"
-  def fieldType(_name,_field,{:"BIT STRING", _}), do: "ASN1BitString"
-  def fieldType(_name,_field,{:"SEQUENCE OF", _}), do: "ASN1SequenceOf"
+  def fieldType(name,field,{:CHOICE,_}), do: bin(name) <> "_" <> bin(field) <> "_Choice"
+  def fieldType(_name,_,{:pt, {_,_,_,type}, _}) when is_atom(type), do: "#{type}"
+  def fieldType(_name,_,{:ANY_DEFINED_BY, type}) when is_atom(type), do: "ASN1Any"
+  def fieldType(_name,_,{:contentType, {:Externaltypereference,_,_,type}}), do: "#{type}"
+  def fieldType(_name,_,{:Externaltypereference,_,_,type}), do: "#{type}"
+  def fieldType(_name,_,{:ObjectClassFieldType,_,_,[{_,type}],_}), do: "#{type}"
+  def fieldType(_name,_,{:"BIT STRING", _}), do: "ASN1BitString"
+  def fieldType(_name,_,{:"SEQUENCE OF", _}), do: "ASN1SequenceOf"
   def fieldType(name,field,{:"SET OF",{:type,_,{:"SEQUENCE", _, _, _,types},_,_,_}}), do: 
       Enum.join(:lists.map(fn x -> fieldType(name, field, x) end, types), "->")
   def fieldType(name,field,{:"SET OF",{:type,_,external,_,_,_}}), do: fieldType(name, field, external)
-  def fieldType(_name,_field,"BOOLEAN"), do: "Bool"
-  def fieldType(_name,_field,type) when is_atom(type), do: "#{type}"
-  def fieldType(name,_field,_type), do: "#{name}"
+  def fieldType(_name,_,type) when is_atom(type), do: "#{type}"
+  def fieldType(name,_,_), do: "#{name}"
 
   def substituteType("INTEGER"),      do: "ArraySlice<UInt8>"
   def substituteType("OCTET STRING"), do: "ASN1OctetString"
   def substituteType("BIT STRING"),   do: "ASN1BitString"
   def substituteType("BOOLEAN"),      do: "Bool"
+  def substituteType("NULL"),         do: "ASN1Null"
   def substituteType(t),              do: t
 
-  def emitSequenceElement(name, type),    do: "@usableFromInline var #{name}: #{type}\n"
-  def emitDecoderBodyElement(name, type), do: "let #{name} = try #{type}(derEncoded: &nodes)"
-  def emitEncoderBodyElement(name),       do: "try coder.serialize(self.#{name})"
-  def emitCtorBodyElement(name),          do: "self.#{name} = #{name}"
-  def emitCtorParam(name, type),          do: "#{name}: #{type}"
-  def emitArg(name),                      do: "#{name}: #{name}"
+  def emitArg(name), do: "#{name}: #{name}"
+  def emitCtorBodyElement(name), do: "self.#{name} = #{name}"
+  def emitCtorParam(name, type), do: "#{name}: #{type}"
+  def emitSequenceElement(name, type), do: "@usableFromInline var #{name}: #{type}\n"
+  def emitSequenceEncoderBodyElement(name), do: "try coder.serialize(self.#{name})"
+  def emitSequenceDecoderBodyElement(name, type), do: "let #{name} = try #{type}(derEncoded: &nodes)"
+  def emitChoiceElement(name, type), do: "case #{name}(#{type})\n"
+  def emitChoiceEncoderBodyElement(pad, name), do: String.duplicate(" ", pad) <> "case .#{name}(let #{name}): try coder.serialize(#{name})"
+  def emitChoiceDecoderBodyElement(pad, name, type), do:
+      String.duplicate(" ", pad) <> "case #{type}.defaultIdentifier:\n" <>
+      String.duplicate(" ", pad+4) <> "self = .#{name}(try #{type}(derEncoded: rootNode))"
+
+  def emitCases(name, pad, cases) when is_list(cases) do
+      Enum.join(:lists.map(fn 
+        {:ComponentType,_,fieldName,{:type,_,fieldType,_elementSet,[],:no},_optional,_,_} ->
+           field = fieldType(name, fieldName, fieldType)
+           :io.format 'Field: ~p~n', [field]
+           String.duplicate(" ", pad) <> emitChoiceElement(fieldName(fieldName), substituteType(lookup(field)))
+         _ -> ""
+      end, cases), "")
+  end
 
   def emitFields(name, pad, fields) when is_list(fields) do
       Enum.join(:lists.map(fn 
@@ -41,10 +56,10 @@ defmodule CHAT.ASN1 do
            field = fieldType(name, fieldName, fieldType)
            case fieldType do
               {:SEQUENCE, _, _, _, fields} -> sequence(fieldType(name,fieldName,fieldType), fields, true)
+              {:CHOICE, cases} -> choice(fieldType(name,fieldName,fieldType), cases, true)
               _ -> :skip
            end
-           String.duplicate(" ", pad) <>
-           emitSequenceElement(fieldName(fieldName), substituteType(lookup(field)))
+           String.duplicate(" ", pad) <> emitSequenceElement(fieldName(fieldName), substituteType(lookup(field)))
         {:ComponentType,_,fieldName,fieldType,_optional,_,_} when is_binary(fieldType) or is_atom(fieldType) ->
            field = fieldType(name, fieldName, bin(fieldType))
            String.duplicate(" ", pad) <> emitSequenceElement(fieldName(fieldName), substituteType(lookup(field)))
@@ -59,18 +74,32 @@ defmodule CHAT.ASN1 do
          _ -> ""
       end, fields), "\n")
 
-  def emitEncoderBody(fields), do:
+  def emitChoiceEncoderBody(cases), do:
       Enum.join(:lists.map(fn 
         {:ComponentType,_,fieldName,{:type,_,_type,_elementSet,[],:no},_optional,_,_} ->
-           String.duplicate(" ", 12) <> emitEncoderBodyElement(fieldName(fieldName))
+           emitChoiceEncoderBodyElement(12, fieldName(fieldName))
+         _ -> ""
+      end, cases), "\n")
+
+  def emitChoiceDecoderBody(cases), do:
+      Enum.join(:lists.map(fn 
+        {:ComponentType,_,fieldName,{:type,_,type,_elementSet,[],:no},_optional,_,_} ->
+           emitChoiceDecoderBodyElement(12, fieldName(fieldName), substituteType(fieldType("", fieldName, type)))
+         _ -> ""
+      end, cases), "\n")
+
+  def emitSequenceEncoderBody(fields), do:
+      Enum.join(:lists.map(fn 
+        {:ComponentType,_,fieldName,{:type,_,_type,_elementSet,[],:no},_optional,_,_} ->
+           String.duplicate(" ", 12) <> emitSequenceEncoderBodyElement(fieldName(fieldName))
          _ -> ""
       end, fields), "\n")
 
-  def emitDecoderBody(name,fields), do:
+  def emitSequenceDecoderBody(name,fields), do:
       Enum.join(:lists.map(fn 
         {:ComponentType,_,fieldName,{:type,_,type,_elementSet,[],:no},_optional,_,_} ->
            String.duplicate(" ", 12) <>
-           emitDecoderBodyElement(fieldName(fieldName),
+           emitSequenceDecoderBodyElement(fieldName(fieldName),
               substituteType(lookup(fieldType(name,fieldName,type))))
          _ -> ""
       end, fields), "\n")
@@ -92,18 +121,47 @@ defmodule CHAT.ASN1 do
       end, fields), ", ")
   end
 
-  def emitSequenceDefinition(name,fields,ctor,decoder,encoder) do
+  def emitChoiceDefinition(name,cases,decoder,encoder), do:
 """
 // This file is autogenerated. Do not edit.
 
-import Foundation
 import SwiftASN1
 import Crypto
+import Foundation
+
+@usableFromInline indirect enum #{name}: DERParseable, DERSerializable, Hashable, Sendable {
+#{cases}#{decoder}#{encoder}
+}
+"""
+
+  def emitChoiceDecoder(cases), do:
+"""
+    @inlinable init(derEncoded rootNode: ASN1Node) throws {
+        switch rootNode.identifier {\n#{cases}
+            default: throw ASN1Error.unexpectedFieldType(rootNode.identifier)
+        }
+    }
+"""
+
+  def emitChoiceEncoder(cases), do:
+"""
+    @inlinable func serialize(into coder: inout DER.Serializer) throws {
+        switch self {\n#{cases}
+        }
+    }
+"""
+
+  def emitSequenceDefinition(name,fields,ctor,decoder,encoder), do:
+"""
+// This file is autogenerated. Do not edit.
+
+import SwiftASN1
+import Crypto
+import Foundation
 
 @usableFromInline struct #{name}: DERImplicitlyTaggable, Hashable, Sendable {
     @inlinable static var defaultIdentifier: ASN1Identifier { .sequence }\n#{fields}#{ctor}#{decoder}#{encoder}}
 """
-  end
 
   def emitSequenceDecoder(fields, name, args), do:
 """
@@ -139,14 +197,21 @@ import Crypto
   def sequence(name, fields, saveFlag) do
       save(saveFlag, name, emitSequenceDefinition(normalizeName(name),
           emitFields(name, 4, fields), emitCtor(emitParams(name,fields), emitCtorBody(fields)),
-          emitSequenceDecoder(emitDecoderBody(name, fields), name, emitArgs(fields)),
-          emitSequenceEncoder(emitEncoderBody(fields))))
+          emitSequenceDecoder(emitSequenceDecoderBody(name, fields), name, emitArgs(fields)),
+          emitSequenceEncoder(emitSequenceEncoderBody(fields))))
+  end
+
+  def choice(name, cases, saveFlag) do
+      save(saveFlag, name, emitChoiceDefinition(normalizeName(name),
+          emitCases(name, 4, cases),
+          emitChoiceDecoder(emitChoiceDecoderBody(cases)),
+          emitChoiceEncoder(emitChoiceEncoderBody(cases))))
   end
 
   def compileType(_pos, name, typeDefinition, save \\ true) do
       res = case typeDefinition do
           {:type, _, {:SEQUENCE, _, _, _, fields}, _, _, :no} -> sequence(name, fields, save)
-          {:type, _, {:CHOICE, _type}, [], [], :no} -> :skip
+          {:type, _, {:CHOICE, cases}, [], [], :no} -> choice(name, cases, save)
           {:type, _, {:ENUMERATED, _type}, [], [], :no} -> :skip
           {:type, _, :INTEGER, [], [], :no} -> :application.set_env(:asn1scg, bin(name), "INTEGER")
           {:type, _, {:INTEGER, _file}, [], [], :no} -> :skip
@@ -170,7 +235,7 @@ import Crypto
       end 
   end
 
-  def normalizeName(name), do: Enum.join(String.split("#{name}", "-"), "")
+  def normalizeName(name), do: Enum.join(String.split("#{name}", "-"), "_")
   def lookup(name), do: bin(:application.get_env(:asn1scg, bin(name), bin(name)))
   def bin(x) when is_atom(x), do: :erlang.atom_to_binary x
   def bin(x) when is_list(x), do: :erlang.list_to_binary x
