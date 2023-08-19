@@ -36,6 +36,11 @@ defmodule CHAT.ASN1 do
   def emitSequenceDecoderBodyElement(name, type), do: "let #{name} = try #{type}(derEncoded: &nodes)"
   def emitChoiceElement(name, type), do: "case #{name}(#{type})\n"
   def emitChoiceEncoderBodyElement(pad, name), do: String.duplicate(" ", pad) <> "case .#{name}(let #{name}): try coder.serialize(#{name})"
+  def emitChoiceEncoderBodyElement(pad, no, name), do:
+      String.duplicate(" ", pad) <> "case .#{name}(let #{name}):\n" <>
+      String.duplicate(" ", pad+4) <> "try coder.appendConstructedNode(\n" <>
+      String.duplicate(" ", pad+4) <> "identifier: ASN1Identifier(tagWithNumber: #{no}, tagClass: .contextSpecific),\n" <>
+      String.duplicate(" ", pad+4) <> "{ coder in try coder.serialize(#{name}) })"
   def emitChoiceDecoderBodyElement(pad, name, type), do:
       String.duplicate(" ", pad) <> "case #{type}.defaultIdentifier:\n" <>
       String.duplicate(" ", pad+4) <> "self = .#{name}(try #{type}(derEncoded: rootNode))"
@@ -44,7 +49,6 @@ defmodule CHAT.ASN1 do
       Enum.join(:lists.map(fn 
         {:ComponentType,_,fieldName,{:type,_,fieldType,_elementSet,[],:no},_optional,_,_} ->
            field = fieldType(name, fieldName, fieldType)
-           :io.format 'Field: ~p~n', [field]
            String.duplicate(" ", pad) <> emitChoiceElement(fieldName(fieldName), substituteType(lookup(field)))
          _ -> ""
       end, cases), "")
@@ -76,8 +80,11 @@ defmodule CHAT.ASN1 do
 
   def emitChoiceEncoderBody(cases), do:
       Enum.join(:lists.map(fn 
-        {:ComponentType,_,fieldName,{:type,_,_type,_elementSet,[],:no},_optional,_,_} ->
-           emitChoiceEncoderBodyElement(12, fieldName(fieldName))
+        {:ComponentType,_,fieldName,{:type,tag,_type,_elementSet,[],:no},_optional,_,_} ->
+           case tag do
+                [] -> emitChoiceEncoderBodyElement(12, fieldName(fieldName))
+                [{:tag,:CONTEXT,no,_explicit,_}] -> emitChoiceEncoderBodyElement(12, no, fieldName(fieldName))
+           end
          _ -> ""
       end, cases), "\n")
 
