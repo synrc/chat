@@ -8,17 +8,17 @@ defmodule CHAT.ASN1 do
   def fieldType(name,field,{:ComponentType,_,_,{:type,_,oc,_,[],:no},_opt,_,_}), do: fieldType(name, field, oc)
   def fieldType(name,field,{:SEQUENCE, _, _, _, _}), do: bin(name) <> "_" <> bin(field) <> "_Sequence"
   def fieldType(name,field,{:CHOICE,_}), do: bin(name) <> "_" <> bin(field) <> "_Choice"
-  def fieldType(_name,_,{:pt, {_,_,_,type}, _}) when is_atom(type), do: "#{type}"
-  def fieldType(_name,_,{:ANY_DEFINED_BY, type}) when is_atom(type), do: "ASN1Any"
-  def fieldType(_name,_,{:contentType, {:Externaltypereference,_,_,type}}), do: "#{type}"
-  def fieldType(_name,_,{:Externaltypereference,_,_,type}), do: "#{type}"
-  def fieldType(_name,_,{:ObjectClassFieldType,_,_,[{_,type}],_}), do: "#{type}"
-  def fieldType(_name,_,{:"BIT STRING", _}), do: "ASN1BitString"
-  def fieldType(_name,_,{:"SEQUENCE OF", _}), do: "ASN1SequenceOf"
+  def fieldType(_,_,{:pt, {_,_,_,type}, _}) when is_atom(type), do: "#{type}"
+  def fieldType(_,_,{:ANY_DEFINED_BY, type}) when is_atom(type), do: "ASN1Any"
+  def fieldType(_,_,{:contentType, {:Externaltypereference,_,_,type}}), do: "#{type}"
+  def fieldType(_,_,{:Externaltypereference,_,_,type}), do: "#{type}"
+  def fieldType(_,_,{:ObjectClassFieldType,_,_,[{_,type}],_}), do: "#{type}"
+  def fieldType(_,_,{:"BIT STRING", _}), do: "ASN1BitString"
+  def fieldType(_,_,{:"SEQUENCE OF", _}), do: "ASN1SequenceOf"
   def fieldType(name,field,{:"SET OF",{:type,_,{:"SEQUENCE", _, _, _,types},_,_,_}}), do: 
       Enum.join(:lists.map(fn x -> fieldType(name, field, x) end, types), "->")
   def fieldType(name,field,{:"SET OF",{:type,_,external,_,_,_}}), do: fieldType(name, field, external)
-  def fieldType(_name,_,type) when is_atom(type), do: "#{type}"
+  def fieldType(_,_,type) when is_atom(type), do: "#{type}"
   def fieldType(name,_,_), do: "#{name}"
 
   def substituteType("INTEGER"),      do: "ArraySlice<UInt8>"
