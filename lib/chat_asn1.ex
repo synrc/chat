@@ -16,6 +16,7 @@ defmodule CHAT.ASN1 do
   def fieldType(_,_,{:"BIT STRING", _}), do: "ASN1BitString"
   def fieldType(_,_,{:"SEQUENCE OF", {:type,_,type,_,_,_}}) do
       t = substituteType(case type do
+           {:Externaltypereference, _, _, name} -> :application.get_env(:asn1scg, bin(name), bin(name))
            x when is_tuple(type) -> :erlang.element(1, x)
            x when is_atom(x) -> "#{x}"
            x when is_binary(x) -> "#{x}"
