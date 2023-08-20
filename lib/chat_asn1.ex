@@ -14,7 +14,14 @@ defmodule CHAT.ASN1 do
   def fieldType(_,_,{:Externaltypereference,_,_,type}), do: "#{type}"
   def fieldType(_,_,{:ObjectClassFieldType,_,_,[{_,type}],_}), do: "#{type}"
   def fieldType(_,_,{:"BIT STRING", _}), do: "ASN1BitString"
-  def fieldType(_,_,{:"SEQUENCE OF", type}), do: "[#{type}]"
+  def fieldType(_,_,{:"SEQUENCE OF", {:type,_,type,_,_,_}}) do
+      t = substituteType(case type do
+           x when is_tuple(type) -> :erlang.element(1, x)
+           x when is_atom(x) -> "#{x}"
+           x when is_binary(x) -> "#{x}"
+      end)
+      "[#{t}]"
+  end
   def fieldType(name,field,{:"SET OF",{:type,_,{:"SEQUENCE", _, _, _,types},_,_,_}}), do: 
       Enum.join(:lists.map(fn x -> fieldType(name, field, x) end, types), "->")
   def fieldType(name,field,{:"SET OF",{:type,_,external,_,_,_}}), do: fieldType(name, field, external)
