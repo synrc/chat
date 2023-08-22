@@ -2,7 +2,7 @@ use Mix.Config
 
 config :chat,
   logger_level: :info,
-  logger: [{:handler, :default3, :logger_std_h,
+  logger: [{:handler, :default4, :logger_std_h,
             %{level: :info,
               id: :synrc,
               max_size: 2000,
@@ -14,14 +14,14 @@ config :chat,
 
 
 
-config :ns,
-  dnssec: [{:enabled, true}],
-  use_root_hints: false,
-  catch_exceptions: false,
-  zones: '/synrc.zone.json',
-  pools: [{:tcp_worker_pool, :erldns_worker, [{:size, 10},{:max_overflow, 20}]}],
-  servers: [ [{:name, :inet_localhost_1}, {:address, '127.0.0.1'}, {:port, 8053}, {:family, :inet}, {:processes, 2}],
-             [{:name, :inet6_localhost_1}, {:address, '::1'}, {:port, 8053}, {:family, :inet6}] ]
+#config :ns,
+#  dnssec: [{:enabled, true}],
+#  use_root_hints: false,
+#  catch_exceptions: false,
+#  zones: '/synrc.zone.json',
+#  pools: [{:tcp_worker_pool, :erldns_worker, [{:size, 10},{:max_overflow, 20}]}],
+#  servers: [ [{:name, :inet_localhost_1}, {:address, '127.0.0.1'}, {:port, 8053}, {:family, :inet}, {:processes, 2}],
+#             [{:name, :inet6_localhost_1}, {:address, '::1'}, {:port, 8053}, {:family, :inet6}] ]
 
 config :n2o,
   port: 8888,

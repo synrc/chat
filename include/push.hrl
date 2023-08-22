@@ -27,3 +27,8 @@
 -define(DEFAULT_MQTTC_OPTS, [{clean_sess, true}, {will, [{qos, 0}, {retain, false}, {topic, ?CLIENT_VERSION}, {payload, <<"I die">>}]}]).
 -define(DEFAULT_LANGUAGE_KEY, <<"ua">>).
 -define(LANG_KEY, <<"ua">>).
+
+-record(pushService,    {recipients = [] :: list(binary()), id = [] :: [] | binary(), ttl = 0 :: [] | integer(), module = [] :: [] | binary(), priority = [] :: [] | binary(), payload = [] :: [] | binary()}).
+-record(publishService, {message = [] :: [] | binary(), topic = [] :: [] | binary(), qos = 0 :: [] | integer()}).
+-record(push,           {model = [] :: [] | term(),type  = [] :: [] | binary(),title = [] :: [] | binary(),alert = [] :: [] | binary(),badge = [] :: [] | integer(),sound = [] :: [] | binary()}).
+

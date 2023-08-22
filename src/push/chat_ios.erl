@@ -1,5 +1,5 @@
 -module(chat_ios).
--include_lib("chat/include/chat.hrl").
+-include_lib("chat/include/CHAT.hrl").
 -include_lib("chat/include/push.hrl").
 
 -define(APNS_TEST_DEVICE_ID, "maxim:0000").

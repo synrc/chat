@@ -20,32 +20,31 @@
         <section>
             <h3>МЕСЕНЖЕР</h3>
 
-            <div>ЧАТ X.509 належить до класу захищених за допомогою ECC PKI сертифікатів,
-                 федеративних месенжерів на MQTT брокері та побудований на Erlang/OTP для
-                 державних та комерційних підприємств з глобальною доступністю.<br><br>
+            <div>ЧАТ X.509 &mdash;  це безпечна програма обміну повідомленнями
+                 з відкритим кодом на основі відкритого ключа, яка використовує
+                 сервери лише для маршрутизації для надсилання наскрізних
+                 зашифрованих повідомлень без доступу до переписки та
+                 метаданих користувачів.<br><br>
 
-                 CHAT X.509 використовує наступні стандарти та протоколи:
-                 IETF: 3278 3370 3394 3565 3851 5084 5280 5480 5652 5753 5755 5911 8418 8550 8551 DNS LDAP OCSP,
-                 ITU: ASN.1 X.509 CMS PKCS-10 PCKS-7 PKCS-3 X9-30 X9-42 X9-62 X9-63,
-                 ДСТУ: 4541 28147 GF(2^509),
-                 NIST: 800-38D 800-56A 800-57 800-162 P-384 P-571,
-                 ISO: 20922 15946 10646 8824 8825,
-                 FIPS: PUB 180-4,
-                 ДСТУ: 4541 28147 GF(2^509),
-                 ДССЗІ: #112 14.05.2010 #1236/5/453 20.08.2012 #687 27.10.2020,
-                 Ключі: X.509 PKCS-12 PFX PEM DER ASN.1,
-                 Обмін: ED-25519 X-448 SECP-384r1 SECP-571 PRIME256v1 ГАЛУА-509,
-                 Шифри: AES GCM CCM CBC КАЛИНА,
-                 Підписи: ECDSA HMAC КУПИНА,
-                 Дайджести: SHA-2 POLY-1305 AES-CMAС RIPEMD160,
-                 Повідомлення: — S/MIME-TEXT CMS-DER.<br>
-                 </div><br/>
+                 Програмне забезпечення засноване на принципах конфіденційності,
+                 для нього не потрібен номер телефону чи будь-яка інша особиста інформація.<br><br>
 
-            <div>Як імплементація ЧАТ реалізований як простий сервер доставки миттєвих повідомлень
-                 розроблений для ненадійних мереж та у відповідності до стандартів ISO/IETF. Він
-                 використовує шину та брокер MQTT, LDAP сервер для корпоративних ієрархічних конфігурацій,
-                 та бінарну серіалізацію ETF (Erlang Term Format). ЧАТ складається з наступних додатків:</div>
-            <br>
+                 ЧАТ X.509 належить до класу мультипрофільних, захищених за
+                 допомогою ECC PKI сертифікатів, федеративних месенжерів
+                 на MQTT брокері та побудований на Erlang/OTP для державних
+                 та комерційних підприємств з глобальною доступністю.<br><br>
+
+                 <ul><li>Етап 0 - протокол X.509, iOS клієнт, P2P чати:</li>
+                 <li>Етап 1 - групові чати, голосові чати:</li>
+                 <li>Етап 2 - P2P відео чати: </li>
+                 <li>Етап 3 - групові відеочати RTP.</li></ul><br>
+
+                 Як імплементація ЧАТ реалізований як простий сервер доставки
+                 миттєвих повідомлень розроблений для ненадійних мереж та у
+                 відповідності до стандартів ISO/IETF. Він використовує шину
+                 та брокер MQTT, LDAP сервер для корпоративних ієрархічних
+                 конфігурацій, та бінарну серіалізацію ETF (Erlang Term Format).
+                 ЧАТ складається з наступних додатків:<br><br></div>
 
             <div>
                  <ul><li>MQTT у якості Pub/Sub ABAC брокера;</li>
@@ -59,42 +58,48 @@
         </section>
         <section>
             <h3><a href="#booklet">БРОШУРА</a></h3>
-            <div><ul><li><a href="#principles">ПРИНЦИПИ</a></li>
+            <div><ul><li><a href="#principles">ЦІЛІ</a></li>
                      <li><a href="#business">БІЗНЕС</a></li>
                      <li><a href="#social">СУСПІЛЬСТВО</a></li>
                      <li><a href="#protocol">ПРОТОКОЛ</a></li>
-                     <li><a href="#client">iOS</a>
-                     <li><a href="#gui">X Windows</a></li>
-                     <li><a href="#terminal">POSIX</a></li>
+                     <li><a href="#protocol">ХАРАКТЕРИСТИКИ</a></li>
+                     <li><a href="#client">КЛІЄНТ iOS</a>
+                     <li><a href="#gui">КЛІЄНТ X Windows</a></li>
+                     <li><a href="#terminal">КЛІЄНТ POSIX</a></li>
                      <li><a href="#structure">КОМПАНІЯ</a></li>
                 </ul></div>
             <br />
             <div>
-                VER 0.6.12 JUN 2023 © 5HT <a href="https://5ht.co/license/">DHARMA</a>
+                VER 6.8.5 2023 © 5HT <a href="https://5ht.co/license/">DHARMA</a>
             </div>
         </section>
     </article>
 </aside>
 <main>
     <section>
-    <a name=booklet><h3>БРОШУРА</h3></a>
-      <p>Рекламний презентаційний проспект продукту з поверхнею води:</p>
-    <figure><img src="priv/design/slides/ChatDP.png"></figure>
-      <p>Слайд презентації виконаний в техніці муар:</p>
-    <figure><img src="https://mail.n2o.dev/synrc-chat-3.png"></figure>
-      <p>Титульний слайд брошури:</p>
-    <figure><img src="priv/design/slides/00 SLIDE.png"></figure>
-      <p>Використані шрифти: IBM Selectra Manifold, Michroma, Eurostyle, Kyiv Machine.</p>
-      <br><center>&dot;</center>
 
-    <a name=principles><h3>ПРИНЦИПИ</h3></a>
-    <figure><img src="priv/design/slides/01 SLIDE.png"></figure>
-    <p>Компанія користується наступними принципами:</p>
-    <p><b class=se>Акредитовані Центр Сертифікації Ключів</b>. ЧАТ має власний X.509 центр видачі сертифікатів з використанням еліптичної криптографії ECC [<a href="https://ca.erp.uno">CA</a>] SECP384R1 SHA384.
-         Кожен раз при реєстрації нового користувача генерується PKCS-10 X.409 запит на створення сертифікату. Це також може бути зроблено за допомогою
-         консольної утіліти.</p>
+    <a name=principles><h3>ЦІЛІ ТА ПРИНЦИПИ</h3></a>
+    <p>Компанія користується наступними принципами які формують цілі продукта:</p>
 
-       <p><b class=se>Ієрархічні домени</b>. ЧАТ має власний DNS сервер [<a href="https://ns.erp.uno">NS</a>] з підтримкою DNSSEC.
+    <p><b class=se>Конфіденційність</b>. Розмови у ЧАТ X.509 завжди наскрізно
+       зашифровані, їх можуть прочитати або почути лише призначені одержувачі.  </p>
+
+    <p><b class=se>Прозорість</b>. Повний вихідний код ЧАТ X.509 клієнтів і
+       серверних рішень доступний на GitHub. Це дає змогу зацікавленим сторонам
+       перевірити код на безпеку та правильність.</p>
+
+    <p><b class=se>Відповідність</b> світовим та державним телекомунікаційним та
+       криптографічним  стандартам.  </p>
+
+    <p><b class=se>Акредитовані Центр Сертифікації Ключів</b>. ЧАТ має власний X.509
+       центр видачі сертифікатів з використанням еліптичної криптографії ECC
+       <a href="https://ca.erp.uno">CA</a>. Кожен раз при реєстрації
+        нового користувача генерується PKCS-10 X.509 запит на створення
+        сертифікату. Це також може бути зроблено за допомогою консольної утіліти.
+        Підтримка сертифікатів сторонніх АЦСК.</p>
+
+       <p><b class=se>Ієрархічні домени</b>. ЧАТ має власний DNS
+        сервер <a href="https://ns.erp.uno">NS</a> з підтримкою DNSSEC.
          Структура використаних сервісів та їх імена записані зберігаються в DNS сервері;</p>
 
        <p><b class=se>Директорія підприємства як розподілена база</b>. В складних розподілених ієрархія підпорядкування
@@ -105,7 +110,7 @@
          використанням еліптичних кривих та їх модулярних форм CCM, які зберігаються в X.509 конфертах як JKS. Нешифровані месаджі заборонені в системі.</p>
 
        <p><b class=se>Повідомлення не зберігаються</b> на сервері. Транзієнта оперативна черга доставки повідомлень MQTT,
-         сертифіковані сервери: [<a href="https://mq.erp.uno">MQ</a>]: Mosquitto через TLSv1.3 та EMQX через QUIC (HTTP/3).
+         сертифіковані сервери: <a href="https://mq.erp.uno">MQ</a>: Mosquitto через TLSv1.3 та EMQX через QUIC (HTTP/3).
          Кожне повідомлення після останнього кроку отримання квитанції про доставку кореспондентом знищується на сервері
          і залишається відтепер тільки на клієнті. Так працювали перші версії Viber;</p>
 
@@ -135,7 +140,6 @@
 
     <section>
     <a name=business><h3>БІЗНЕС</h3></a>
-    <figure><img src="priv/design/slides/03 SLIDE.png?v=2"></figure>
     <p>Форми співробітництва:</p>
     <p>
        — Автономні впровадження на ВАШИХ потужностях;<br>
@@ -150,9 +154,13 @@
     <section>
 
     <a name=social><h3>СУСПІЛЬСТВО</h3></a>
-    <figure><img src="priv/design/slides/04 SLIDE.png"></figure>
     <p>Зроблено для людей:</p>
-    <p>— Інтегровані системи масового оповіщення;<br>
+    <p>— Безкоштовний захищений анонімний месенджер;<br>
+       — Безкоштовний захищений веріфікований месенджер;<br>
+       — Безпека персональних даних при спілкуванні в Інтернеті;<br>
+       — Цифровізація держпослуг та звернень громадян;<br>
+       — Використання електронного підпису документів онлайн;<br>
+       — Інтегровані системи масового оповіщення;<br>
        — B2C сервісні канали для бізнесу і ОВВ;<br>
        — Календар iCal та Контакт vCard органайзер;<br>
        — Референсний iOS UI дизайн, додаток без залежностей;<br>
@@ -164,10 +172,6 @@
     <section>
     <a name=protocol><h3>ПРОТОКОЛ</h3></a>
 
-    <p>Технічна специфікація протоколу:</p>
-
-    <ul><li><img src="https://github.com/fluidicon.png" width="35" style="margin-bottom:-12px;margin-right:10px;" />
-<a href="https://github.com/synrc/chat/tree/main/priv/proto/">SYNRC CHAT</a> — ETF/MQTT протокол.</li></ul>
 
     <p>Поняття протоколу:</p>
 
@@ -198,19 +202,54 @@
         3) <b>Третя</b> пара ключів забезпечує доступ до державних та юридичних сервісів ДСТУ-4145.
         Кожен учасник системи перед комунікацією здійснює реанонс своїх публічних частин цих асиметричних ключів.</p>
 
-     <p><b class=se>Протоколи обміну ключами</b>. Для створення спільного секретного слова, яким можна було би
-        шифрувати трафік за допомогою симетричного шифру використовується математичний протокол обміну публічними ключами
-        і його обчислення на сторонах кореспондентів комунікації. Нище наведені параметри
-        протоколів обміну ключами <b>ED25519</b>, <b>SECP384r1</b>, <b>SECP571r1</b>,
-       <b>ДСТУ-ГАЛУА</b> які використовуються в месенжері.</p>
+     <p><b class=se>Відкритість платформи</b>. Єдиний додаток як в часи IRC та
+        XMPP забезпечує доступ до всіх серверів сумісних з CHAT X509. Таким чином клієнт
+        підримує довільну кількість ключів та довільну кількість серверів. І вся ця інформація зберігається
+        тільки на клієнті.</p>
 
-     <p><figure ><code style="text-align: center;"> roccoK := privat(32)
- roccoP := public(roccoK)
- tonpaK := privat(32)
- tonpaP := public(tonpaK)
- tonpaS := shared(tonpaK,roccoP)
- roccoS := shared(roccoK,tonpaP)
- roccoS == tonpaS</code></figure></p>
+   <br><center>&dot;</center>
+   <br>
+
+    <p>[1]. <a href="https://github.com/synrc/chat/tree/main/priv/proto/CHAT.asn1">SYNRC</a>. ASN.1/ETF/TLS/TCP/MQTT CHAT протокол.<br>
+       [2]. <a href="https://dut.edu.ua/ua/lib/1/category/2132/view/1822">Ю.І. Горбенко, І.Д. Горбенко.</a> &mdash; Інфраструктури відкритих ключів. Електроний цифровий підпис. Теорія та практика.<br>
+       [3]. <a href="http://ksv.do.am/GOST/DSTY_ALL/DSTU2/dstu_4145-2002.pdf">ДСТУ 4145-2002</a> &mdash; Інформаційні технології. Криптографічний захист інформації.
+           Цифровий підпис, що ґрунтується на еліптичних кривих. Формування та перевірка.<br>
+       [4]. <a href="https://www.secg.org/sec2-v2.pdf">SEC2</a> &mdash; Recommended EC Domain Parameters.<br>
+       [5]. <a href="https://research.nccgroup.com/wp-content/uploads/2020/02/A_Tour_of_Curve25519_in_Erlang-1.pdf">Eric Schorn</a> &mdash; A Tour of Curve25519 in Erlang.
+    </p>
+
+    </section>
+
+    <section>
+
+    <a name=tech><h3>ТЕХНІЧНІ ХАРАКТЕРИСТИКИ</h3></a>
+
+    <h4>CHAT/CMS/MQTT/TLS</h4>
+
+    <p>NIST: SP 800 38D-56A-57-162, P-384, P-571;<br>
+        ISO: 20922 15946 10646 8824 8825;<br>
+       ANSI: X9-64, X9-62;<br>
+       FIPS: PUB 180-4;<br>
+       ДСТУ: 4541 28147 GF(2^509);<br>
+        ITU: X.509 (PKI), X.894 (CMS), X.680-X.683 X.690-697 (ASN.1);<br>
+      ДССЗІ: #112 14.05.2010 #1236/5/453 20.08.2012 #687 27.10.2020</p>
+
+<p>Як імплементація ЧАТ реалізований як простий сервер доставки
+   миттєвих повідомлень розроблений для ненадійних мереж та у
+   відповідності до стандартів ISO/IETF. Він використовує шину
+   та брокер MQTT, LDAP сервер для корпоративних ієрархічних
+   конфігурацій, та бінарну серіалізацію ETF (Erlang Term Format).
+   ЧАТ складається з наступних додатків:</p>
+
+   <p>1) MQTT у якості Pub/Sub ABAC брокера;
+   2) LDAP для директорії користувачів;
+   3) DNS для безпеки іменного простору;
+   4) CA для видачі клієнтських сертифікатів.</p>
+
+    <h4>PKIX CRYPTO</h4>
+
+    <p><b>Протоколи ключів</b>. ED-25519, X25519, X448,
+       SECP-384r1, SECP-571r1, ДСТУ-ГАЛУА-GF(2^431), GF(2^509).</p>
 
        <p>Схема ED-25519 поліноміальної репрезентації Монтгомері B⋅y²=x³+A⋅x²+x () і редукційного
           многочлена x²⁵⁵-19 з порядком циклічної групи &mdash; 2^252 + 27742317777372353535851937790883648493,
@@ -237,65 +276,54 @@
             F40F973F 2F06C5E8 0EFE3B43 651BD5FF
             8B06BA5F 9299.</p>
 
-    <p><b class=se>Симетричні блочні шифри</b>. Тепер можна шифрувати симетричним
-          ключем (<b>AES-GCM</b>, <b>AES-CCM</b>, <b>ДСТУ-КАЛИНА</b>) по ізоморфному (roccoS==tonpaS) закритому токену:
-       на стороні Тонпа &mdash; :n2o.encrypt(msg,tonpaS) і на стороні
-       Рокко: :n2o.decrypt(msg,roccoS).
+    <p><b>Похідні ключі</b>. KDF, PBDKF2, HKDF, AES-KW.</p>
 
-     <p><b class=se>Геш-функції</b>. Для перевірки підпису можуть використовуватися
-       наступні геші: <b>ДСТУ-КУПИНА</b>, <b>SHA-2</b>, <b>POLY-1305</b>, <b>AES-CMAK</b>.</p>
+    <p><b>Шифри</b>. AES-CBC, AES-GCM, AES-CCM, ДСТУ-КАЛИНА.</p>
 
-     <p><b class=se>Відкритість платформи</b>. Єдиний додаток як в часи IRC та
-        XMPP забезпечує доступ до всіх серверів сумісних з CHAT X509. Таким чином клієнт
-        підримує довільну кількість ключів та довільну кількість серверів. І вся ця інформація зберігається
-        тільки на клієнті.</p>
+    <p><b>Хеші</b>. SHA-2, POLY-1305, AES-CMAK, ДСТУ-КУПИНА, CAdES.</p>
 
-       <hr>
+    <p><b>Протоколи груп</b>. MLS.</p>
 
-       <p><img src="https://n2o.dev/img/pdf.jpg" width="35" style="margin-bottom:-12px;margin-right:10px;" />
-        <a href="https://dut.edu.ua/ua/lib/1/category/2132/view/1822">Ю.І. Горбенко, І.Д. Горбенко.</a> &mdash; Інфраструктури відкритих ключів. Електроний цифровий підпис. Теорія та практика.</p>
+    <p><b>PQC</b>. IBE, KYBER.</p>
 
-       <p><img src="https://n2o.dev/img/pdf.jpg" width="35" style="margin-bottom:-12px;margin-right:10px;" />
-        <a href="http://ksv.do.am/GOST/DSTY_ALL/DSTU2/dstu_4145-2002.pdf">ДСТУ 4145-2002</a> &mdash; Інформаційні технології. Криптографічний захист інформації.
-           Цифровий підпис, що ґрунтується на еліптичних кривих. Формування та перевірка.</p>
 
-       <p><img src="https://n2o.dev/img/pdf.jpg" width="35" style="margin-bottom:-12px;margin-right:10px;" />
-        <a href="https://www.secg.org/sec2-v2.pdf">SEC2</a> &mdash; Recommended EC Domain Parameters.</p>
+    <h4>CA/CMP/CMC/TSP/TLS</h4>
 
-       <p><img src="https://n2o.dev/img/pdf.jpg" width="35" style="margin-bottom:-12px;margin-right:10px;" />
-        <a href="https://research.nccgroup.com/wp-content/uploads/2020/02/A_Tour_of_Curve25519_in_Erlang-1.pdf">Eric Schorn</a> &mdash; A Tour of Curve25519 in Erlang.</p>
+    <p>SMIME-WG: 5990, 5911, 5750—5754, 5652, 5408, 5409, 5275, 5126, 5035, 4853, 4490, 4262, 4134, 4056, 4010, 3850, 3851, 3852, 3854, 3855, 3657, 3560, 3565, 3537, 3394, 3369, 3370, 3274, 3114, 3278, 3218, 3211, 3217, 3183, 3185, 3125—3126, 3058, 2984, 2876, 2785, 2630, 2631, 2632, 2633, 5083, 5084, 2634.</p>
 
-   <br><center>&dot;</center>
+    <p>PKIX: 7030, 6960, 6818, 6844, 6712, 6664, 6402, 6277, 6170, 6024, 6025, 5934, 5912—5914, 5877, 5816, 5755, 5756, 5758, 5697, 5636, 5480, 5272—5274, 5280, 5055, 5019, 4985, 4683, 4630, 4476, 4387, 4325, 4158, 4210, 4211, 4055, 4043, 3874, 3779, 3820, 3739, 3709, 3628, 3161, 3029, 2797, 2559, 2587, 3039, 3029, 2511, 2510.</p>
+
+    <p>Compatibility: LibreSSL CMS, OpenSSL CMS, GnuPG S/MIME, OpenSSL, Cisco, Red Hat, Siemens, Nokia, IBM. </p>
+
+    <h4>LDAP/TLS</h4>
+
+    <p>LDAP: 2849, 3296, 3671—3673, 3866, 4511—4518, 4522, 4525, 4526, 4529, 1823, 2377, 2820, 3352, 3384, 3494, 4510, 4520, 4521, 2589, 2649, 2696, 2891, 3062, 3829, 3876, 3909, 3928, 4370, 4373, 4527, 4527, 4531—4533, 5805, 6171, 2247, 2798, 2926, 2985, 3045, 3112, 3687, 3698, 4517, 4519, 4524, 4530, 5020, 2079, 2307, 2713, 2714, 2739, 3641, 3642, 3703, 3727, 4104, 4403, 4523, 4792, 4876, 5803, 7612, 8284. </p>
+
+    <p>Compatibility: Apache Directory Studio, OpenLDAP.</p>
+
+    <h4>NS/DNSSEC/TLS</h4>
+
+    <p>NS: Name Server IETF 1034, 1035, 1101, 2065, 2535, 2539, 4033-4035 4398, 6944.</p>
+
     </section>
+
     <section>
 
-    <a name=client><h3>iOS 13.0</h3></a>
-
-
-    <figure><img src="priv/design/slides/05 SLIDE.png"></figure>
-
+    <a name=client><h3>КЛІЄНТ iOS 13.0</h3></a>
 
     <p>Тут ви можете завантажити білд iOS клієнта написаного на Swift:</p>
 
-    <ul><li><img src="https://github.com/fluidicon.png" width="35" style="margin-bottom:-12px;margin-right:10px;" />
-<a href="https://github.com/chat-x509/">CHAT X.509 </a> — iOS клієнт (Swift).</li></ul>
 
-     <p><table width=100% cellspacing=10>
-        <tr><td width=33%><img src="priv/design/slides/SCREEN 0.svg" width=100%/></td>
-            <td width=33%><img src="priv/design/slides/SCREEN 1.svg" width=100%/></td>
-            <td width=33%><img src="priv/design/slides/SCREEN 2.svg" width=100%/></td></td></tr>
-        <tr><td><img src="priv/design/slides/SCREEN 3.svg" width=100%/></td>
-            <td><img src="priv/design/slides/SCREEN 4.svg" width=100%/></td>
-            <td><img src="priv/design/slides/SCREEN 5.svg" width=100%/></td></td></tr>
-     </table></p>
+    <figure style="background-color:white;"><img style="background:white;" src="priv/design/screens.png"></figure>
 
    <br><center>&dot;</center>
+   <br>
+
+    <p>[1]. SYNRC. <a href="https://github.com/chat-x509/">CHAT X.509 iOS клієнт</b> (Swift).</p>
 
     </section>
     <section>
-       <a name=gui><h3>X Windows</h3></a>
-
-    <figure><img src="priv/design/slides/chat-gui.png"></figure>
+       <a name=gui><h3>КЛІЄНТ X Windows</h3></a>
 
        <p>Простий X Windows клієнт доступний для запуску у  WSL, BSD, Linux та Mac. Написаний на C.
           ЧАТ клієнт X.ORG X.509 базується на наступних бібліотеках:
@@ -303,24 +331,19 @@
           2) X Windows Library (Xlib) and
           3) OpenGL for X Windows (GLX 1.3). Завантаження:</p>
 
-       <p>
-<img src="https://n2o.dev/img/pdf.jpg" width="35" style="margin-bottom:-12px;margin-right:10px;" />
-        <a href="https://chat.erp.uno/priv/design/GUI.pdf">CHAT-X509-GUI</a> &mdash; X Windows клієнт (C99).
+   <br><center>&dot;</center>
+   <br>
+
+       <p>[1]. SYNRC. <a href="https://chat.erp.uno/priv/design/GUI.pdf">CHAT-X509-GUI</a> X Windows клієнт (C99).
        </p>
 
-   <br><center>&dot;</center>
     </section>
     <section>
 
-    <a name=terminal><h3>POSIX</h3></a>
-
-    <figure><img src="priv/design/slides/06 SLIDE.png"></figure>
+    <a name=terminal><h3>КЛІЄНТ POSIX</h3></a>
 
     <p>Тут ви можете завантажити консолький референсний клієнт CHAT-X509:</p>
 
-    <ul><li>
-<img src="https://github.com/fluidicon.png" width="35" style="margin-bottom:-12px;margin-right:10px;" />
-<a href="https://github.com/chat-x509/">CHAT-X509</a> — TERMIO клієнт (C99).</li></ul>
 
     <p>CHAT включає систему доставки текстових повідомлень на основі вбудованого брокера
        повідомлень Erlang/OTP SYN разом із MQTT. Реалізація протоколу SYNRC CHAT CLI
@@ -370,33 +393,27 @@
  >
     </code></figure>
 
-
    <br><center>&dot;</center>
    <br>
+
+    <p>
+<img src="https://github.com/fluidicon.png" width="35" style="margin-bottom:-12px;margin-right:10px;" />
+<a href="https://github.com/chat-x509/">CHAT-X509</a> — TERMIO клієнт (C99).</p>
 
     </section>
 
     <section>
     <a name=structure><h3>КОМПАНІЯ</h3></a>
-    <figure><img src="priv/design/slides/02 SLIDE.png"></figure>
-
-    <ul><li>
-<img src="https://github.com/fluidicon.png" width="35" style="margin-bottom:-12px;margin-right:10px;" />
-<a href="https://chat.erp.uno/">CHAT ERP/1</a> — Головний сайт продукту.</li></ul>
 
     <p>Структура виробничого процесу компанії:</p>
 
     <p><b class=se>Маркетинговий відділ</b>: Threema, Signal, WhatsApp, Session, Element, Wire, Wickr.
        Займається дослідженням найкращих практик та адаптацією їх до дизайну месанжера;</p>
 
-    <p><b class=se>Відділ проектної документації</b>. займається розвитком та
-      підтримкою протоколу, дидактичних матеріалів та технічної докментації.
-      Описує протокол SYNRC CHAT в BERT/MQTT контексті для мов Swift і Erlang;</p>
-
-    <p><b class=se>Клієнтський відділ розробки.</b> Відділ розробки iOS клієнта на мові програмування Swift 5.8
+    <p><b class=se>Клієнтський сектор розробки.</b> Відділ розробки iOS клієнта на мові програмування Swift 5.8
         Chat X.509, разом з дизайном та ігровою ергономікою в Figma та Swift;</p>
 
-    <p><b class=se>Серверний відділ розробки</b>. Займається як розвитком сервера на Erlang/OTP
+    <p><b class=se>Серверний сектор розробки</b>. Займається як розвитком сервера на Erlang/OTP
        так і розробкою інших серверів в інфраструктурі системи: CA NS LDAP AUTH MQTT [mac] CHAT CLI;</p>
 
 
@@ -407,11 +424,30 @@
 
     <p><b class=se>Відділ впровадження, супроводу і підтримки</b>. Відділ займається
        інсталяціями під ключ та супроводом існуючої публічної клієнтської бази користувачів
-       месенжера для операційних систем NetBSD і Linux. Головний продукт компанії &mdash; X.509 чат месенжер.</p>
+       месенжера для операційних систем NetBSD і Linux. Головний продукт компанії &mdash; X.509 чат месенжер;</p>
 
-
+    <p><b class=se>Відділ документування та проєктування</b>. Відділ займається розвитком та
+      підтримкою протоколу, дидактичних матеріалів та технічної докментації.
+      Описує протокол SYNRC CHAT в X.509 та BERT/MQTT контекстах для мов Swift і Erlang.</p>
+  
    <br><center>&dot;</center>
    <br>
+
+<p>1) <a href="https://tonpa.guru/stream/2023/pdf/Datasheet.pdf">Технічні характеристики</a> (Datasheet);<br>
+2) <a href="https://tonpa.guru/stream/2023/pdf/Whitepaper.pdf">Брошура та головний сайт</a> (Whitepaper);<br>
+3) Посібник користувача (Manual);<br>
+4) <a href="https://tonpa.guru/stream/2023/2023-08-09%20CHAT%20SLIDES.htm">Слайди презентації</a> (Slides);<br>
+5) Діаграми Ґанта (Gantt);<br>
+6) <a href="https://tonpa.guru/stream/2023/2023-08-10 CHAT Техзавдання.htm">Вимоги та технічне завдання</a> (Requirements);<br>
+7) <a href="https://tonpa.guru/stream/2023/2023-08-10 CHAT Публікації.htm">Публікації</a> (Publications);<br>
+8) Архітектура та програмування (Book);<br>
+9) Ліцензії та угода користувача (EULA);<br>
+10) Субліцензії (Licenses);<br>
+11) Контракти (ЄДРПО);<br>
+12) Контракти (ФОП);<br>
+13) Комплекс систем захисту інформації (КЗЗІ).<br>
+</p>
+
     </section>
 
 </main><footer>

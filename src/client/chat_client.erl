@@ -10,7 +10,7 @@
          set_filer/2, start_connect/3, write_log/2,  wait_for_last_res/2
        ]).
 -include_lib("n2o/include/n2o.hrl").
--include_lib("chat/include/chat.hrl").
+-include_lib("chat/include/CHAT.hrl").
 -include_lib("chat/include/push.hrl").
 
 -record(mqttc, {client :: pid(),
@@ -62,7 +62,7 @@ filter(Term, _) ->
 		{send_push, _, _, _} -> skip;
 		#'Message'{type = [sys | _], status = [], files = Files} = _Msg ->
 			roster:info(?MODULE, "system:~p", [case Files of [] -> []; _ ->
-				(hd(Files))#'Desc'.payload end]); %% ignore muc system messages
+				(hd(Files))#'FileDesc'.payload end]); %% ignore muc system messages
 		#'Contact'{presence = Presence} when Presence == online; Presence == offline -> skip; %% ignore Contact presence
 		#'Contact'{status = internal} -> skip; %% ignore Contact presence
 		#'Member'{presence = Presence, status = Status}
@@ -134,9 +134,9 @@ gen_anylist(N, Prefix) -> [iolist_to_binary([Prefix, integer_to_binary(D)]) || D
 
 rosters(_ClientId, Phone) ->
 	{ok, #'Profile'{roster = RosterIds}} = kvs:get('Profile', Phone),
-	[roster:phone_id(Phone, Id) || Id <- RosterIds].
+	[chat:phone_id(Phone, Id) || Id <- RosterIds].
 rosters(#'Profile'{roster = Rosters, phone = Phone}) ->
-	[roster:phone_id(Phone, Id) || #'Roster'{id = Id} <- Rosters].
+	[chat:phone_id(Phone, Id) || #'Roster'{id = Id} <- Rosters].
 
 reg_fake_user(Phone) -> reg_fake_user(Phone, <<"DevKey_", Phone/binary>>, 1000, []).
 reg_fake_user(Phone, DevKey) -> reg_fake_user(Phone, DevKey, 1000).
@@ -149,13 +149,13 @@ reg_fake_user(Phone, DevKey, Sleep, Opts, Features) ->
     receive_drop(),
     stop_client(RegClientId),
     start_client(RegClientId, <<>>, Opts),
-    #io{code = #ok{src = {ClientId, Token}}} = send_receive(RegClientId,
-          #'Auth'{type = reg, dev_key = DevKey, sms_code = <<"12">>, phone = {fake, Phone}, settings = Features}),
+    #'IO'{code = #'OK'{data = {ClientId, Token}}} = send_receive(RegClientId,
+          #'Auth'{type = reg, devkey = DevKey, phone = {fake, Phone}, settings = Features}),
     stop_client(RegClientId), timer:sleep(Sleep), 
     receive_drop(),
     {ClientId, Token}.
 
-client_ids(Phone) -> [ClientId || #'Auth'{session = ClientId} <- kvs:index('Auth', user_id, roster:phone_id(Phone))].
+client_ids(Phone) -> [ClientId || #'Auth'{session = ClientId} <- kvs:index('Auth', user_id, chat:phone_id(Phone))].
 client_id(Phone) -> hd(client_ids(Phone)).
 
 test_info(Module, Term, #cx{} = State) -> Module:info(Term, [], State);
@@ -164,17 +164,17 @@ test_info(Module, Term, Phone) -> test_info(Module, Term, #cx{params = client_id
 test_info(#'History'{roster = Phone, feed = Feed, data = Data} = History) ->
 	test_info(roster_history,
 		History#'History'{
-			roster = roster:phone_id(Phone),
+			roster = chat:phone_id(Phone),
 			feed = feed(Feed),
-			data = [Msg#'Message'{feed_id = feed(MsgFeed), from = roster:phone_id(From), to = roster:phone_id(To)}
-				|| #'Message'{feed_id = MsgFeed, from = From, to = To} = Msg <- Data]}, Phone);
+			data = [Msg#'Message'{feed = feed(MsgFeed), from = chat:phone_id(From), to = chat:phone_id(To)}
+				|| #'Message'{feed = MsgFeed, from = From, to = To} = Msg <- Data]}, Phone);
 
-test_info(#'Message'{from= From, to=_To, feed_id = _Feed, files = _Data} = Message) ->
+test_info(#'Message'{from= From, to=_To, feed = _Feed, files = _Data} = Message) ->
 	test_info(roster_message,
 		Message#'Message'{},
 		From).
 
-feed(#p2p{from = From, to = To}) -> [FromId, ToId] = [roster:phone_id(P) || P <- [From, To]], roster:feed_key(p2p, FromId, ToId);
+feed(#'P2P'{from = From, to = To}) -> [FromId, ToId] = [chat:phone_id(P) || P <- [From, To]], roster:feed_key(p2p, FromId, ToId);
 feed(Feed) -> Feed.
 
 receive_test(ClientId, Term) -> receive_test(ClientId, Term, 0).
@@ -191,8 +191,8 @@ receive_test(ClientId, Term, Counter, Timeout) ->
             {#'Message'{status = []}, #'Message'{status = []}} when Counter > 0 -> receive_test(ClientId, Term, Counter - 1);
             {#'Message'{status = []}, #'Message'{status = []}} -> R;
             {#'Message'{},#'Ack'{}} -> R;
-            {#'Message'{status = []}, #io{code = #error{}} = IO} -> IO;
-            {#'Message'{status = []}, #errors{} = IO} -> IO;
+            {#'Message'{status = []}, #'IO'{code = #'ERROR'{}} = IO} -> IO;
+            {#'Message'{status = []}, #'ERROR'{} = IO} -> IO;
             {#'Message'{status = []}, _} -> receive_test(ClientId, Term, Counter);
             {_, _} when Counter > 0 -> receive_test(ClientId, Term, Counter - 1);
             _ -> R end

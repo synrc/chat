@@ -1,5 +1,6 @@
 -module(chat_push).
--include_lib("chat/include/chat.hrl").
+-include_lib("chat/include/CHAT.hrl").
+-include_lib("chat/include/push.hrl").
 -include_lib("n2o/include/n2o.hrl").
 -include_lib("kvs/include/kvs.hrl").
 -export([start/0, proc/2, push/6, notify/3, notify/5]).
