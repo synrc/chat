@@ -1,29 +1,33 @@
 List DEFINITIONS EXPLICIT TAGS ::= BEGIN
 
+  Real ::= SEQUENCE {
+    mantissa INTEGER,
+    base INTEGER (2|10),
+    exponent INTEGER }
+
+  X ::= SET {
+    a INTEGER,
+    b SET OF OCTET STRING,
+    d Real
+  }
+
   V ::= SEQUENCE {
-    a INTEGER (0..7),
-    b BOOLEAN,
+    a [1] INTEGER (0..7),
+    b [2] BOOLEAN,
+    version INTEGER { v1(1) },
     c INTEGER (0..3),
     d SEQUENCE { d1 BOOLEAN, d2 BOOLEAN } }
 
-  A ::= CHOICE { v [0] V, list-x [1] List }
+  Versioning ::= INTEGER {  v1(0) }
+
+  A ::= CHOICE {
+    v [0] V,
+    list-x [1] List,
+    o [2] SET OF OCTET STRING,
+    s [3] SEQUENCE OF OCTET STRING }
 
   List ::= SEQUENCE {
     data OCTET STRING,
-    next CHOICE { linked-list List, end NULL } }
-
-  CMSVersion ::= INTEGER  { v0(0), v1(1), v2(2), v3(3), v4(4), v5(5) }
-
-  CRLReason ::= ENUMERATED {
-    unspecified             (0),
-    keyCompromise           (1),
-    cACompromise            (2),
-    affiliationChanged      (3),
-    superseded              (4),
-    cessationOfOperation    (5),
-    certificateHold         (6),
-    removeFromCRL           (8),
-    privilegeWithdrawn      (9),
-    aACompromise           (10) }
+    next CHOICE { linked-list List, end NULL, ss [1] SET OF OCTET STRING } }
 
 END
