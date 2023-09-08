@@ -158,7 +158,7 @@ Development Reports
 * [DR-16] <a href="https://tonpa.guru/stream/2023/2023-08-11 ITU X Series.htm">2023-08-11 ITU X Series</a><br>
 * [DR-17] <a href="https://tonpa.guru/stream/2023/2023-08-13 SWIFT X.509.htm">2023-08-13 SWIFT X.509</a><br>
 * [DR-18] <a href="https://tonpa.guru/stream/2023/2023-08-15 CHAT Техноробочий проєкт.htm">2023-08-15 CHAT Техноробочий проєкт</a><br>
-* [DR-19] <a href="https://tonpa.guru/stream/2023/2023-09-01 ASN1.EX X.680.htm">2023-09-01 ASN1.EX X.680</a><br>
+* [DR-19] <a href="https://tonpa.guru/stream/2023/2023-09-01 ASN1.EX X.680.htm">2023-09-01 ASN1.EX X.680 Тензори</a><br>
 * [DR-20] <a href="https://tonpa.guru/stream/2023/2023-09-07 Криптоніт.htm">2023-09-07 Криптоніт</a><br>
 
 Credits
