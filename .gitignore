@@ -7,12 +7,7 @@ apps/*/ebin
 *.log.*
 Mnesia.*
 *.iml
-misc.xml
-modules.xml
 sample
-vcs.xml
-workspace.xml
-.idea/
 .DS_Store
 _build
 .applist
