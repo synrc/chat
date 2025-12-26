@@ -26,7 +26,7 @@ The CHAT protocols communicates with `actions/:client`, `events/:client`, `devic
 `Index`, `Typing`, `Search`, `Feature`, `Service`, `Desc`, `Presence`,
 `Friend`, `Tag`,  `Link`, `Message`, `Member`, `Room`, `Contact`,
 `Star`, `RoomStar`, `Ack`, `Auth`, `Roster`, `Profile`, `History`, `push`, `io`
-ETF-serialized messages.
+DER-serialized ASN.1 defined messages.
 
 The CHAT protocol is implemented in the set of sub-protocol modules:
 FILE, HISTORY, LINK, MESSAGE, PRESENSE, PROFILE, PUSH, ROOM, ROSTER,
@@ -34,7 +34,7 @@ SEARCH, AUTH. For full specification follow `priv/design` folder.
 The CHAT server implementation relies only on ISO/IETF connections
 such as DNSSEC, X.509 CSR, LDAP, QUIC, WebSocket, MQTT.
 
-* [CHAT N2O PROTO SPEC](priv/proto/CHAT.asn1) Erlang Term Format ETF/BERT over MQTT/QUIC
+* [CHAT N2O PROTO SPEC](priv/proto/CHAT.asn1) ASN.1/DER over MQTT/QUIC
 
 CHAT is a simple instant messaging server based on ISO standards.
 It uses MQTT protocol and ETF binary serialization from Erlang/OTP
@@ -62,7 +62,7 @@ CHAT server
 
 ```sh
 $ sudo apt install erlang elixir build-essential libcsv3 libcsv-dev cmake
-$ git clone git@github.com:synrc/mq && cd mq
+$ git clone git@github.com:synrc/chat && cd mq
 $ mix deps.get
 $ mix release
 $ _build/dev/rel/chat/bin/chat daemon
