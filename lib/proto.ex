@@ -18,7 +18,7 @@ defmodule Chat.Proto do
   end
 
   def listen(port) do
-      :logger.info ~c"Running Chat.Application at 0.0.0.0:~p (tcp)", [port]
+      :logger.info ~c"Running CHAT.Application at 0.0.0.0:~p (tcp)", [port]
       {:ok, socket} = :gen_tcp.listen(port, [:binary, {:active, false}, {:reuseaddr, true}])
       accept(socket)
   end
