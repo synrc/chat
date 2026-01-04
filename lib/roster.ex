@@ -1,5 +1,4 @@
 defmodule Chat.Roster do
-  @moduledoc "Roster Protocol"
   require Record
 
   Record.defrecord(:roster, Record.extract(:Roster, from_lib: "chat/include/CHAT.hrl"))

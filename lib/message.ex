@@ -1,7 +1,6 @@
 defmodule Chat.Message do
-  @moduledoc "Message Protocol"
-
   require Record
+
   Record.defrecord(:typing, Record.extract(:Typing, from_lib: "chat/include/CHAT.hrl"))
   Record.defrecord(:message, Record.extract(:Message, from_lib: "chat/include/CHAT.hrl"))
   Record.defrecord(:ack, Record.extract(:Ack, from_lib: "chat/include/CHAT.hrl"))

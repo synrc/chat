@@ -1,6 +1,4 @@
 defmodule Chat.Auth do
-  @moduledoc "Auth Protocol"
-
   require Record
 
   Record.defrecord(:auth, Record.extract(:Auth, from_lib: "chat/include/CHAT.hrl"))

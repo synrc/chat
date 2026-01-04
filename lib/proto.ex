@@ -1,7 +1,6 @@
 defmodule Chat.Proto do
-  @moduledoc "Chat Protocol Top Level"
-
   require Record
+
   Record.defrecord(:io, Record.extract(:IO, from_lib: "chat/include/CHAT.hrl"))
   Record.defrecord(:ack, Record.extract(:Ack, from_lib: "chat/include/CHAT.hrl"))
   Record.defrecord(:error, Record.extract(:ERROR, from_lib: "chat/include/CHAT.hrl"))
@@ -70,16 +69,8 @@ defmodule Chat.Proto do
     Chat.Message.info(message, req, state)
   end
 
-  def info(message = {:Message, _, _, _, _, _, _, _, _, _, _, _, _, _}, req, cx() = state) do
-    Chat.Message.info(message, req, state)
-  end
-
   def info(history = {:History, _, _, _, _, _, _, _}, req, cx() = state) do
     Chat.History.info(history, req, state)
-  end
-
-  def info(profile = {:Profile, _, _, _, _, _, _, _, _, _, _, _}, req, cx() = state) do
-    Chat.Profile.info(profile, req, state)
   end
 
   def info(profile = {:Profile, _, _, _, _, _, _, _, _, _, _, _}, req, cx() = state) do
