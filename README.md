@@ -11,12 +11,8 @@ Features
 --------
 
 * X.509 OpenSSL, LiberSSL for security;
-* MQTT for CHAT application;
-* NS for DNSSEC domain security;
-* LDAP for user directory;
 * SYN/MAIL message delivery system;
 * CA for X.509 client certificate enrollment;
-* N2O based CHAT protocol.
 
 CHAT protocol
 -------------
