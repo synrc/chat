@@ -8,7 +8,7 @@ defmodule CHAT.Mixfile do
 
   def project do
     [app: :chat,
-     version: "6.8.5",
+     version: "9.1.1",
      description: "CHAT  CXC 138 25 X.509 CMS Instant Messenger",
      package: package(),
      deps: deps()]
@@ -26,7 +26,7 @@ defmodule CHAT.Mixfile do
 
   def deps() do
     [ {:ex_doc, ">= 0.0.0", only: :dev},
-      {:ca, "~> 6.1.1"},
+      {:ca, "~> 7.1.1"},
       {:ssl_verify_fun, "~> 1.1.7"}
     ]
   end
