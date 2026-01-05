@@ -41,19 +41,18 @@
 
                  Як імплементація чат реалізований як простий сервер доставки
                  миттєвих повідомлень розроблений для ненадійних мереж та у
-                 відповідності до стандартів ISO/IETF. Він використовує шину
-                 та брокер MQTT, LDAP сервер для корпоративних ієрархічних
+                 відповідності до стандартів ISO/IETF. Він використовує
+                 монолітний асинхронний TCP сервер, LDAP сервер для корпоративних ієрархічних
                  конфігурацій, та бінарну серіалізацію ASN.1 DER.
                  Чат складається з наступних додатків:<br><br></div>
 
             <div>
-                 <ul><li>MQTT у якості Pub/Sub ABAC брокера;</li>
-                     <li>LDAP для директорії користувачів;</li>
+                 <ul><li>LDAP для директорії користувачів;</li>
                      <li>DNS для безпеки іменного простору;</li>
                      <li>CA для видачі клієнтських сертифікатів.</li></ul>
             <div>
             <br>
-            <figure><code> $ chat-x509 chat.erp.uno</code></figure>
+            <figure><code> $ chat-x509 chat.n2o.dev</code></figure>
 
         </section>
         <section>
@@ -176,8 +175,8 @@
 
     <p>Поняття протоколу:</p>
 
-    <p><b class=se>Топіки</b>. ЧАТ протокол використовує наступні MQTT топіки, перелік яких зберігається на клієнті:
-       1) actions/:client; 2) events/:client; 3) devices/:phone; 4) contacts/:roster; 5) private/:roster/:roster; 6) room/:room.</p>
+    <!--p><b class=se>Топіки</b>. ЧАТ протокол використовує наступні MQTT топіки, перелік яких зберігається на клієнті:
+       1) actions/:client; 2) events/:client; 3) devices/:phone; 4) contacts/:roster; 5) private/:roster/:roster; 6) room/:room.</p-->
 
     <p><b class=se>Записи</b>. По цим топікам передаються наступні Erlang записи (records):
        Index, Typing, Search, Feature, Service,
