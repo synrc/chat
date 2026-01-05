@@ -16,12 +16,11 @@ Features
 CHAT protocol
 -------------
 
-The CHAT protocols communicates with `actions/:client`, `events/:client`, `devices/:phone`,
-`contacts/:roster`, `private/:roster/:roster` MQTT topics, sending through them
+The CHAT protocols communicates with following records:
 `Index`, `Typing`, `Search`, `Feature`, `Service`, `Desc`, `Presence`,
 `Friend`, `Tag`,  `Link`, `Message`, `Member`, `Room`, `Contact`,
 `Star`, `RoomStar`, `Ack`, `Auth`, `Roster`, `Profile`, `History`, `push`, `io`
-DER-serialized ASN.1 defined messages.
+which is DER-serialized ASN.1 defined messages.
 
 The CHAT protocol is implemented in the set of sub-protocol modules:
 FILE, HISTORY, LINK, MESSAGE, PRESENSE, PROFILE, PUSH, ROOM, ROSTER,
@@ -29,7 +28,7 @@ SEARCH, AUTH. For full specification follow `priv/design` folder.
 The CHAT server implementation relies only on ISO/IETF connections
 such as DNSSEC, X.509 CSR, LDAP, QUIC, WebSocket.
 
-* [CHAT N2O PROTO SPEC](priv/proto/CHAT.asn1) ASN.1/DER over TCP/MQTT/QUIC
+* [CHAT N2O PROTO SPEC](priv/proto/CHAT.asn1) ASN.1/DER over TCP/QUIC
 
 CHAT is a simple instant messaging server based on ISO standards.
 It uses ASN.1 defined protocol and DER binary serialization from Erlang/OTP
