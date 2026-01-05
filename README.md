@@ -57,7 +57,7 @@ Erlang/OTP 28 [erts-16.0.2] [source] [64-bit] [smp:8:8] [ds:8:8:10] [async-threa
 Eshell V16.0.2 (press Ctrl+G to abort, type help(). for help)
 iex(1)> :application.which_applications
 [
-  {:chat, 'CHAT X.509 Instant Messenger mqtt://chat.synrc.com', '6.6.14'},
+  {:chat, 'CHAT X.509 Instant Messenger tcp://chat.erp.uno', '9.1.2'},
   {:ssl_verify_fun, 'SSL verification functions for Erlang\n', '1.1.6'},
   {:mnesia, 'MNESIA  CXC 138 12', '4.20.1'},
   {:hex, 'hex', '2.0.0'},
