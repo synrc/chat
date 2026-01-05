@@ -4,14 +4,14 @@ defmodule CHAT.Mixfile do
   def application() do
       [
         mod: {CHAT, []},
-        extra_applications: [ :x509, :bandit, :plug, :logger, :ca, :ldap ]
+        extra_applications: [ :x509, :bandit, :plug, :logger, :ca, :ldap, :ns ]
       ]
   end
 
   def project do
       [
         app: :chat,
-        version: "9.1.2",
+        version: "9.1.4",
         description: "CHAT  CXC 138 25 X.509 CMS Instant Messenger",
         package: package(),
         deps: deps(),
@@ -33,7 +33,8 @@ defmodule CHAT.Mixfile do
       [
         {:ex_doc, ">= 0.0.0", only: :dev},
         {:ldap, "~> 15.1.1"},
-        {:ca, "~> 7.1.2"},
+        {:ca, "~> 7.1.4"},
+        {:ns, "~> 2.1.1"},
         {:ssl_verify_fun, "~> 1.1.7"}
       ]
   end
