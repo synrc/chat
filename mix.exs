@@ -2,7 +2,7 @@ defmodule CHAT.Mixfile do
   use Mix.Project
 
   def application(), do:
-   [  mod: {Chat, []},
+   [  mod: {CHAT, []},
       applications: [ :ca ],
    ]
 
@@ -26,7 +26,7 @@ defmodule CHAT.Mixfile do
 
   def deps() do
     [ {:ex_doc, ">= 0.0.0", only: :dev},
-      {:ca, "~> 7.1.1"},
+      {:ca, "~> 7.1.2"},
       {:ssl_verify_fun, "~> 1.1.7"}
     ]
   end

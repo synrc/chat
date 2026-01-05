@@ -1,4 +1,4 @@
-defmodule Chat.Message do
+defmodule CHAT.Message do
   require Record
 
   Record.defrecord(:typing, Record.extract(:Typing, from_lib: "chat/include/CHAT.hrl"))

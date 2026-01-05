@@ -1,4 +1,4 @@
-defmodule Chat.Proto do
+defmodule CHAT.Proto do
   require Record
 
   Record.defrecord(:io, Record.extract(:IO, from_lib: "chat/include/CHAT.hrl"))
@@ -9,8 +9,8 @@ defmodule Chat.Proto do
   def start_link(port: port), do: {:ok, :erlang.spawn_link(fn -> listen(port) end)}
   def child_spec(opt) do
       %{
-        id: Chat.Proto,
-        start: {Chat.Proto, :start_link, [opt]},
+        id: CHAT.Proto,
+        start: {CHAT.Proto, :start_link, [opt]},
         type: :supervisor,
         restart: :permanent,
         shutdown: 500
@@ -25,10 +25,7 @@ defmodule Chat.Proto do
 
   def accept(socket) do
       {:ok, fd} = :gen_tcp.accept(socket)
-      :erlang.spawn(fn ->
-            ca = []
-            __MODULE__.loop(fd, ca)
-      end)
+      {:ok, _pid} = Task.Supervisor.start_child(CHAT.TaskSupervisor, fn -> loop(fd,[]) end, restart: :temporary)
       accept(socket)
   end
 
@@ -62,27 +59,27 @@ defmodule Chat.Proto do
   end
 
   def info(typing = {:Typing, _, _, _}, req, cx() = state) do
-    Chat.Message.info(typing, req, state)
+    CHAT.Message.info(typing, req, state)
   end
 
   def info(message = {:Message, _, _, _, _, _, _, _, _, _, _, _, _, _}, req, cx() = state) do
-    Chat.Message.info(message, req, state)
+    CHAT.Message.info(message, req, state)
   end
 
   def info(history = {:History, _, _, _, _, _, _, _}, req, cx() = state) do
-    Chat.History.info(history, req, state)
+    CHAT.History.info(history, req, state)
   end
 
   def info(profile = {:Profile, _, _, _, _, _, _, _, _, _, _, _}, req, cx() = state) do
-    Chat.Profile.info(profile, req, state)
+    CHAT.Profile.info(profile, req, state)
   end
 
   def info(roster = {:Roster, _, _, _, _, _, _}, req, cx() = state) do
-    Chat.Roster.info(roster, req, state)
+    CHAT.Roster.info(roster, req, state)
   end
 
   def info(auth = {:Auth, _, _, _, _, _, _, _, _, _, _, _}, req, state) do
-    Chat.Auth.info(auth, req, state)
+    CHAT.Auth.info(auth, req, state)
   end
 
   def info(message, req, state) do

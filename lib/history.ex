@@ -1,4 +1,4 @@
-defmodule Chat.History do
+defmodule CHAT.History do
   require Record
 
   Record.defrecord(:history, Record.extract(:History, from_lib: "chat/include/CHAT.hrl"))

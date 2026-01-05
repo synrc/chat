@@ -1,4 +1,4 @@
-defmodule Chat do
+defmodule CHAT do
   use Application
   require Record
 
@@ -10,7 +10,8 @@ defmodule Chat do
   def start(_type, _args) do
       :logger.add_handlers(:chat)
       Supervisor.start_link([
-         { Chat.Proto,  port: 8830 },
+         { Task.Supervisor, name: CHAT.TaskSupervisor},
+         { CHAT.Proto,  port: 8830 },
       ], strategy: :one_for_one, name: CHAT.Supervisor)
   end
 

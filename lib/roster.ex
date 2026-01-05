@@ -1,4 +1,4 @@
-defmodule Chat.Roster do
+defmodule CHAT.Roster do
   require Record
 
   Record.defrecord(:roster, Record.extract(:Roster, from_lib: "chat/include/CHAT.hrl"))

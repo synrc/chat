@@ -1,4 +1,4 @@
-defmodule Chat.Auth do
+defmodule CHAT.Auth do
   require Record
 
   Record.defrecord(:auth, Record.extract(:Auth, from_lib: "chat/include/CHAT.hrl"))
