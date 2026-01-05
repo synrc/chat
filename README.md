@@ -28,7 +28,7 @@ SEARCH, AUTH. For full specification follow `priv/design` folder.
 The CHAT server implementation relies only on ISO/IETF connections
 such as DNSSEC, X.509 CSR, LDAP, QUIC, WebSocket.
 
-* [CHAT N2O PROTO SPEC](priv/proto/CHAT.asn1) ASN.1/DER over TCP/QUIC
+* [CHAT N2O PROTO SPEC](priv/v2/CHAT.asn1) ASN.1/DER over TCP/QUIC
 
 CHAT is a simple instant messaging server based on ISO standards.
 It uses ASN.1 defined protocol and DER binary serialization from Erlang/OTP
