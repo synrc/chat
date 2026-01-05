@@ -81,20 +81,20 @@ counterparty subscribe to this topic.
 Message Formats
 ---------------
 
-* [IO](v1/IO.md) — 1
-* [INIT](v1/INIT.md) — 1
-* [AUTH](v1/AUTH.md) — 8
-* [PERSON](v1/PERSON.md) — 2
-* [PROFILE](v1/PROFILE.md) — 9
-* [PRESENCE](v1/PRESENCE.md) — 4
-* [ROSTER](v1/ROSTER.md) — 9
-* [MESSAGE](v1/MESSAGE.md) — 5
-* [FRIEND](v1/FRIEND.md) — 7
-* [ROOM](v1/ROOM.md) — 6
-* [SEARCH](v1/SEARCH.md) — 1
-* [FAV](v1/FAV.md) — 5
-* [FTP](v1/FTP.md) — 1
-* [LOC](v1/LOC.md) — 1
+* [IO](IO.md) — 1
+* [INIT](INIT.md) — 1
+* [AUTH](AUTH.md) — 8
+* [PERSON](PERSON.md) — 2
+* [PROFILE](PROFILE.md) — 9
+* [PRESENCE](PRESENCE.md) — 4
+* [ROSTER](ROSTER.md) — 9
+* [MESSAGE](MESSAGE.md) — 5
+* [FRIEND](FRIEND.md) — 7
+* [ROOM](ROOM.md) — 6
+* [SEARCH](SEARCH.md) — 1
+* [FAV](FAV.md) — 5
+* [FTP](FTP.md) — 1
+* [LOC](LOC.md) — 1
 
 Client API RPC Specification
 ----------------------------
