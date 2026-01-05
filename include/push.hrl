@@ -1,5 +1,5 @@
-%% FGPN - Feature Group for Push Notification
-%% FKPN - Feature Key for Push Notification
+-ifndef(CHAT_PUSH_HRL).
+-define(CHAT_PUSH_HRL, true).
 
 -define(FGPN_INFO,       <<"PUSH_SETTINGS">>).
 -define(FKPN_BANDLE,     <<"IOS_BANDLE">>).
@@ -32,3 +32,4 @@
 -record(publishService, {message = [] :: [] | binary(), topic = [] :: [] | binary(), qos = 0 :: [] | integer()}).
 -record(push,           {model = [] :: [] | term(),type  = [] :: [] | binary(),title = [] :: [] | binary(),alert = [] :: [] | binary(),badge = [] :: [] | integer(),sound = [] :: [] | binary()}).
 
+-endif.
