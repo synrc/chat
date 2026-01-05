@@ -43,8 +43,8 @@ CHAT server
 -----------
 
 ```sh
-$ sudo apt install erlang elixir build-essential libcsv3 libcsv-dev cmake
-$ git clone git@github.com:synrc/chat && cd mq
+$ sudo apt install erlang elixir
+$ git clone git@github.com:synrc/chat && cd chat
 $ mix deps.get
 $ mix release
 $ _build/dev/rel/chat/bin/chat daemon
@@ -52,10 +52,9 @@ $ _build/dev/rel/chat/bin/chat remote
 ```
 
 ```elixir
-Erlang/OTP 24 [erts-12.2.1] [source] [64-bit] [smp:12:12]
-    [ds:12:12:10] [async-threads:1] [jit]
+Erlang/OTP 28 [erts-16.0.2] [source] [64-bit] [smp:8:8] [ds:8:8:10] [async-threads:1] [jit] [dtrace]
 
-Interactive Elixir (1.12.2) - press Ctrl+C to exit (type h() ENTER for help)
+Eshell V16.0.2 (press Ctrl+G to abort, type help(). for help)
 iex(1)> :application.which_applications
 [
   {:chat, 'CHAT X.509 Instant Messenger mqtt://chat.synrc.com', '6.6.14'},
