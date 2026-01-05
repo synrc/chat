@@ -4,6 +4,7 @@ CHAT DEFINITIONS IMPLICIT TAGS ::=
 BEGIN
 
     IMPORTS ContentInfo FROM CryptographicMessageSyntax-2009
+            CertificationRequest FROM PKCS-10
             Certificate FROM PKIX1Explicit-2009 ;
 
     IO ::= SEQUENCE { data UniversalString, code UniversalString }
