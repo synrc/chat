@@ -3,9 +3,8 @@ SYNRC 💬 CHAT
 
 ![image](https://github.com/erpuno/chat/assets/144776/b7e0b60b-4b61-4ff6-a8c9-e27f2e4c4e7c)
 
-💬 CHAT: Instant Messenger respects ISO 20922 IETF 3394 3565 5280 5480
-5652 5755 8551 ITU ASN.1 X.509 CMS PKCS-10 PCKS-7 OCSP LDAP DNS X9-42
-X9-62 X25519 X488 SECP384r1.
+💬 CHAT: Instant Messenger respects IETF 3394 3565 5280 5480 5652 5755 8551 ITU
+ASN.1 X.509 CMS PKCS-10 PCKS-7 OCSP LDAP DNS X9-42 X9-62 X25519 X488 SECP384r1.
 
 Features
 --------
