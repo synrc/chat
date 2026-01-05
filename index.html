@@ -2,6 +2,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="description" content="" />
 <meta name="author" content="Maxim Sokhatsky" /><title>CHAT</title>
     <link rel="stylesheet" href="https://n2o.dev/blank.css" />
+    <link rel="stylesheet" href="https://n2o.dev/zima.css" />
+    <link rel="stylesheet" href="https://n2o.dev/pro/pro.css?v=1" />
 </head><body><nav>
     <a href="https://erp.uno/">ERP</a>
     <a href="https://chat.erp.uno" style="background:#ededed;">CHAT</a>
@@ -108,8 +110,7 @@
        <p><b class=se>Всі повідомлення шифруются завжди</b>. Кожне повідомлення шифрується за допомогою моделей полів Галуа GF(2^m) GCM або з
          використанням еліптичних кривих та групових операції на них, які зберігаються в X.509 конвертах. Нешифровані месаджі заборонені в системі.</p>
 
-       <p><b class=se>Повідомлення не зберігаються</b> на сервері. Транзієнта оперативна черга доставки повідомлень на MNESIA,
-         сертифіковані сервери: <a href="https://mq.erp.uno">MQTT</a>: Mosquitto через TLSv1.3 та EMQX через QUIC (HTTP/3) для федеративних конфігурацій.
+       <p><b class=se>Повідомлення не зберігаються</b> на сервері. Транзієнта оперативна черга доставки повідомлень на MNESIA.
          Кожне повідомлення після останнього кроку отримання квитанції про доставку кореспондентом знищується на сервері
          і залишається відтепер тільки на клієнті. Так працювали перші версії Viber;</p>
 
