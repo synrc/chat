@@ -27,7 +27,7 @@ The CHAT protocol is implemented in the set of sub-protocol modules:
 FILE, HISTORY, LINK, MESSAGE, PRESENSE, PROFILE, PUSH, ROOM, ROSTER,
 SEARCH, AUTH. For full specification follow `priv/design` folder. 
 The CHAT server implementation relies only on ISO/IETF connections
-such as DNSSEC, X.509 CSR, LDAP, QUIC, WebSocket, MQTT.
+such as DNSSEC, X.509 CSR, LDAP, QUIC, WebSocket.
 
 * [CHAT N2O PROTO SPEC](priv/proto/CHAT.asn1) ASN.1/DER over MQTT/QUIC
 
