@@ -1,6 +1,10 @@
 -- "https://tonpa.guru/stream/2023/2023-08-07 CHAT ASN.1.htm"
 
-CHAT DEFINITIONS IMPLICIT TAGS ::= BEGIN
+CHAT DEFINITIONS IMPLICIT TAGS ::=
+BEGIN
+
+    IMPORTS ContentInfo FROM CryptographicMessageSyntax-2009
+            Certificate FROM PKIX1Explicit-2009 ;
 
     IO ::= SEQUENCE { data UniversalString, code UniversalString }
     OK ::= SEQUENCE { data UniversalString }
