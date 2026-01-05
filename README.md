@@ -33,25 +33,12 @@ such as DNSSEC, X.509 CSR, LDAP, QUIC, WebSocket, MQTT.
 * [CHAT N2O PROTO SPEC](priv/proto/CHAT.asn1) ASN.1/DER over MQTT/QUIC
 
 CHAT is a simple instant messaging server based on ISO standards.
-It uses MQTT protocol and ETF binary serialization from Erlang/OTP
-across applications: MQTT, N2O, KVS, MAIL, LDAP, NS, CA. Secure by default.
+It uses ASN.1 defined protocol and DER binary serialization from Erlang/OTP
+across applications: MAIL, LDAP, NS, CA. Secure by default.
 The CHAT application has Sign/Verify, Encrypt/Decrypt feature enabled for
 every single message passed by. The delivered messages are being deleted
-from MQTT instance after recipient acknowledgment.
+from instance after recipient acknowledgment.
 This is Keybase, OTR, PGP (you name it) replacement for secure X.509 ASN.1 defined communications.
-
-MQTT server
------------
-
-```sh
-$ sudo apt install mosquitto mosquitto-clients
-$ mosquitto -c mosquitto.conf
-$ mosquitto_sub -p 8883 -t topic --cafile "caroot.pem" \
-                --cert "client.pem" --key "client.key"
-$ mosquitto_pub -p 8883 -t topic --cafile "caroot.pem" \
-                --cert "client.pem" --key "client.key" -m "HELLO"
-```
-
 
 CHAT server
 -----------
@@ -73,14 +60,8 @@ Interactive Elixir (1.12.2) - press Ctrl+C to exit (type h() ENTER for help)
 iex(1)> :application.which_applications
 [
   {:chat, 'CHAT X.509 Instant Messenger mqtt://chat.synrc.com', '6.6.14'},
-  {:kvs, 'KVS Abstract Chain Database', '8.10.4'},
   {:ssl_verify_fun, 'SSL verification functions for Erlang\n', '1.1.6'},
-  {:n2o, 'N2O MQTT TCP WebSocket', '8.8.1'},
-  {:emqtt, 'Erlang MQTT v5.0 Client', '1.2.1'},
   {:mnesia, 'MNESIA  CXC 138 12', '4.20.1'},
-  {:cowboy, 'Small, fast, modern HTTP server.', '2.5.0'},
-  {:ranch, 'Socket acceptor pool for TCP protocols.', '1.6.2'},
-  {:cowlib, 'Support library for manipulating Web protocols.', '2.6.0'},
   {:hex, 'hex', '2.0.0'},
   {:inets, 'INETS  CXC 138 49', '7.5'},
   {:ssl, 'Erlang/OTP SSL application', '10.6.1'},
@@ -95,43 +76,6 @@ iex(1)> :application.which_applications
   {:kernel, 'ERTS  CXC 138 10', '8.2'}
 ]
 ```
-
-MQTT client
------------
-
-```elixir
-iex(2)> pid = :chat.connect
-MQTT Server Connection: <0.790.0>#PID<0.790.0>
-iex(3)> :chat.sub pid
-{:ok, :undefined, [0]}
-iex(4)> :chat.pub pid
-:ok
-iex(5)> flush
-{:publish,
- %{
-   client_pid: #PID<0.790.0>,
-   dup: false,
-   packet_id: :undefined,
-   payload: "Hello World!",
-   properties: :undefined,
-   qos: 0,
-   retain: false,
-   topic: "hello"
- }}
-:ok
-```
-
-CHAT client
------------
-
-The CHAT comes with Elixir shell console `chat_x509` module.
-
-<img src="https://github.com/synrc/chat/assets/144776/2593b330-8c19-4813-a3c6-59f1b6f120d3" width=500>
-
-<img src="https://github.com/synrc/chat/assets/144776/ae0ab82b-48c2-4617-951c-c15344c558a1" width=500>
-
-<img src="https://github.com/synrc/chat/assets/144776/c6ed4fc5-d077-473b-b18c-62f82a41fa98" width=500>
-
 
 Development Reports
 -------------------
