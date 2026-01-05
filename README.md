@@ -51,7 +51,8 @@ $ _build/dev/rel/chat/bin/chat remote
 ```
 
 ```elixir
-Erlang/OTP 28 [erts-16.0.2] [source] [64-bit] [smp:8:8] [ds:8:8:10] [async-threads:1] [jit] [dtrace]
+Erlang/OTP 28 [erts-16.0.2] [source] [64-bit]
+  [smp:8:8] [ds:8:8:10] [async-threads:1] [jit] [dtrace]
 
 Eshell V16.0.2 (press Ctrl+G to abort, type help(). for help)
 iex(1)> :application.which_applications
