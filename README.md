@@ -3,9 +3,8 @@ SYNRC 💬 CHAT
 
 ![image](https://github.com/erpuno/chat/assets/144776/b7e0b60b-4b61-4ff6-a8c9-e27f2e4c4e7c)
 
-💬 CHAT: Instant Messenger respects ISO 20922 IETF 3394 3565 5280 5480
-5652 5755 8551 ITU ASN.1 X.509 CMS PKCS-10 PCKS-7 OCSP LDAP DNS X9-42
-X9-62 X25519 X488 SECP384r1.
+💬 CHAT: Instant Messenger respects IETF 3394 3565 5280 5480 5652 5755 8551 ITU
+ASN.1 X.509 CMS PKCS-10 PCKS-7 OCSP LDAP DNS X9-42 X9-62 X25519 X488 SECP384r1.
 
 Features
 --------
@@ -28,37 +27,24 @@ The CHAT protocol is implemented in the set of sub-protocol modules:
 FILE, HISTORY, LINK, MESSAGE, PRESENSE, PROFILE, PUSH, ROOM, ROSTER,
 SEARCH, AUTH. For full specification follow `priv/design` folder. 
 The CHAT server implementation relies only on ISO/IETF connections
-such as DNSSEC, X.509 CSR, LDAP, QUIC, WebSocket, MQTT.
+such as DNSSEC, X.509 CSR, LDAP, QUIC, WebSocket.
 
-* [CHAT N2O PROTO SPEC](priv/proto/CHAT.asn1) ASN.1/DER over MQTT/QUIC
+* [CHAT N2O PROTO SPEC](priv/proto/CHAT.asn1) ASN.1/DER over TCP/MQTT/QUIC
 
 CHAT is a simple instant messaging server based on ISO standards.
-It uses MQTT protocol and ETF binary serialization from Erlang/OTP
-across applications: MQTT, N2O, KVS, MAIL, LDAP, NS, CA. Secure by default.
+It uses ASN.1 defined protocol and DER binary serialization from Erlang/OTP
+across applications: MAIL, LDAP, NS, CA. Secure by default.
 The CHAT application has Sign/Verify, Encrypt/Decrypt feature enabled for
 every single message passed by. The delivered messages are being deleted
-from MQTT instance after recipient acknowledgment.
+from instance after recipient acknowledgment.
 This is Keybase, OTR, PGP (you name it) replacement for secure X.509 ASN.1 defined communications.
-
-MQTT server
------------
-
-```sh
-$ sudo apt install mosquitto mosquitto-clients
-$ mosquitto -c mosquitto.conf
-$ mosquitto_sub -p 8883 -t topic --cafile "caroot.pem" \
-                --cert "client.pem" --key "client.key"
-$ mosquitto_pub -p 8883 -t topic --cafile "caroot.pem" \
-                --cert "client.pem" --key "client.key" -m "HELLO"
-```
-
 
 CHAT server
 -----------
 
 ```sh
-$ sudo apt install erlang elixir build-essential libcsv3 libcsv-dev cmake
-$ git clone git@github.com:synrc/chat && cd mq
+$ sudo apt install erlang elixir
+$ git clone git@github.com:synrc/chat && cd chat
 $ mix deps.get
 $ mix release
 $ _build/dev/rel/chat/bin/chat daemon
@@ -66,21 +52,14 @@ $ _build/dev/rel/chat/bin/chat remote
 ```
 
 ```elixir
-Erlang/OTP 24 [erts-12.2.1] [source] [64-bit] [smp:12:12]
-    [ds:12:12:10] [async-threads:1] [jit]
+Erlang/OTP 28 [erts-16.0.2] [source] [64-bit] [smp:8:8] [ds:8:8:10] [async-threads:1] [jit] [dtrace]
 
-Interactive Elixir (1.12.2) - press Ctrl+C to exit (type h() ENTER for help)
+Eshell V16.0.2 (press Ctrl+G to abort, type help(). for help)
 iex(1)> :application.which_applications
 [
-  {:chat, 'CHAT X.509 Instant Messenger mqtt://chat.synrc.com', '6.6.14'},
-  {:kvs, 'KVS Abstract Chain Database', '8.10.4'},
+  {:chat, 'CHAT X.509 Instant Messenger tcp://chat.erp.uno', '9.1.2'},
   {:ssl_verify_fun, 'SSL verification functions for Erlang\n', '1.1.6'},
-  {:n2o, 'N2O MQTT TCP WebSocket', '8.8.1'},
-  {:emqtt, 'Erlang MQTT v5.0 Client', '1.2.1'},
   {:mnesia, 'MNESIA  CXC 138 12', '4.20.1'},
-  {:cowboy, 'Small, fast, modern HTTP server.', '2.5.0'},
-  {:ranch, 'Socket acceptor pool for TCP protocols.', '1.6.2'},
-  {:cowlib, 'Support library for manipulating Web protocols.', '2.6.0'},
   {:hex, 'hex', '2.0.0'},
   {:inets, 'INETS  CXC 138 49', '7.5'},
   {:ssl, 'Erlang/OTP SSL application', '10.6.1'},
@@ -95,43 +74,6 @@ iex(1)> :application.which_applications
   {:kernel, 'ERTS  CXC 138 10', '8.2'}
 ]
 ```
-
-MQTT client
------------
-
-```elixir
-iex(2)> pid = :chat.connect
-MQTT Server Connection: <0.790.0>#PID<0.790.0>
-iex(3)> :chat.sub pid
-{:ok, :undefined, [0]}
-iex(4)> :chat.pub pid
-:ok
-iex(5)> flush
-{:publish,
- %{
-   client_pid: #PID<0.790.0>,
-   dup: false,
-   packet_id: :undefined,
-   payload: "Hello World!",
-   properties: :undefined,
-   qos: 0,
-   retain: false,
-   topic: "hello"
- }}
-:ok
-```
-
-CHAT client
------------
-
-The CHAT comes with Elixir shell console `chat_x509` module.
-
-<img src="https://github.com/synrc/chat/assets/144776/2593b330-8c19-4813-a3c6-59f1b6f120d3" width=500>
-
-<img src="https://github.com/synrc/chat/assets/144776/ae0ab82b-48c2-4617-951c-c15344c558a1" width=500>
-
-<img src="https://github.com/synrc/chat/assets/144776/c6ed4fc5-d077-473b-b18c-62f82a41fa98" width=500>
-
 
 Development Reports
 -------------------
