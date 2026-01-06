@@ -3,24 +3,24 @@ SYNRC 💬 CHAT
 
 <img width="5001" height="2495" alt="CHAT" src="https://github.com/user-attachments/assets/86e4a1a3-73e1-405e-9107-5665664ca894" />
 
-💬 CHAT: Instant Messenger respects IETF 3394 3565 5280 5480 5652 5755 8551 ITU
-ASN.1 X.509 CMS PKCS-10 PCKS-7 OCSP LDAP DNS X9-42 X9-62 X25519 X488 SECP384r1.
+SYNRC 💬 CHAT Instant Messenger respects IETF 3394 3565 5280 5480 5652 5755 8551 ITU
+ASN.1 X.509 CMS PKCS-10 PCKS-7 OCSP LDAP DNS X9-42 X9-62 X25519 X488 SECP384r1
 
 Features
 --------
 
-* X.509 OpenSSL, LiberSSL for security;
-* SYN/MAIL message delivery system;
-* CA for X.509 client certificate enrollment;
+* X.509 CMS Envelope for Key Management;
+* MNESIA records delivery system;
+* CMP EST for X.509 CA enrollment;
 
 CHAT protocol
 -------------
 
-The CHAT protocols communicates with following records:
+The CHAT protocols communicates with 
 `Index`, `Typing`, `Search`, `Feature`, `Service`, `Desc`, `Presence`,
 `Friend`, `Tag`,  `Link`, `Message`, `Member`, `Room`, `Contact`,
-`Star`, `RoomStar`, `Ack`, `Auth`, `Roster`, `Profile`, `History`, `push`, `io`
-which is DER-serialized ASN.1 defined messages.
+`Star`, `RoomStar`, `Ack`, `Auth`, `Roster`, `Profile`, `History`
+DER-serialized ASN.1-defined messages.
 
 The CHAT protocol is implemented in the set of sub-protocol modules:
 FILE, HISTORY, LINK, MESSAGE, PRESENSE, PROFILE, PUSH, ROOM, ROSTER,
@@ -28,7 +28,7 @@ SEARCH, AUTH. For full specification follow `priv/design` folder.
 The CHAT server implementation relies only on ISO/IETF connections
 such as DNSSEC, X.509 CSR, LDAP, QUIC, WebSocket.
 
-* [CHAT N2O PROTO SPEC](priv/proto/CHAT.asn1) ASN.1/DER over TCP/QUIC
+* [CHAT V2 ASN.1 SPEC](priv/v2/CHAT.asn1) DER over TCP/QUIC
 
 CHAT is a simple instant messaging server based on ISO standards.
 It uses ASN.1 defined protocol and DER binary serialization from Erlang/OTP
@@ -51,7 +51,8 @@ $ _build/dev/rel/chat/bin/chat remote
 ```
 
 ```elixir
-Erlang/OTP 28 [erts-16.0.2] [source] [64-bit] [smp:8:8] [ds:8:8:10] [async-threads:1] [jit] [dtrace]
+Erlang/OTP 28 [erts-16.0.2] [source] [64-bit]
+  [smp:8:8] [ds:8:8:10] [async-threads:1] [jit] [dtrace]
 
 Eshell V16.0.2 (press Ctrl+G to abort, type help(). for help)
 iex(1)> :application.which_applications
