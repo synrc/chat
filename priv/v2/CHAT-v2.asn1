@@ -1,6 +1,7 @@
 --- Протокол Месенжера Сохацького v2 для паб-саб брокерів на TLS
 --- https://tonpa.guru/stream/2023/2023-08-07 CHAT ASN.1.htm
 
+
 CHAT-v2 DEFINITIONS IMPLICIT TAGS ::=
 BEGIN
 
