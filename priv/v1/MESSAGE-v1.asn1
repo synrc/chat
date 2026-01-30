@@ -1,6 +1,6 @@
 --- Протокол Месанжера Сохацького v1 для UDP мультікаст в локальних мережах
 
-MESSAGE DEFINITIONS ::= BEGIN
+MESSAGE-v1 DEFINITIONS ::= BEGIN
 
     IMPORTS ContentInfo FROM CryptographicMessageSyntax-2009
             Certificate FROM PKIX1Explicit-2009 ;

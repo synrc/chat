@@ -8,15 +8,13 @@ BEGIN
             CertificationRequest FROM PKCS-10
             Certificate FROM PKIX1Explicit-2009 ;
 
+    OS ::= ENUMERATED { apple (1), microsoft (2), google (3), ericsson (4), nokia (5), cisco (6) }
     P2P ::= SEQUENCE { from OCTET STRING, to OCTET STRING }
     MUC ::= SEQUENCE { room OCTET STRING }
-    Channel ::= SEQUENCE { channel OCTET STRING }
-    OS ::= ENUMERATED { apple (1), microsoft (2), google (3), ericsson (4), nokia (5), cisco (6) }
-    CHATString ::= OCTET STRING
-    PresenceType ::= ENUMERATED { offline (1), online (2) }
-    Presence ::= SEQUENCE { nickname OCTET STRING, status PresenceType }
-    Feature ::= SEQUENCE { id OCTET STRING, key OCTET STRING, value OCTET STRING, group OCTET STRING }
     Server ::= SEQUENCE { service OCTET STRING, port INTEGER, host OCTET STRING }
+    Channel ::= SEQUENCE { channel OCTET STRING }
+    Feature ::= SEQUENCE { id OCTET STRING, key OCTET STRING, value OCTET STRING, group OCTET STRING }
+    CHATString ::= OCTET STRING
 
     AuthorityMethod ::= ENUMERATED { announce (0), register (1), authenticate (2), dismiss (3), renew (4) }
 
@@ -29,6 +27,9 @@ BEGIN
        token OCTET STRING,
        devkey OCTET STRING,
        terminal OCTET STRING }
+
+    Presence ::= SEQUENCE { nickname OCTET STRING, status PresenceType }
+    PresenceType ::= ENUMERATED { offline (1), online (2) }
 
     ContactStatus ::= ENUMERATED {
        request (1), authorization (2), ignore (3), internal (4),
@@ -163,13 +164,8 @@ BEGIN
        status RoomStatus }
 
     SearchStatus ::= ENUMERATED { ok (0) }
-
-    Criteria ::= ENUMERATED {
-       equal (0), notequal (1), like (2) }
-
-    Scope ::= ENUMERATED {
-       profile (0), folder (1), contact (2),
-       member (3), room (4), chat (5), message (6) }
+    Criteria ::= ENUMERATED { equal (0), notequal (1), like (2) }
+    Scope ::= ENUMERATED { profile (0), folder (1), contact (2), member (3), room (4), chat (5), message (6) }
 
     Search ::= SEQUENCE {
        dn OCTET STRING,
