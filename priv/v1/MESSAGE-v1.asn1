@@ -5,46 +5,50 @@ MESSAGE-v1 DEFINITIONS ::= BEGIN
     IMPORTS ContentInfo FROM CryptographicMessageSyntax-2009
             Certificate FROM PKIX1Explicit-2009 ;
 
-    P2P           ::= SEQUENCE { from OCTET STRING, to OCTET STRING }
-    MUC           ::= SEQUENCE { room OCTET STRING }
-    OS            ::= ENUMERATED { apple (1), microsoft (2), google (3), ericsson (4) }
-    AuthType      ::= ENUMERATED { reg (1), auth (2), forget (3), renew (4) }
-    MessageType   ::= ENUMERATED { sys (1), reply (2), forward (3), read (4), edited (5) }
-    MessageStatus ::= ENUMERATED { async (1), delete (2), clear (3), update (4), edit (5) }
-    MessageFeed   ::= CHOICE { p2p [0] P2P, muc [1] MUC }
+    OS  ::= ENUMERATED { apple (1), microsoft (2), google (3), ericsson (4), nokia (5), cisco (6) }
+    P2P ::= SEQUENCE { from OCTET STRING, to OCTET STRING }
+    MUC ::= SEQUENCE { room OCTET STRING }
+
+    CHATString ::= OCTET STRING
+
+    -- 01 Authority (CA)
+
+    Feature ::= SEQUENCE { id OCTET STRING, key OCTET STRING, value OCTET STRING, group OCTET STRING }
+    AuthorityMethod ::= ENUMERATED { announce (0), register (1), authenticate (2), dismiss (3), renew (4) }
+    Authority ::= SEQUENCE {
+       session OCTET STRING,
+       type AuthorityMethod,
+       cert OCTET STRING,
+       settings SEQUENCE OF feature Feature }
+
+    -- 02 File (FS)
 
     File ::= SEQUENCE {
        id OCTET STRING,
        mime OCTET STRING,
-       payload ANY, -- ContentInfo
+       payload ANY,
        parentid OCTET STRING }
 
+    -- 03 Message (MNESIA)
+
+    Channel ::= SEQUENCE { channel OCTET STRING }
+    MessageType ::= ENUMERATED { sys (1), reply (2), forward (3), read (4), edited (5) }
+    MessageStatus ::= ENUMERATED { async (1), delete (2), clear (3), update (4), edit (5) }
+    MessageFeed ::= CHOICE { p2p [0] P2P, muc [1] MUC, chan [2] Channel }
     Message ::= SEQUENCE {
-       id OCTET STRING,
+       id CHATString,
        feed MessageFeed,
-       signature OCTET STRING,
-       from OCTET STRING,
-       to OCTET STRING,
-       created INTEGER,
+       from CHATString,
+       to CHATString,
        files SEQUENCE OF file File,
        type MessageType,
        link CHOICE { empty [1] NULL, message [2] Message },
-       seenby OCTET STRING,
-       repliedby OCTET STRING,
-       mentioned SEQUENCE OF name OCTET STRING,
+       seenby CHATString,
+       repliedby CHATString,
+       mentioned SEQUENCE OF name CHATString,
        status MessageStatus DEFAULT clear }
 
-    Announcement ::= SEQUENCE {
-       session OCTET STRING,
-       type AuthType,
-       certificate ANY, -- Certificate
-       challange OCTET STRING,
-       push OCTET STRING,
-       os OS,
-       nickname OCTET STRING,
-       token OCTET STRING,
-       devkey OCTET STRING,
-       phone OCTET STRING }
+    -- 04 Ack (TCP REPLY PUSH)
 
     Ack ::= SEQUENCE { table OCTET STRING, id OCTET STRING }
 
