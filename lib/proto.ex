@@ -70,10 +70,6 @@ defmodule CHAT.Proto do
     CHAT.History.info(history, req, state)
   end
 
-  def info(profile = {:Profile, _, _, _, _, _, _, _, _, _, _, _}, req, cx() = state) do
-    CHAT.Profile.info(profile, req, state)
-  end
-
   def info(roster = {:Roster, _, _, _, _, _, _}, req, cx() = state) do
     CHAT.Roster.info(roster, req, state)
   end
