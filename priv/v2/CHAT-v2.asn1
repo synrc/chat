@@ -9,23 +9,22 @@ BEGIN
             CertificationRequest FROM PKCS-10
             Certificate FROM PKIX1Explicit-2009 ;
 
-    OS  ::= ENUMERATED { apple (1), microsoft (2), google (3), ericsson (4), nokia (5), cisco (6) }
-    P2P ::= SEQUENCE { from OCTET STRING, to OCTET STRING }
-    MUC ::= SEQUENCE { room OCTET STRING }
-
-    CHATString ::= OCTET STRING
+    Version ::= INTEGER  { v0(0), v1(1), v2(2), v3(3) }
+    OS ::= ENUMERATED { apple (1), microsoft (2), google (3), ericsson (4), nokia (5), cisco (6) }
 
     -- 01 Authority (CA)
 
     Feature ::= SEQUENCE { id OCTET STRING, key OCTET STRING, value OCTET STRING, group OCTET STRING }
     AuthorityMethod ::= ENUMERATED { announce (0), register (1), authenticate (2), dismiss (3), renew (4) }
     Authority ::= SEQUENCE {
+       vsn Version,
        session OCTET STRING,
+       id OCTET STRING,
        type AuthorityMethod,
        cert OCTET STRING,
        settings SEQUENCE OF feature Feature }
 
-    -- 02 File (FS)
+    -- 02 Message (MNESIA, SQLite)
 
     File ::= SEQUENCE {
        id OCTET STRING,
@@ -33,34 +32,47 @@ BEGIN
        payload ANY,
        parentid OCTET STRING }
 
-    -- 03 Message (MNESIA, SQLite)
-
-    Channel ::= SEQUENCE { channel OCTET STRING }
     MessageType ::= ENUMERATED { sys (1), reply (2), forward (3), read (4), edited (5) }
     MessageStatus ::= ENUMERATED { async (1), delete (2), clear (3), update (4), edit (5) }
-    MessageFeed ::= CHOICE { p2p [0] P2P, muc [1] MUC, chan [2] Channel }
+    MessageFeed ::= CHOICE { private [1] Privatebox, chan [2] Streambox, mailbox [4] Mailbox, group [8] Groupbox }
     Message ::= SEQUENCE {
-       id CHATString,
-       feed MessageFeed,
-       signature CHATString,
-       from CHATString,
-       to CHATString,
+       vsn Version,
+       session OCTET STRING,
+       id OCTET STRING,
+       from OCTET STRING,
+       to MessageFeed,
        files SEQUENCE OF file File,
        type MessageType,
        link CHOICE { empty [1] NULL, message [2] Message },
-       seenby CHATString,
-       repliedby CHATString,
-       mentioned SEQUENCE OF name CHATString,
+       seenby OCTET STRING,
+       repliedby OCTET STRING,
+       mentioned SEQUENCE OF name OCTET STRING,
        status MessageStatus DEFAULT clear }
 
-    -- 04 Ack (TCP REPLY PUSH)
+    -- 03 Inbox Folder Queue (MNESIA, SQLite) /Mail /Chat
 
-    Ack ::= SEQUENCE { table OCTET STRING, id OCTET STRING }
+    Privatebox ::= SEQUENCE { address OCTET STRING } -- /Chat
+    Streambox ::= SEQUENCE { channel OCTET STRING } -- /Stream
+    Groupbox ::= SEQUENCE { channel OCTET STRING } -- /Conference
+    Mailbox ::= SEQUENCE { channel OCTET STRING } -- /Mail
 
-    -- 06 Activity (TCP REPLY PUSH)
+    Inbox ::= SEQUENCE {
+       vsn Version,
+       session OCTET STRING,
+       id OCTET STRING,
+       feed MessageFeed,
+       messages SEQUENCE OF message Message }
+
+    -- 04 Ack / Nack (TCP REPLY PUSH)
+
+    Ack ::= SEQUENCE { vsn Version, id OCTET STRING, primary OCTET STRING, secondary OCTET STRING OPTIONAL }
+
+    -- 05 Activity (TCP REPLY PUSH)
 
     Activity ::= SEQUENCE {
+       vsn Version,
        session OCTET STRING,
+       id OCTET STRING,
        nickname OCTET STRING,
        comments SEQUENCE OF comment OCTET STRING }
 
@@ -70,27 +82,33 @@ BEGIN
     Criteria ::= ENUMERATED { equal (0), notequal (1), like (2) }
     Scope ::= ENUMERATED { profile (0), folder (1), contact (2), member (3), room (4), chat (5), message (6) }
     Search ::= SEQUENCE {
-       dn OCTET STRING,
+       vsn Version,
+       session OCTET STRING,
        id OCTET STRING,
+       dn OCTET STRING,
        field OCTET STRING,
        value OCTET STRING,
        criteria Criteria,
        type Scope,
        status SearchStatus }
 
-    -- 08 Subscruption (MNESIA, Pub/Sub)
+    -- 07 Subscruption (MNESIA, Pub/Sub)
 
     SubscriptionPresence ::= ENUMERATED { offline (1), online (2) }
     SubscriptionStatus ::= ENUMERATED { request (1), confirm (2), update (3), ignore (4), ban (5), unban (6) }
     Subscription ::= SEQUENCE {
+       vsn Version,
+       session OCTET STRING,
+       id OCTET STRING,
        nickname OCTET STRING,
        friend OCTET STRING,
        status SubscriptionPresence,
        type SubscriptionStatus }
 
-    -- 09 Person (LDAP inetOrgPerson)
+    -- 08 Roster (LDAP /People, /Channels, /Topics and /Servers user sub-folders)
 
-    PersonStatus ::= ENUMERATED { req (1), auth (2), ignore (3), internal (4), friend (5), lastmsg (6), ban (7), banned (8), deleted (9), nonexised (10) }
+    PersonStatus ::= ENUMERATED { req (1), auth (2), ignore (3), internal (4),
+       friend (5), lastmsg (6), ban (7), banned (8), deleted (9), nonexised (10) }
     Person ::= SEQUENCE {
        nickname OCTET STRING,
        avatar OCTET STRING,
@@ -104,16 +122,15 @@ BEGIN
        settings SEQUENCE OF feature Feature,
        status PersonStatus }
 
-    -- 09 Roster (LDAP /People, /Channels, /Topics and /Servers user sub-folders)
-
     Server ::= SEQUENCE { service OCTET STRING, port INTEGER, host OCTET STRING }
     RosterStatus ::= ENUMERATED {
        get (1), create (2), del (3), remove (4), nick (5), search (6),
        contact (7), add (8), update (9), list (10), patch (11), lastmsg (12) }
     Roster ::= SEQUENCE {
+       vsn Version,
+       session OCTET STRING,
        id OCTET STRING,
        nickname OCTET STRING,
-       session OCTET STRING,
        keys SEQUENCE OF key OCTET STRING,
        people SEQUENCE OF contact Person,
        topics SEQUENCE OF room Conference,
@@ -122,12 +139,12 @@ BEGIN
        update INTEGER,
        status RosterStatus }
 
-    -- 10 Member (RocksDB, Conference Member)
+    -- 09 Conference (RocksDB, Multi-user Conferences)
 
     MemberStatus ::= ENUMERATED { admin (1), member (2), removed (3), patch (4), owner (5) }
     Member ::= SEQUENCE {
-       id INTEGER,
-       feed CHOICE { p2p [0] P2P, muc [1] MUC },
+       nickname OCTET STRING,
+       feed MessageFeed,
        feeds SEQUENCE OF feed OCTET STRING,
        phone OCTET STRING,
        avatar OCTET STRING,
@@ -139,12 +156,12 @@ BEGIN
        presence SubscriptionPresence,
        status MemberStatus }
 
-    -- 11 Conference (RocksDB, Multi-user Conferences)
-
     ConferenceType ::= ENUMERATED { group (1), channel (2), call (3) }
     ConferenceStatus ::= ENUMERATED { create (1), leave (2), add (3), remove (4), removed (5),
        join (6), joined (7), info (8), patch (9), get (10), delete (11), lastmsg (12), mute (13), unmute (14) }
     Conference ::= SEQUENCE {
+       vsn Version,
+       session OCTET STRING,
        id OCTET STRING,
        name OCTET STRING,
        links SEQUENCE OF link OCTET STRING,
@@ -166,16 +183,14 @@ BEGIN
 
     CHATProtocol ::= CHOICE {
        authority    [1] Authority,
-       file         [2] File,
-       message      [3] Message,
+       message      [2] Message,
+       inbox        [3] Inbox,
        ack          [4] Ack,
        activity     [5] Activity,
        subscription [6] Subscription,
        search       [7] Search,
-       person       [8] Person,
-       roster       [9] Roster,
-       member      [10] Member,
-       conference  [11] Conference
+       roster       [8] Roster,
+       conference   [9] Conference
     }
 
     CHATMessage ::= SEQUENCE {
