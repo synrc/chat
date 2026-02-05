@@ -15,7 +15,7 @@ BEGIN
     -- 01 Authority (CA)
 
     Feature ::= SEQUENCE { id OCTET STRING, key OCTET STRING, value OCTET STRING, group OCTET STRING }
-    AuthorityMethod ::= ENUMERATED { announce (0), register (1), authenticate (2), dismiss (3), renew (4) }
+    AuthorityMethod ::= ENUMERATED { announce (0), enroll (1), authenticate (2), revoke (3), renew (4) }
     Authority ::= SEQUENCE {
        vsn Version,
        session OCTET STRING,
