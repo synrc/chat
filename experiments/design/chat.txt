@@ -23,3 +23,23 @@
 +----------+---------------------------------+
 | Chat     | X25519, x448, SECP384r1, RSA    |
 +----------+---------------------------------+
+
++--------------------------+-------------------------------------+-----------------------------------------+-------------------------------+---------------------------------------------+
+| Parameter                | Threema                             | Signal Protocol                         | Session (Oxen/Loki)           | Chat X.509 v1                               |
++--------------------------+-------------------------------------+-----------------------------------------+-------------------------------+---------------------------------------------+
+| Key Agreement            | Curve25519 ECDH (ephemeral-static)  | X25519 ECDH (X3DH + Double Ratchet)     | Ed25519-X25519                | NIST P-256 (secp256r1) ECDH (ephemeral)     |
+| Identity / Long-term     | Curve25519 key pair (Threema ID)    | X25519 identity + Ed25519 signing       | Ed25519-X25519                | X.509 certificate + P-256 key pair          |
+| Key Derivation (KDF)     | HSalsa20 (reduced Salsa20)          | HKDF (HMAC-SHA256 or SHA512)            | Argon2id (ONS)                | HKDF-SHA256 (shared secret → AES key)       |
+| Symmetric Encryption     | XSalsa20 stream cipher              | AES-256-GCM / AES-256-CBC / HMAC-SHA256 | XSalsa20-Poly1305             | AES-256-GCM                                 |
+| Authentication / MAC     | Poly1305 (one-time MAC)             | GCM tag (AEAD) / HMAC-SHA256            | Poly1305                      | AES-GCM authentication tag                  |
+| Authenticated Encryption | XSalsa20 + Poly1305 (NaCl)          | AES-GCM (AEAD)                          | XSalsa20-Poly1305             | AES-256-GCM (AEAD)                          |
+| Forward Secrecy          | Ephemeral (No Ratchet)              | Ephemeral (Double Ratchet)              | Ephemeral (No Ratchet)        | Ephemeral (No Ratchet)                      |
+| Post-Compromise Security | No (no ratchet healing)             | Yes (Double Ratchet)                    | No                            | No (no ratchet Yet!)                        |
+| Standards / Format       | Custom binary (NaCl-inspired)       | Custom binary (X3DH + Double Ratchet)   | libsodium sealed boxes        | CMS EnvelopedData (RFC 5652) + ASN.1 DER    |
+| Curve / ECC Family       | Curve25519 (Ed25519)                | Curve25519 (X25519+Ed25519)             | Curve25519 (Ed25519-X25519)   | NIST P-256 (secp256r1)                      |
+| Nonce / IV               | 24-byte random nonce (XSalsa20)     | 12-byte nonce (GCM)                     | libsodium crypto_box_seal     | 12-byte random IV (GCM)                     |
+| Main Library             | NaCl / libsodium                    | libsignal-protocol                      | libsodium                     | CryptoKit (Swift) + SwiftASN1               |
+| Group Messaging          | Limited (up to 256, no full FS)     | Yes (Sender Keys + Double Ratchet)      | Yes (but simpler, No Ratchet) | N/A                                         |
+| Quantum Resistance       | Low (Curve25519 vulnerable to Shor) | Low (but PQXDH variant exists)          | Low                           | Low (P-256 vulnerable)                      |
++--------------------------+-------------------------------------+-----------------------------------------+-------------------------------+---------------------------------------------
+
