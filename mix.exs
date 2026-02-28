@@ -11,7 +11,7 @@ defmodule CHAT.Mixfile do
   def project do
       [
         app: :chat,
-        version: "9.1.4",
+        version: "9.2.28",
         description: "CHAT  CXC 138 25 X.509 CMS Instant Messenger",
         package: package(),
         deps: deps(),
