@@ -11,7 +11,7 @@ defmodule CHAT do
       :logger.add_handlers(:chat)
       Supervisor.start_link([
          { Task.Supervisor, name: CHAT.TaskSupervisor},
-         { CHAT.Proto,  port: 8830 },
+         { CHAT.Proto,  port: :application.get_env(:chat, :tcp, 8830) },
       ], strategy: :one_for_one, name: CHAT.Supervisor)
   end
 
