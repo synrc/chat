@@ -14,9 +14,9 @@
 }).
 
 -record('Authority', {
+  id,
   vsn,
   session,
-  id,
   type,
   cert,
   settings
@@ -30,9 +30,9 @@
 }).
 
 -record('Message', {
+  id,
   vsn,
   session,
-  id,
   from,
   to,
   files,

@@ -61,8 +61,7 @@ defmodule MAIL.X420.P3 do
     }
   end
 
-  @impl true
-  def handle_connection(socket, state) do
+  def handle_connection(socket, _state) do
     # Extract which protocol this connection belongs to (by transport info)
     {:ok, {_, port}} = :inet.port(socket.transport_socket)
     protocol = case port do
@@ -78,7 +77,6 @@ defmodule MAIL.X420.P3 do
     {:ok, %{buffer: <<>>, protocol: protocol, socket: socket}}
   end
 
-  @impl true
   def handle_data(data, %{buffer: buffer, protocol: protocol, socket: socket} = state) do
     new_buffer = buffer <> data
 
@@ -103,13 +101,11 @@ defmodule MAIL.X420.P3 do
     {:continue, %{state | buffer: new_buffer}}
   end
 
-  @impl true
   def handle_close(_socket, state) do
     IO.puts("[#{state.protocol}] Connection closed")
     :ok
   end
 
-  @impl true
   def handle_error(reason, state) do
     IO.puts("[#{state.protocol}] Error: #{inspect(reason)}")
     :ok

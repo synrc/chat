@@ -1,5 +1,10 @@
 import Config
 
+config :kvs,
+  dba: :kvs_mnesia,
+  dba_st: :kvs_stream,
+  schema: [:kvs, :kvs_stream, CHAT]
+
 config :ca,
   enabled: [:issuer, :wallet, :verifier, :est, :cmp, :cmc, :ocsp, :tsp],
   issuer:   8107,

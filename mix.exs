@@ -4,7 +4,7 @@ defmodule CHAT.Mixfile do
   def application() do
       [
         mod: {CHAT, []},
-        extra_applications: [ :crypto, :thousand_island, :x509, :bandit, :plug, :logger, :ca, :ldap ]
+        extra_applications: [ :crypto, :thousand_island, :x509, :bandit, :plug, :logger, :ca, :ldap, :mnesia ]
       ]
   end
 
@@ -34,6 +34,7 @@ defmodule CHAT.Mixfile do
         {:ex_doc, ">= 0.0.0", only: :dev},
         {:ldap, "~> 15.1.1"},
         {:ca, "~> 7.1.4"},
+        {:kvs, "~> 11.9.1"},
         {:thousand_island, "~> 1.4.3"},
         {:ssl_verify_fun, "~> 1.1.7"}
       ]

@@ -1,11 +1,20 @@
 defmodule CHAT do
   use Application
   require Record
+  require KVS
+  require CHAT.X509
 
-  Enum.each(Record.extract_all(from_lib: "chat/include/CHAT-v2.hrl"),
+  Enum.each(Record.extract_all(from_lib: "kvs/include/metainfo.hrl"),
             fn {name, definition} -> Record.defrecord(name, definition) end)
 
   def init([]), do: {:ok, { {:one_for_one, 5, 10}, []} }
+
+  def metainfo() do
+      KVS.schema(name: :"CHAT-v2", tables: [
+        KVS.table(name: :"Authority", fields: [:id,:vsn,:session,:type,:cert,:settings], instance: CHAT.X509."Authority"()),
+        KVS.table(name: :"Message",   fields: [:id,:vsn,:session,:from,:to,:files,:type,:link,:seenby,:repliedby,:mentioned,:status], instance: CHAT.X509."Message"()),
+      ])
+  end
 
   @p1_port 17001
   @p3_port 17002
