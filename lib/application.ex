@@ -10,9 +10,10 @@ defmodule CHAT do
   def init([]), do: {:ok, { {:one_for_one, 5, 10}, []} }
 
   def metainfo() do
-      KVS.schema(name: :"CHAT-v2", tables: [
-        KVS.table(name: :"Authority", fields: [:id,:vsn,:session,:type,:cert,:settings], instance: CHAT.X509."Authority"()),
-        KVS.table(name: :"Message",   fields: [:id,:vsn,:session,:from,:to,:files,:type,:link,:seenby,:repliedby,:mentioned,:status], instance: CHAT.X509."Message"()),
+      KVS.schema(name: :"CHAT-v2",   tables: [
+       KVS.table(name: :"Authority", fields: [:id,:vsn,:session,:type,:cert,:settings], instance: CHAT.X509."Authority"()),
+       KVS.table(name: :"Message",   fields: [:id,:vsn,:session,:from,:to,:files,:type,:link,
+                                              :seenby,:repliedby,:mentioned,:status], instance: CHAT.X509."Message"()),
       ])
   end
 

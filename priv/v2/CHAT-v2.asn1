@@ -58,9 +58,9 @@ BEGIN
     InboxMethod ::= ENUMERATED { get (1), erase (2) }
 
     Inbox ::= SEQUENCE {
+       id OCTET STRING,
        vsn Version,
        session OCTET STRING,
-       id OCTET STRING,
        type InboxMethod,
        feed MessageFeed,
        messages SEQUENCE OF message Message }
@@ -72,9 +72,9 @@ BEGIN
     -- 05 Activity (TCP REPLY PUSH)
 
     Activity ::= SEQUENCE {
+       id OCTET STRING,
        vsn Version,
        session OCTET STRING,
-       id OCTET STRING,
        nickname OCTET STRING,
        comments SEQUENCE OF comment OCTET STRING }
 
@@ -84,9 +84,9 @@ BEGIN
     Criteria ::= ENUMERATED { equal (0), notequal (1), like (2) }
     Scope ::= ENUMERATED { profile (0), folder (1), contact (2), member (3), room (4), chat (5), message (6) }
     Search ::= SEQUENCE {
+       id OCTET STRING,
        vsn Version,
        session OCTET STRING,
-       id OCTET STRING,
        dn OCTET STRING,
        field OCTET STRING,
        value OCTET STRING,
@@ -99,9 +99,9 @@ BEGIN
     SubscriptionPresence ::= ENUMERATED { offline (1), online (2) }
     SubscriptionStatus ::= ENUMERATED { request (1), confirm (2), update (3), ignore (4), ban (5), unban (6) }
     Subscription ::= SEQUENCE {
+       id OCTET STRING,
        vsn Version,
        session OCTET STRING,
-       id OCTET STRING,
        nickname OCTET STRING,
        friend OCTET STRING,
        status SubscriptionPresence,
@@ -112,6 +112,7 @@ BEGIN
     PersonStatus ::= ENUMERATED { req (1), auth (2), ignore (3), internal (4),
        friend (5), lastmsg (6), ban (7), banned (8), deleted (9), nonexised (10) }
     Person ::= SEQUENCE {
+       id OCTET STRING,
        nickname OCTET STRING,
        avatar OCTET STRING,
        names SEQUENCE OF name OCTET STRING,
@@ -129,9 +130,9 @@ BEGIN
        get (1), create (2), del (3), remove (4), nick (5), search (6),
        contact (7), add (8), update (9), list (10), patch (11), lastmsg (12) }
     Roster ::= SEQUENCE {
+       id OCTET STRING,
        vsn Version,
        session OCTET STRING,
-       id OCTET STRING,
        nickname OCTET STRING,
        keys SEQUENCE OF key OCTET STRING,
        people SEQUENCE OF contact Person,
@@ -145,6 +146,7 @@ BEGIN
 
     MemberStatus ::= ENUMERATED { admin (1), member (2), removed (3), patch (4), owner (5) }
     Member ::= SEQUENCE {
+       id OCTET STRING,
        nickname OCTET STRING,
        feed MessageFeed,
        feeds SEQUENCE OF feed OCTET STRING,
@@ -162,9 +164,9 @@ BEGIN
     ConferenceStatus ::= ENUMERATED { create (1), leave (2), add (3), remove (4), removed (5),
        join (6), joined (7), info (8), patch (9), get (10), delete (11), lastmsg (12), mute (13), unmute (14) }
     Conference ::= SEQUENCE {
+       id OCTET STRING,
        vsn Version,
        session OCTET STRING,
-       id OCTET STRING,
        name OCTET STRING,
        links SEQUENCE OF link OCTET STRING,
        description OCTET STRING,

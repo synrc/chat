@@ -10,10 +10,10 @@
 -asn1_info([{vsn,'5.4.1'},
             {module,'CHAT-v2'},
             {options,[warnings,ber,errors,
- {cwd,"/Users/5ht/depot/zencrypted/chat/priv/v2"},
- {outdir,"/Users/5ht/depot/zencrypted/chat/priv/v2"},
+ {cwd,"/Users/5ht/depot/synrc/chat/priv/v2"},
+ {outdir,"/Users/5ht/depot/synrc/chat/priv/v2"},
  {i,"."},
- {i,"/Users/5ht/depot/zencrypted/chat/priv/v2"}]}]).
+ {i,"/Users/5ht/depot/synrc/chat/priv/v2"}]}]).
 
 -export([encoding_rule/0,maps/0,bit_string_format/0,
          legacy_erlang_types/0]).
