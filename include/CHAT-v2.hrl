@@ -33,6 +33,7 @@
   id,
   vsn,
   session,
+  inbox,
   from,
   to,
   files,

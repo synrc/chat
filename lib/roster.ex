@@ -1,10 +1,10 @@
 defmodule CHAT.Roster do
   require Record
 
-  Record.defrecord(:roster, Record.extract(:Roster, from_lib: "chat/include/CHAT-v2.hrl"))
-  Record.defrecord(:contact, Record.extract(:Person, from_lib: "chat/include/CHAT-v2.hrl"))
-  Record.defrecord(:cx, Record.extract(:cx, from_lib: "chat/include/roster.hrl"))
-  Record.defrecord(:pi, Record.extract(:pi, from_lib: "chat/include/roster.hrl"))
+  Record.defrecord(:roster,  Record.extract(:Roster, from_lib: "chat/include/CHAT-v2.hrl"))
+  Record.defrecord(:person,  Record.extract(:Person, from_lib: "chat/include/CHAT-v2.hrl"))
+  Record.defrecord(:cx,      Record.extract(:cx,     from_lib: "chat/include/roster.hrl"))
+  Record.defrecord(:pi,      Record.extract(:pi,     from_lib: "chat/include/roster.hrl"))
 
   def info(roster(status: :list), req, cx(params: _client_id) = state) do
     {:reply, {:bert, <<>>}, req, cx(state, state: [])}
@@ -45,7 +45,7 @@ defmodule CHAT.Roster do
     {:ok, async}
   end
 
-  def proc({:update_contact, contact(phone: _phone_id)}, pi() = h) do
+  def proc({:update_person, person(phone: _phone_id)}, pi() = h) do
     {:reply, [], h}
   end
 

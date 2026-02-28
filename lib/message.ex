@@ -2,11 +2,10 @@ defmodule CHAT.Message do
   require Record
 
   Record.defrecord(:activity, Record.extract(:Activity, from_lib: "chat/include/CHAT-v2.hrl"))
-  Record.defrecord(:message, Record.extract(:Message, from_lib: "chat/include/CHAT-v2.hrl"))
-  Record.defrecord(:ack, Record.extract(:Ack, from_lib: "chat/include/CHAT-v2.hrl"))
-  Record.defrecord(:file_desc, Record.extract(:File, from_lib: "chat/include/CHAT-v2.hrl"))
-
-  Record.defrecord(:cx, Record.extract(:cx, from_lib: "chat/include/roster.hrl"))
+  Record.defrecord(:message,  Record.extract(:Message,  from_lib: "chat/include/CHAT-v2.hrl"))
+  Record.defrecord(:ack,      Record.extract(:Ack,      from_lib: "chat/include/CHAT-v2.hrl"))
+  Record.defrecord(:file,     Record.extract(:File,     from_lib: "chat/include/CHAT-v2.hrl"))
+  Record.defrecord(:cx,       Record.extract(:cx,       from_lib: "chat/include/roster.hrl"))
 
   def init(:ok), do: {:ok, %{}}
 
@@ -27,7 +26,7 @@ defmodule CHAT.Message do
         from: _from0,
         to: _to,
         type: _type,
-        files: [file_desc(payload: _payload) | _] = _descs
+        files: [file(payload: _payload) | _] = _descs
       ), req, cx(client_pid: _c, params: _client_id, state: :ack) = state) do
     {:reply, {:bert, <<>>}, req, state}
   end
@@ -39,7 +38,7 @@ defmodule CHAT.Message do
         from: _from,
         to: _to,
         mentioned: _mentioned,
-        files: [file_desc(payload: _payload) | _] = _descs
+        files: [file(payload: _payload) | _] = _descs
       ), req, cx(params: _client_id, client_pid: _c, state: :ack) = state) do
     {:reply, {:bert, <<>>}, req, state}
   end

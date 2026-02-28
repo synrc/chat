@@ -39,6 +39,7 @@ BEGIN
        id OCTET STRING,
        vsn Version,
        session OCTET STRING,
+       inbox OCTET STRING,
        from OCTET STRING,
        to MessageFeed,
        files SEQUENCE OF file File,

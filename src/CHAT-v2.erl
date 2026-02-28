@@ -734,7 +734,7 @@ enc_Message(Val) ->
     enc_Message(Val, [<<48>>]).
 
 enc_Message(Val, TagIn) ->
-{_,Cindex1,Cindex2,Cindex3,Cindex4,Cindex5,Cindex6,Cindex7,Cindex8,Cindex9,Cindex10,Cindex11,Cindex12} = Val,
+{_,Cindex1,Cindex2,Cindex3,Cindex4,Cindex5,Cindex6,Cindex7,Cindex8,Cindex9,Cindex10,Cindex11,Cindex12,Cindex13} = Val,
 
 %%-------------------------------------------------
 %% attribute id(1) with type OCTET STRING
@@ -752,73 +752,78 @@ enc_Message(Val, TagIn) ->
    {EncBytes3,EncLen3} = encode_restricted_string(Cindex3, [<<4>>]),
 
 %%-------------------------------------------------
-%% attribute from(4) with type OCTET STRING
+%% attribute inbox(4) with type OCTET STRING
 %%-------------------------------------------------
    {EncBytes4,EncLen4} = encode_restricted_string(Cindex4, [<<4>>]),
 
 %%-------------------------------------------------
-%% attribute to(5)   External CHAT-v2:MessageFeed
+%% attribute from(5) with type OCTET STRING
 %%-------------------------------------------------
-   {EncBytes5,EncLen5} = 'enc_MessageFeed'(Cindex5, []),
+   {EncBytes5,EncLen5} = encode_restricted_string(Cindex5, [<<4>>]),
 
 %%-------------------------------------------------
-%% attribute files(6) with type SEQUENCE OF
+%% attribute to(6)   External CHAT-v2:MessageFeed
 %%-------------------------------------------------
-   {EncBytes6,EncLen6} = 'enc_Message_files'(Cindex6, [<<48>>]),
+   {EncBytes6,EncLen6} = 'enc_MessageFeed'(Cindex6, []),
 
 %%-------------------------------------------------
-%% attribute type(7) with type ENUMERATED
+%% attribute files(7) with type SEQUENCE OF
 %%-------------------------------------------------
-   {EncBytes7,EncLen7} = case Cindex7 of
+   {EncBytes7,EncLen7} = 'enc_Message_files'(Cindex7, [<<48>>]),
+
+%%-------------------------------------------------
+%% attribute type(8) with type ENUMERATED
+%%-------------------------------------------------
+   {EncBytes8,EncLen8} = case Cindex8 of
 sys -> encode_tags([<<10>>], [1], 1);
 reply -> encode_tags([<<10>>], [2], 1);
 forward -> encode_tags([<<10>>], [3], 1);
 read -> encode_tags([<<10>>], [4], 1);
 edited -> encode_tags([<<10>>], [5], 1);
-Enumval5 -> exit({error,{asn1, {enumerated_not_in_range,Enumval5}}})
+Enumval6 -> exit({error,{asn1, {enumerated_not_in_range,Enumval6}}})
 end,
 
 %%-------------------------------------------------
-%% attribute link(8) with type CHOICE
+%% attribute link(9) with type CHOICE
 %%-------------------------------------------------
-   {EncBytes8,EncLen8} = 'enc_Message_link'(Cindex8, []),
+   {EncBytes9,EncLen9} = 'enc_Message_link'(Cindex9, []),
 
 %%-------------------------------------------------
-%% attribute seenby(9) with type OCTET STRING
-%%-------------------------------------------------
-   {EncBytes9,EncLen9} = encode_restricted_string(Cindex9, [<<4>>]),
-
-%%-------------------------------------------------
-%% attribute repliedby(10) with type OCTET STRING
+%% attribute seenby(10) with type OCTET STRING
 %%-------------------------------------------------
    {EncBytes10,EncLen10} = encode_restricted_string(Cindex10, [<<4>>]),
 
 %%-------------------------------------------------
-%% attribute mentioned(11) with type SEQUENCE OF
+%% attribute repliedby(11) with type OCTET STRING
 %%-------------------------------------------------
-   {EncBytes11,EncLen11} = 'enc_Message_mentioned'(Cindex11, [<<48>>]),
+   {EncBytes11,EncLen11} = encode_restricted_string(Cindex11, [<<4>>]),
 
 %%-------------------------------------------------
-%% attribute status(12) with type ENUMERATED DEFAULT = clear
+%% attribute mentioned(12) with type SEQUENCE OF
 %%-------------------------------------------------
-   {EncBytes12,EncLen12} =  case Cindex12 of
+   {EncBytes12,EncLen12} = 'enc_Message_mentioned'(Cindex12, [<<48>>]),
+
+%%-------------------------------------------------
+%% attribute status(13) with type ENUMERATED DEFAULT = clear
+%%-------------------------------------------------
+   {EncBytes13,EncLen13} =  case Cindex13 of
          asn1_DEFAULT ->
             {<<>>,0};
-         _ when Cindex12 =:= clear ->
+         _ when Cindex13 =:= clear ->
             {<<>>,0};
          _ ->
-            case Cindex12 of
+            case Cindex13 of
 async -> encode_tags([<<10>>], [1], 1);
 delete -> encode_tags([<<10>>], [2], 1);
 clear -> encode_tags([<<10>>], [3], 1);
 update -> encode_tags([<<10>>], [4], 1);
 edit -> encode_tags([<<10>>], [5], 1);
-Enumval8 -> exit({error,{asn1, {enumerated_not_in_range,Enumval8}}})
+Enumval9 -> exit({error,{asn1, {enumerated_not_in_range,Enumval9}}})
 end
        end,
 
-   BytesSoFar = [EncBytes1, EncBytes2, EncBytes3, EncBytes4, EncBytes5, EncBytes6, EncBytes7, EncBytes8, EncBytes9, EncBytes10, EncBytes11, EncBytes12],
-LenSoFar = EncLen1 + EncLen2 + EncLen3 + EncLen4 + EncLen5 + EncLen6 + EncLen7 + EncLen8 + EncLen9 + EncLen10 + EncLen11 + EncLen12,
+   BytesSoFar = [EncBytes1, EncBytes2, EncBytes3, EncBytes4, EncBytes5, EncBytes6, EncBytes7, EncBytes8, EncBytes9, EncBytes10, EncBytes11, EncBytes12, EncBytes13],
+LenSoFar = EncLen1 + EncLen2 + EncLen3 + EncLen4 + EncLen5 + EncLen6 + EncLen7 + EncLen8 + EncLen9 + EncLen10 + EncLen11 + EncLen12 + EncLen13,
 encode_tags(TagIn, BytesSoFar, LenSoFar).
 
 
@@ -907,28 +912,34 @@ end
 Term3 = decode_octet_string(V3, [4]),
 
 %%-------------------------------------------------
-%% attribute from(4) with type OCTET STRING
+%% attribute inbox(4) with type OCTET STRING
 %%-------------------------------------------------
 [V4|Tlv5] = Tlv4, 
 Term4 = decode_octet_string(V4, [4]),
 
 %%-------------------------------------------------
-%% attribute to(5)   External CHAT-v2:MessageFeed
+%% attribute from(5) with type OCTET STRING
 %%-------------------------------------------------
 [V5|Tlv6] = Tlv5, 
-Term5 = 'dec_MessageFeed'(V5, []),
+Term5 = decode_octet_string(V5, [4]),
 
 %%-------------------------------------------------
-%% attribute files(6) with type SEQUENCE OF
+%% attribute to(6)   External CHAT-v2:MessageFeed
 %%-------------------------------------------------
 [V6|Tlv7] = Tlv6, 
-Term6 = 'dec_Message_files'(V6, [16]),
+Term6 = 'dec_MessageFeed'(V6, []),
 
 %%-------------------------------------------------
-%% attribute type(7) with type ENUMERATED
+%% attribute files(7) with type SEQUENCE OF
 %%-------------------------------------------------
 [V7|Tlv8] = Tlv7, 
-Term7 = case decode_integer(V7, [10]) of
+Term7 = 'dec_Message_files'(V7, [16]),
+
+%%-------------------------------------------------
+%% attribute type(8) with type ENUMERATED
+%%-------------------------------------------------
+[V8|Tlv9] = Tlv8, 
+Term8 = case decode_integer(V8, [10]) of
 1 -> sys;
 2 -> reply;
 3 -> forward;
@@ -938,50 +949,50 @@ Default1 -> exit({error,{asn1,{illegal_enumerated,Default1}}})
 end,
 
 %%-------------------------------------------------
-%% attribute link(8) with type CHOICE
-%%-------------------------------------------------
-[V8|Tlv9] = Tlv8, 
-Term8 = 'dec_Message_link'(V8, []),
-
-%%-------------------------------------------------
-%% attribute seenby(9) with type OCTET STRING
+%% attribute link(9) with type CHOICE
 %%-------------------------------------------------
 [V9|Tlv10] = Tlv9, 
-Term9 = decode_octet_string(V9, [4]),
+Term9 = 'dec_Message_link'(V9, []),
 
 %%-------------------------------------------------
-%% attribute repliedby(10) with type OCTET STRING
+%% attribute seenby(10) with type OCTET STRING
 %%-------------------------------------------------
 [V10|Tlv11] = Tlv10, 
 Term10 = decode_octet_string(V10, [4]),
 
 %%-------------------------------------------------
-%% attribute mentioned(11) with type SEQUENCE OF
+%% attribute repliedby(11) with type OCTET STRING
 %%-------------------------------------------------
 [V11|Tlv12] = Tlv11, 
-Term11 = 'dec_Message_mentioned'(V11, [16]),
+Term11 = decode_octet_string(V11, [4]),
 
 %%-------------------------------------------------
-%% attribute status(12) with type ENUMERATED DEFAULT = clear
+%% attribute mentioned(12) with type SEQUENCE OF
 %%-------------------------------------------------
-{Term12,Tlv13} = case Tlv12 of
-[{10,V12}|TempTlv13] ->
-    {case decode_integer(V12, []) of
+[V12|Tlv13] = Tlv12, 
+Term12 = 'dec_Message_mentioned'(V12, [16]),
+
+%%-------------------------------------------------
+%% attribute status(13) with type ENUMERATED DEFAULT = clear
+%%-------------------------------------------------
+{Term13,Tlv14} = case Tlv13 of
+[{10,V13}|TempTlv14] ->
+    {case decode_integer(V13, []) of
 1 -> async;
 2 -> delete;
 3 -> clear;
 4 -> update;
 5 -> edit;
 Default2 -> exit({error,{asn1,{illegal_enumerated,Default2}}})
-end, TempTlv13};
+end, TempTlv14};
     _ ->
-        {clear,Tlv12}
+        {clear,Tlv13}
 end,
 
-case Tlv13 of
-[] -> true;_ -> exit({error,{asn1, {unexpected,Tlv13}}}) % extra fields not allowed
+case Tlv14 of
+[] -> true;_ -> exit({error,{asn1, {unexpected,Tlv14}}}) % extra fields not allowed
 end,
-Res1 = {'Message',Term1,Term2,Term3,Term4,Term5,Term6,Term7,Term8,Term9,Term10,Term11,Term12},
+Res1 = {'Message',Term1,Term2,Term3,Term4,Term5,Term6,Term7,Term8,Term9,Term10,Term11,Term12,Term13},
 Res1.
 'dec_Message_files'(Tlv, TagIn) ->
    %%-------------------------------------------------

@@ -1,34 +1,8 @@
 defmodule MAIL.X420.P7 do
-  @moduledoc """
-  Basic Thousand Island handler for X.400-style protocols (P1/P3/P7).
-
-  Real X.400 protocols are built on:
-  - ACSE (association control) for bind/unbind
-  - ROSE (Remote Operations) for invoke/result/error
-  - Presentation/Session layers (often collapsed over TCP today)
-  - ASN.1 BER encoding
-
-  This is a **minimal skeleton**:
-  - Accepts connections
-  - Accumulates incoming bytes (X.400 PDUs can be large)
-  - Logs raw hex for debugging
-  - Echoes a simple "accept" response on first data (simulating A-ASSOCIATE.rsp)
-  - Keeps connection open for streaming PDUs
-
-  To make it functional you must add:
-  - ASN.1 BER decoding (e.g., using :asn1 or a library like ex_asn)
-  - ACSE parsing (A-ASSOCIATE, A-RELEASE)
-  - ROSE dispatch (invoke → operation handling)
-  - Protocol-specific logic (P1 transfer, P3 submission/delivery, P7 fetch/list)
-
-  This handler treats all three protocols the same for demonstration.
-  In production, you would have separate handler modules or dispatch based on port.
-  """
-
   use ThousandIsland.Handler
 
   def start_link(port: port) do
-    :logger.info(~c"Starting CHAT.X420 (Thousand Island) on 0.0.0.0:~p", [port])
+    :logger.info(~c"Starting MAIL.X420 P7 (Thousand Island) on 0.0.0.0:~p", [port])
 
     ThousandIsland.start_link(
       handler_module: __MODULE__,
