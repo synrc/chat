@@ -55,11 +55,13 @@ BEGIN
     Streambox ::= SEQUENCE { channel OCTET STRING } -- /Stream
     Groupbox ::= SEQUENCE { channel OCTET STRING } -- /Conference
     Mailbox ::= SEQUENCE { channel OCTET STRING } -- /Mail
+    InboxMethod ::= ENUMERATED { get (1), erase (2) }
 
     Inbox ::= SEQUENCE {
        vsn Version,
        session OCTET STRING,
        id OCTET STRING,
+       type InboxMethod,
        feed MessageFeed,
        messages SEQUENCE OF message Message }
 

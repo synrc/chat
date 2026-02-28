@@ -4,16 +4,11 @@ defmodule CHAT.Proto do
   """
 
   use ThousandIsland.Handler
-
   require Record
-
-  Record.defrecord(:io, Record.extract(:IO, from_lib: "chat/include/CHAT.hrl"))
-  Record.defrecord(:ack, Record.extract(:Ack, from_lib: "chat/include/CHAT.hrl"))
-  Record.defrecord(:error, Record.extract(:ERROR, from_lib: "chat/include/CHAT.hrl"))
   Record.defrecord(:cx, Record.extract(:cx, from_lib: "chat/include/roster.hrl"))
-
-  for name <- [:Typing, :Message, :History, :Profile, :Roster, :Search, :Auth, :Presence, :Room, :Member, :FileDesc] do
-    Record.defrecord(name, Record.extract(name, from_lib: "chat/include/CHAT.hrl"))
+  for name <- [:'Feature', :'Authority', :'File', :'Message', :'Privatebox', :'Streambox', :'Groupbox', :'Mailbox', :'Inbox', :'Ack',
+               :'Activity', :'Search', :'Subscription', :'Person', :'Server', :'Roster', :'Member', :'Conference', :'CHATMessage'] do
+      Record.defrecord(name, Record.extract(name, from_lib: "chat/include/CHAT-v2.hrl"))
   end
 
   def start_link(port: port) do
@@ -61,12 +56,12 @@ defmodule CHAT.Proto do
       process(new_buffer, socket, expecting_body)
   end
 
-  def process(buffer, socket, true) do
+  def process(buffer, _socket, true) do
       handle_message(buffer)
       {:continue, {<<>>, false}}
   end
 
-  def process(buffer, socket, false) do
+  def process(buffer, _socket, false) do
     case :binary.split(buffer, "\r\n\r\n") do
          [_, ""] -> {:continue, {buffer, true}}
          [_, body | _] when byte_size(body) > 0 -> handle_message(body) ; {:continue, {<<>>, false}}
@@ -78,7 +73,7 @@ defmodule CHAT.Proto do
 
   def handle_message(body) do
     try do
-      {:ok, dec} = :chat.decode(:'CHATMessage', body)
+      {:ok, dec} = :'CHAT-v2'.decode(:'CHATMessage', body)
       {:CHATMessage, _no, _headers, {_tag, msg_body}} = dec
       info(msg_body, [], cx())
     catch
@@ -87,23 +82,23 @@ defmodule CHAT.Proto do
     end
   end
 
-  def info(typing = {:Typing, _, _, _}, req, cx() = state) do
-    CHAT.Message.info(typing, req, state)
+  def info(ativity = {:Activity, _, _, _}, req, cx() = state) do
+    CHAT.Message.info(ativity, req, state)
   end
 
   def info(message = {:Message, _, _, _, _, _, _, _, _, _, _, _, _, _}, req, cx() = state) do
     CHAT.Message.info(message, req, state)
   end
 
-  def info(history = {:History, _, _, _, _, _, _, _}, req, cx() = state) do
-    CHAT.History.info(history, req, state)
+  def info(inbox = {:Inbox, _, _, _, _, _, _, _}, req, cx() = state) do
+    CHAT.Inbox.info(inbox, req, state)
   end
 
   def info(roster = {:Roster, _, _, _, _, _, _}, req, cx() = state) do
     CHAT.Roster.info(roster, req, state)
   end
 
-  def info(auth = {:Auth, _, _, _, _, _, _, _, _, _, _, _}, req, state) do
+  def info(auth = {:Authority, _, _, _, _, _, _, _, _, _, _, _}, req, state) do
     CHAT.Auth.info(auth, req, state)
   end
 

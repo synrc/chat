@@ -2,7 +2,7 @@ defmodule CHAT do
   use Application
   require Record
 
-  Enum.each(Record.extract_all(from_lib: "chat/include/CHAT.hrl"),
+  Enum.each(Record.extract_all(from_lib: "chat/include/CHAT-v2.hrl"),
             fn {name, definition} -> Record.defrecord(name, definition) end)
 
   def init([]), do: {:ok, { {:one_for_one, 5, 10}, []} }
