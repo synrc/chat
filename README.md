@@ -13,18 +13,61 @@ Features
 * MNESIA records delivery system;
 * CMP EST for X.509 CA enrollment;
 
+Files
+-----
+
+```
+├── config
+│   └── config.exs
+├── include
+│   ├── CHAT-v2.hrl
+│   ├── meta.hrl
+│   ├── push.hrl
+│   └── roster.hrl
+├── lib
+│   ├── application.ex
+│   ├── auth.ex
+│   ├── chat.ex
+│   ├── inbox.ex
+│   ├── message.ex
+│   ├── p1.ex
+│   ├── p3.ex
+│   ├── p7.ex
+│   └── roster.ex
+├── priv
+│   ├── v1
+│   │   ├── AlgorithmInformation-2009.asn1
+│   │   ├── CryptographicMessageSyntax-2009.asn1
+│   │   ├── MESSAGE-v1.asn1
+│   │   ├── PKIX-CommonTypes-2009.asn1
+│   │   ├── PKIX1-PSS-OAEP-Algorithms-2009.asn1
+│   │   ├── PKIX1Explicit-2009.asn1
+│   │   ├── PKIX1Implicit-2009.asn1
+│   │   └── PKIXAlgs-2009.asn1
+│   └── v2
+│       ├── CHAT-v2.asn1
+│       ├── CryptographicMessageSyntax-2009.asn1
+│       ├── PKCS-10.asn1
+│       ├── PKIX1Explicit-2009.asn1
+│       └── PKIX1Implicit-2009.asn1
+├── src
+│   └── CHAT-v2.erl
+├── mix.exs
+├── LICENSE
+├── index.html
+└── README.md
+```
+
 CHAT protocol
 -------------
 
-The CHAT protocols communicates with 
-`Index`, `Typing`, `Search`, `Feature`, `Service`, `Desc`, `Presence`,
-`Friend`, `Tag`,  `Link`, `Message`, `Member`, `Room`, `Contact`,
-`Star`, `RoomStar`, `Ack`, `Auth`, `Roster`, `Profile`, `History`
+The CHAT protocols communicates with `Inbox`, `Activity`, `Search`, `File`, `Presence`,
+`Friend`, `Message`, `Member`, `Conference`, `Person`, `Ack`, `Authority`, `Roster`, `History`
 DER-serialized ASN.1-defined messages.
 
 The CHAT protocol is implemented in the set of sub-protocol modules:
 FILE, HISTORY, LINK, MESSAGE, PRESENSE, PROFILE, PUSH, ROOM, ROSTER,
-SEARCH, AUTH. For full specification follow `priv/design` folder. 
+SEARCH, AUTH. For full specification follow `priv/design` folder.
 The CHAT server implementation relies only on ISO/IETF connections
 such as DNSSEC, X.509 CSR, LDAP, QUIC, WebSocket.
 
