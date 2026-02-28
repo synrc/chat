@@ -17,9 +17,9 @@ BEGIN
     Feature ::= SEQUENCE { id OCTET STRING, key OCTET STRING, value OCTET STRING, group OCTET STRING }
     AuthorityMethod ::= ENUMERATED { announce (0), enroll (1), authenticate (2), revoke (3), renew (4) }
     Authority ::= SEQUENCE {
+       id OCTET STRING,
        vsn Version,
        session OCTET STRING,
-       id OCTET STRING,
        type AuthorityMethod,
        cert OCTET STRING,
        settings SEQUENCE OF feature Feature }
@@ -36,9 +36,9 @@ BEGIN
     MessageStatus ::= ENUMERATED { async (1), delete (2), clear (3), update (4), edit (5) }
     MessageFeed ::= CHOICE { private [1] Privatebox, chan [2] Streambox, mailbox [4] Mailbox, group [8] Groupbox }
     Message ::= SEQUENCE {
+       id OCTET STRING,
        vsn Version,
        session OCTET STRING,
-       id OCTET STRING,
        from OCTET STRING,
        to MessageFeed,
        files SEQUENCE OF file File,
