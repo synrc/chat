@@ -16,6 +16,7 @@ defmodule CHAT do
       :logger.add_handlers(:chat)
       Supervisor.start_link([
          { Task.Supervisor, name: CHAT.TaskSupervisor},
+         CHAT.Registry,
          { MAIL.X420.P1, port: @p1_port}, # MMHS P1 SPEC: MTA-to-MTA transfer (relay).
          { MAIL.X420.P3, port: @p3_port}, # MMHS P3 SPEC: UA-to-MTA submission and MTA-to-UA delivery.
          { MAIL.X420.P7, port: @p7_port}, # MMHS P7 SPEC: UA-to-MS retrieval (with MTA delivering to MS via P3-like internal mechanism).

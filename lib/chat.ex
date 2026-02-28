@@ -17,10 +17,10 @@ defmodule CHAT.X509 do
     ThousandIsland.start_link(
       handler_module: __MODULE__,
       port: port,
-      num_acceptors: System.schedulers_online() * 4,   # масштабується з кількістю ядер
-      num_connections: :infinity,                      # знімаємо обмеження (контроль через OS ulimit)
+      num_acceptors: System.schedulers_online() * 4,
+      num_connections: :infinity,
       num_listen_sockets: 1,
-      read_timeout: :infinity,                         # persistent chat-з'єднання
+      read_timeout: :infinity,
       shutdown_timeout: 30_000,
       transport_module: ThousandIsland.Transports.TCP,
       transport_options: [
@@ -45,69 +45,94 @@ defmodule CHAT.X509 do
     }
   end
 
+  # State: {buffer, expecting_body, client_id}
   @impl ThousandIsland.Handler
   def handle_connection(_socket, _state) do
-      {:continue, {<<>>, false}}
+    {:continue, {<<>>, false, nil}}
   end
 
   @impl ThousandIsland.Handler
-  def handle_data(data, socket, {buffer, expecting_body}) do
-      new_buffer = buffer <> data
-      process(new_buffer, socket, expecting_body)
+  def handle_data(data, socket, {buffer, expecting_body, client_id}) do
+    new_buffer = buffer <> data
+    process(new_buffer, socket, expecting_body, client_id)
   end
 
-  def process(buffer, _socket, true) do
-      handle_message(buffer)
-      {:continue, {<<>>, false}}
+  def process(buffer, socket, true, client_id) do
+    new_client_id = handle_message(buffer, socket, client_id)
+    {:continue, {<<>>, false, new_client_id}}
   end
 
-  def process(buffer, _socket, false) do
+  def process(buffer, socket, false, client_id) do
     case :binary.split(buffer, "\r\n\r\n") do
-         [_, ""] -> {:continue, {buffer, true}}
-         [_, body | _] when byte_size(body) > 0 -> handle_message(body) ; {:continue, {<<>>, false}}
-          _ -> {:continue, {buffer, false}}
+      [_, ""] ->
+        {:continue, {buffer, true, client_id}}
+      [_, body | _] when byte_size(body) > 0 ->
+        new_client_id = handle_message(body, socket, client_id)
+        {:continue, {<<>>, false, new_client_id}}
+      _ ->
+        {:continue, {buffer, false, client_id}}
     end
   end
 
-  def handle_message(<<>>), do: :ok
+  def handle_message(<<>>, _socket, client_id), do: client_id
 
-  def handle_message(body) do
+  def handle_message(body, socket, client_id) do
     try do
       {:ok, dec} = :'CHAT-v2'.decode(:'CHATMessage', body)
-      {:CHATMessage, _no, _headers, {_tag, msg_body}} = dec
-      info(msg_body, [], cx())
+      {:'CHATMessage', no, headers, {tag, msg_body}} = dec
+      cx_state = cx(params: client_id)
+      case info(tag, msg_body, {no, headers, body}, cx_state) do
+        {:reply, reply_body, _req, new_state} ->
+          send_reply(socket, no, headers, reply_body)
+          cx(params: new_client_id) = new_state
+          new_client_id || client_id
+        _ ->
+          client_id
+      end
     catch
       _kind, _reason ->
-        :ok
+        client_id
     end
   end
 
-  def info(ativity = {:Activity, _, _, _}, req, cx() = state) do
-    CHAT.Message.info(ativity, req, state)
+  defp send_reply(_socket, _no, _headers, {:bert, <<>>}), do: :ok
+
+  defp send_reply(socket, no, headers, {:bert, record}) do
+    body = {choice_tag(elem(record, 0)), record}
+    case :'CHAT-v2'.encode(:'CHATMessage', {:'CHATMessage', no, headers, body}) do
+      {:ok, encoded} -> ThousandIsland.Socket.send(socket, encoded <> "\r\n\r\n")
+      _ -> :ok
+    end
   end
 
-  def info(message = {:Message, _, _, _, _, _, _, _, _, _, _, _, _, _}, req, cx() = state) do
-    CHAT.Message.info(message, req, state)
-  end
+  defp choice_tag(:'Ack'),          do: :ack
+  defp choice_tag(:'Message'),      do: :message
+  defp choice_tag(:'Inbox'),        do: :inbox
+  defp choice_tag(:'Roster'),       do: :roster
+  defp choice_tag(:'Authority'),    do: :authority
+  defp choice_tag(:'Activity'),     do: :activity
+  defp choice_tag(:'Subscription'), do: :subscription
+  defp choice_tag(:'Search'),       do: :search
+  defp choice_tag(:'Conference'),   do: :conference
 
-  def info(inbox = {:Inbox, _, _, _, _, _, _, _}, req, cx() = state) do
-    CHAT.Inbox.info(inbox, req, state)
-  end
+  # Dispatch by CHOICE tag from CHATProtocol
+  def info(:activity,  msg_body, req, cx() = state), do: CHAT.Message.info(msg_body, req, state)
+  def info(:message,   msg_body, req, cx() = state), do: CHAT.Message.info(msg_body, req, state)
+  def info(:inbox,     msg_body, req, cx() = state), do: CHAT.Inbox.info(msg_body, req, state)
+  def info(:roster,    msg_body, req, cx() = state), do: CHAT.Roster.info(msg_body, req, state)
+  def info(:authority, msg_body, req,          state), do: CHAT.Auth.info(msg_body, req, state)
+  def info(_tag,       msg_body, req,          state), do: {:unknown, msg_body, req, state}
 
-  def info(roster = {:Roster, _, _, _, _, _, _}, req, cx() = state) do
-    CHAT.Roster.info(roster, req, state)
-  end
-
-  def info(auth = {:Authority, _, _, _, _, _, _, _, _, _, _, _}, req, state) do
-    CHAT.Auth.info(auth, req, state)
-  end
-
-  def info(message, req, state) do
-    {:unknown, message, req, state}
+  # Receive forwarded messages from other client connections
+  def handle_info({:forward, encoded}, socket, state) do
+    ThousandIsland.Socket.send(socket, encoded <> "\r\n\r\n")
+    {:continue, state}
   end
 
   @impl ThousandIsland.Handler
-  def handle_close(_socket, _state), do: :ok
+  def handle_close(_socket, {_buffer, _expecting_body, client_id}) do
+    CHAT.Registry.unregister(client_id)
+  end
 
   @impl ThousandIsland.Handler
   def handle_error(reason, _socket, _state) do
