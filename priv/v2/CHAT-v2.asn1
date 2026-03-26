@@ -26,36 +26,37 @@ BEGIN
 
     -- 02 Message (MNESIA, SQLite)
 
-    File ::= SEQUENCE {
-       id OCTET STRING,
-       mime OCTET STRING,
-       payload ANY,
-       parentid OCTET STRING }
+    -- Message описує тільки саме повідомлення і його вміст.
+    -- Event є уніфікованим типом для всіх подій (Ack + Activity).
+    -- Такий поділ мінімізує розмір базових повідомлень і не змішує семантику.
 
-    MessageType ::= ENUMERATED { sys (1), reply (2), forward (3), read (4), edited (5) }
-    MessageStatus ::= ENUMERATED { async (1), delete (2), clear (3), update (4), edit (5) }
+    MessageType ::= ENUMERATED { normal (0), sys (1), reply (2), forward (3) }
+
     MessageFeed ::= CHOICE { private [1] Privatebox, chan [2] Streambox, mailbox [4] Mailbox, group [8] Groupbox }
+
     Message ::= SEQUENCE {
        id OCTET STRING,
        vsn Version,
        session OCTET STRING,
-       inbox OCTET STRING,
-       from OCTET STRING,
-       to MessageFeed,
-       files SEQUENCE OF file File,
-       type MessageType,
-       link CHOICE { empty [1] NULL, message [2] Message },
-       seenby OCTET STRING,
-       repliedby OCTET STRING,
-       mentioned SEQUENCE OF name OCTET STRING,
-       status MessageStatus DEFAULT clear }
+
+       -- базовий мінімум
+       feed MessageFeed,
+       payload ContentInfo,
+
+       -- optional атрибути
+       type MessageType OPTIONAL,
+       linkId OCTET STRING OPTIONAL,
+       files SEQUENCE OF fileId OCTET STRING OPTIONAL,
+       mentioned SEQUENCE OF name OCTET STRING OPTIONAL
+    }
 
     -- 03 Inbox Folder Queue (MNESIA, SQLite) /Mail /Chat
 
-    Privatebox ::= SEQUENCE { address OCTET STRING } -- /Chat
-    Streambox ::= SEQUENCE { channel OCTET STRING } -- /Stream
-    Groupbox ::= SEQUENCE { channel OCTET STRING } -- /Conference
-    Mailbox ::= SEQUENCE { channel OCTET STRING } -- /Mail
+    Privatebox ::= SEQUENCE { address OCTET STRING }
+    Streambox ::= SEQUENCE { channel OCTET STRING }
+    Groupbox ::= SEQUENCE { channel OCTET STRING }
+    Mailbox ::= SEQUENCE { channel OCTET STRING }
+
     InboxMethod ::= ENUMERATED { get (1), erase (2) }
 
     Inbox ::= SEQUENCE {
@@ -66,24 +67,40 @@ BEGIN
        feed MessageFeed,
        messages SEQUENCE OF message Message }
 
-    -- 04 Ack / Nack (TCP REPLY PUSH)
+    -- 04 Event (Ack + Activity fusion)
 
-    Ack ::= SEQUENCE { vsn Version, id OCTET STRING, primary OCTET STRING, secondary OCTET STRING OPTIONAL }
+	EventType ::= ENUMERATED {
+	   received  (1),
+	   delivered (2),
+	   read      (3),
+	   edited    (4),
+	   deleted   (5),
+	   updated   (6),
+	   
+	   online    (7),
+	   offline   (8),
+	   typing    (9)
+	}
 
-    -- 05 Activity (TCP REPLY PUSH)
-
-    Activity ::= SEQUENCE {
+    Event ::= SEQUENCE {
        id OCTET STRING,
        vsn Version,
        session OCTET STRING,
-       nickname OCTET STRING,
-       comments SEQUENCE OF comment OCTET STRING }
 
-    -- 06 Search (LDAP Search)
+       messageId OCTET STRING OPTIONAL,
+       eventType EventType,
+
+       feed MessageFeed OPTIONAL,
+       actor OCTET STRING OPTIONAL,
+       timestamp INTEGER OPTIONAL
+    }
+
+    -- 05 Search (LDAP Search)
 
     SearchStatus ::= ENUMERATED { ok (0) }
     Criteria ::= ENUMERATED { equal (0), notequal (1), like (2) }
     Scope ::= ENUMERATED { profile (0), folder (1), contact (2), member (3), room (4), chat (5), message (6) }
+
     Search ::= SEQUENCE {
        id OCTET STRING,
        vsn Version,
@@ -95,10 +112,11 @@ BEGIN
        type Scope,
        status SearchStatus }
 
-    -- 07 Subscruption (MNESIA, Pub/Sub)
+    -- 06 Subscription (MNESIA, Pub/Sub)
 
     SubscriptionPresence ::= ENUMERATED { offline (1), online (2) }
     SubscriptionStatus ::= ENUMERATED { request (1), confirm (2), update (3), ignore (4), ban (5), unban (6) }
+
     Subscription ::= SEQUENCE {
        id OCTET STRING,
        vsn Version,
@@ -108,10 +126,11 @@ BEGIN
        status SubscriptionPresence,
        type SubscriptionStatus }
 
-    -- 08 Roster (LDAP /People, /Channels, /Topics and /Servers user sub-folders)
+    -- 07 Roster (LDAP /People, /Channels, /Topics and /Servers user sub-folders)
 
     PersonStatus ::= ENUMERATED { req (1), auth (2), ignore (3), internal (4),
        friend (5), lastmsg (6), ban (7), banned (8), deleted (9), nonexised (10) }
+
     Person ::= SEQUENCE {
        id OCTET STRING,
        nickname OCTET STRING,
@@ -123,7 +142,7 @@ BEGIN
        presence SubscriptionPresence,
        update INTEGER,
        created INTEGER,
-       settings SEQUENCE OF feature Feature,
+       settings SEQUENCE OF feature Feature OPTIONAL,
        status PersonStatus }
 
     Server ::= SEQUENCE { service OCTET STRING, port INTEGER, host OCTET STRING }
@@ -143,7 +162,7 @@ BEGIN
        update INTEGER,
        status RosterStatus }
 
-    -- 09 Conference (RocksDB, Multi-user Conferences)
+    -- 08 Conference (RocksDB, Multi-user Conferences)
 
     MemberStatus ::= ENUMERATED { admin (1), member (2), removed (3), patch (4), owner (5) }
     Member ::= SEQUENCE {
@@ -174,7 +193,7 @@ BEGIN
        settings SEQUENCE OF feature Feature,
        members SEQUENCE OF member Member,
        admins SEQUENCE OF member Member,
-       data SEQUENCE OF file File,
+       data SEQUENCE OF fileId OCTET STRING OPTIONAL,
        type ConferenceType,
        tos OCTET STRING,
        unread INTEGER,
@@ -184,14 +203,13 @@ BEGIN
        created INTEGER,
        status ConferenceStatus }
 
-    -- 12 CHAT-v2 Protocol Entities
+    -- 09 CHAT-v2 Protocol Entities
 
     CHATProtocol ::= CHOICE {
        authority    [1] Authority,
        message      [2] Message,
        inbox        [3] Inbox,
-       ack          [4] Ack,
-       activity     [5] Activity,
+       event        [4] Event,
        subscription [6] Subscription,
        search       [7] Search,
        roster       [8] Roster,
