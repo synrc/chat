@@ -1,0 +1,53 @@
+# Comments start with #
+# Connect / auth (if not already done by the console)
+connect user@domain.com
+auth password "secret"          # or use cert if X.509 flow
+login cert "path/to/cert.der"
+
+# Presence
+set presence online "Available"
+send presence to alice subscribed
+
+# Messages
+send message to alice "Hello there!"
+send message to room:general "Hi everyone" reply-to "msg-id-123"
+
+# Rich message (with optional fields)
+send message {
+    to: alice
+    body: "Hi"
+    subject: "Greeting"
+    attachments: ["file1.jpg"]
+    encrypted: true
+}
+
+# Roster / Friends
+roster list
+roster add bob@domain.com
+roster remove alice
+
+# Rooms / Conferences
+room create general "General Chat"
+room join general
+room invite general bob
+
+# History / Search
+history get alice limit 50
+search "keyword" in inbox
+
+# File transfer
+file upload "photo.jpg" to alice
+file download "file-id-xyz"
+
+# Ack / Ack-all
+ack "msg-id-123"
+ack all
+
+# Raw / low-level (escape hatch)
+raw hex "300A..."                   # send raw DER hex
+raw base64 "MIIB..."
+
+# Expect testing primitives (for scripts)
+expect message from alice contains "hello" timeout 5s
+expect presence from bob "online"
+expect error "not-found"
