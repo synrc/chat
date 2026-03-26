@@ -95,6 +95,27 @@ BEGIN
        timestamp INTEGER OPTIONAL
     }
 
+    QueryType ::= ENUMERATED {
+       get    (1),
+       set    (2),
+       result (3),
+       error  (4)
+    }
+
+    Query ::= SEQUENCE {
+       id OCTET STRING,
+       vsn Version,
+       session OCTET STRING,
+
+       queryType QueryType,
+
+       refId OCTET STRING OPTIONAL, -- request correlation id
+       feed MessageFeed OPTIONAL,
+       target OCTET STRING OPTIONAL, -- user/conference/ message/document id
+       payload OCTET STRING OPTIONAL, -- DSL/CMS encoded data
+       code INTEGER OPTIONAL
+    }
+
     -- 05 Search (LDAP Search)
 
     SearchStatus ::= ENUMERATED { ok (0) }
@@ -210,6 +231,7 @@ BEGIN
        message      [2] Message,
        inbox        [3] Inbox,
        event        [4] Event,
+       query        [5] Query,
        subscription [6] Subscription,
        search       [7] Search,
        roster       [8] Roster,
