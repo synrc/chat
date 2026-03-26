@@ -1,0 +1,68 @@
+MAIL-P3 DEFINITIONS IMPLICIT TAGS ::=
+BEGIN
+
+IMPORTS
+  ORName, MessageIdentifier, ContentType, Priority,
+  PerMessageIndicators, ExtensionField
+    FROM MAIL-P1;
+
+-- P3 Submission and Delivery
+MessageSubmissionArgument ::= SEQUENCE {
+  originator-name                     ORName,
+  recipient-name                      ORName OPTIONAL,
+  original-encoded-information-types  OCTET STRING OPTIONAL,
+  content-type                        ContentType,
+  content-identifier                  PrintableString OPTIONAL,
+  priority                            Priority DEFAULT normal,
+  per-message-indicators              PerMessageIndicators OPTIONAL,
+  deferred-delivery-time              [0] UTCTime OPTIONAL,
+  extensions                          [1] SEQUENCE OF ExtensionField OPTIONAL,
+  content                             OCTET STRING
+}
+
+MessageSubmissionResult ::= SEQUENCE {
+  message-submission-identifier  MessageIdentifier,
+  message-submission-time        [0] UTCTime,
+  content-identifier             PrintableString OPTIONAL,
+  extensions                     [1] SEQUENCE OF ExtensionField OPTIONAL
+}
+
+MessageDeliveryArgument ::= SEQUENCE {
+  message-delivery-identifier     MessageIdentifier,
+  message-delivery-time           [0] UTCTime,
+  originator-name                 ORName,
+  content-type                    ContentType,
+  content-identifier              PrintableString OPTIONAL,
+  priority                        Priority DEFAULT normal,
+  extensions                      [1] SEQUENCE OF ExtensionField OPTIONAL,
+  content                         OCTET STRING
+}
+
+-- MTS Bind
+MTSBindArgument ::= SEQUENCE {
+  initiator-name         ORName,
+  messages-waiting       [1] MessagesWaiting OPTIONAL,
+  initiator-credentials  [2] Credentials,
+  security-context       [3] OCTET STRING OPTIONAL,
+  extensions             [5] SEQUENCE OF ExtensionField OPTIONAL
+}
+
+MTSBindResult ::= SEQUENCE {
+  responder-name         ORName,
+  messages-waiting       [1] MessagesWaiting OPTIONAL,
+  responder-credentials  [2] Credentials,
+  extensions             [5] SEQUENCE OF ExtensionField OPTIONAL
+}
+
+MessagesWaiting ::= SEQUENCE {
+  urgent      [0] INTEGER OPTIONAL,
+  normal      [1] INTEGER OPTIONAL,
+  non-urgent  [2] INTEGER OPTIONAL
+}
+
+Credentials ::= CHOICE {
+  simple  PrintableString,
+  strong  [0] OCTET STRING
+}
+
+END

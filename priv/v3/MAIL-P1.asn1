@@ -1,0 +1,124 @@
+MAIL-P1 DEFINITIONS IMPLICIT TAGS ::=
+BEGIN
+
+EXPORTS
+  ORName, MessageIdentifier, ContentType, Priority,
+  PerMessageIndicators, ExtensionField, GlobalDomainIdentifier,
+  CountryName, AdminDomainName, PrivateDomainName, MTSIdentifier,
+  BuiltInStandardAttributes, PersonalName, DomainDefinedAttribute,
+  ExtensionAttribute, Content;
+
+Content ::= OCTET STRING
+
+Message ::= SEQUENCE {
+  envelope  MessageTransferEnvelope,
+  content   Content
+}
+
+ContentType ::= CHOICE {
+  built-in  INTEGER,
+  external  OBJECT IDENTIFIER
+}
+
+Priority ::= INTEGER { normal(0), non-urgent(1), urgent(2) }
+
+PerMessageIndicators ::= BIT STRING
+
+ExtensionField ::= SEQUENCE {
+  type        [0] INTEGER,
+  criticality [1] ENUMERATED { for-delivery(0), for-transfer(1), for-submission(2) } DEFAULT for-delivery,
+  value       [2] OCTET STRING
+}
+
+CountryName ::= [APPLICATION 1] CHOICE {
+  x121-dcc-code         NumericString,
+  iso-3166-alpha2-code  PrintableString
+}
+
+AdminDomainName ::= [APPLICATION 2] CHOICE {
+  numeric    NumericString,
+  printable  PrintableString
+}
+
+PrivateDomainName ::= CHOICE {
+  numeric    NumericString,
+  printable  PrintableString
+}
+
+GlobalDomainIdentifier ::= [APPLICATION 3] SEQUENCE {
+  country-name                CountryName,
+  administration-domain-name  AdminDomainName,
+  private-domain-name         PrivateDomainName OPTIONAL
+}
+
+MTSIdentifier ::= [APPLICATION 4] SEQUENCE {
+  global-domain-identifier  GlobalDomainIdentifier,
+  local-identifier          IA5String
+}
+
+MessageIdentifier ::= MTSIdentifier
+
+PersonalName ::= SEQUENCE {
+  surname               [0] PrintableString,
+  given-name            [1] PrintableString OPTIONAL,
+  initials              [2] PrintableString OPTIONAL,
+  generation-qualifier  [3] PrintableString OPTIONAL
+}
+
+DomainDefinedAttribute ::= SEQUENCE {
+  type   PrintableString,
+  value  PrintableString
+}
+
+ExtensionAttribute ::= SEQUENCE {
+  type   [0] INTEGER,
+  value  [1] OCTET STRING
+}
+
+BuiltInStandardAttributes ::= SEQUENCE {
+  country-name                CountryName OPTIONAL,
+  administration-domain-name  AdminDomainName OPTIONAL,
+  network-address             [0] NumericString OPTIONAL,
+  terminal-identifier         [1] PrintableString OPTIONAL,
+  private-domain-name         [2] PrivateDomainName OPTIONAL,
+  organization-name           [3] PrintableString OPTIONAL,
+  numeric-user-identifier     [4] NumericString OPTIONAL,
+  personal-name               [5] PersonalName OPTIONAL,
+  organizational-unit-names   [6] SEQUENCE OF PrintableString OPTIONAL
+}
+
+ORName ::= [APPLICATION 0] SEQUENCE {
+  built-in-standard-attributes        BuiltInStandardAttributes,
+  built-in-domain-defined-attributes  [1] SEQUENCE OF DomainDefinedAttribute OPTIONAL,
+  extension-attributes                [2] SEQUENCE OF ExtensionAttribute OPTIONAL
+}
+
+TraceInformationElement ::= SEQUENCE {
+  global-domain-identifier     GlobalDomainIdentifier,
+  arrival-time                 UTCTime,
+  routing-action               ENUMERATED { relayed(0), rerouted(1) }
+}
+
+MessageTransferEnvelope ::= SEQUENCE {
+  message-identifier                  MessageIdentifier,
+  originator-name                     ORName,
+  original-encoded-information-types  OCTET STRING OPTIONAL,
+  content-type                        ContentType,
+  content-identifier                  PrintableString OPTIONAL,
+  priority                            Priority DEFAULT normal,
+  per-message-indicators              PerMessageIndicators OPTIONAL,
+  deferred-delivery-time              [0] UTCTime OPTIONAL,
+  trace-information                   SEQUENCE OF TraceInformationElement,
+  extensions                          [3] SEQUENCE OF ExtensionField OPTIONAL,
+  per-recipient-fields                [2] SEQUENCE OF PerRecipientFields
+}
+
+PerRecipientFields ::= SEQUENCE {
+  recipient-name                         ORName,
+  originally-specified-recipient-number  [0] INTEGER,
+  per-recipient-indicators               [1] BIT STRING,
+  explicit-conversion                    [2] INTEGER OPTIONAL,
+  extensions                             [3] SEQUENCE OF ExtensionField OPTIONAL
+}
+
+END

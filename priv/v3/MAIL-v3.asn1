@@ -1,0 +1,325 @@
+MAIL-v3 DEFINITIONS IMPLICIT TAGS ::=
+BEGIN
+
+-- Consolidated X.420 minimal set for Sokhatsky Messenger Protocol (MAIL-v3)
+
+Message ::= SEQUENCE {
+  envelope  MessageTransferEnvelope,
+  content   Content
+}
+
+Content ::= OCTET STRING
+
+-- P1 Message Transfer Envelope
+MessageTransferEnvelope ::= SEQUENCE {
+  message-identifier                  MessageIdentifier,
+  originator-name                     ORName,
+  original-encoded-information-types  OCTET STRING OPTIONAL,
+  content-type                        ContentType,
+  content-identifier                  PrintableString OPTIONAL,
+  priority                            Priority DEFAULT normal,
+  per-message-indicators              PerMessageIndicators OPTIONAL,
+  deferred-delivery-time              [0] UTCTime OPTIONAL,
+  trace-information                   SEQUENCE OF TraceInformationElement,
+  extensions                          [3] SEQUENCE OF ExtensionField OPTIONAL,
+  per-recipient-fields                [2] SEQUENCE OF PerRecipientFields
+}
+
+PerRecipientFields ::= SEQUENCE {
+  recipient-name                         ORName,
+  originally-specified-recipient-number  [0] INTEGER,
+  per-recipient-indicators               [1] BIT STRING,
+  explicit-conversion                    [2] INTEGER OPTIONAL,
+  extensions                             [3] SEQUENCE OF ExtensionField OPTIONAL
+}
+
+-- P3 Submission and Delivery
+MessageSubmissionArgument ::= SEQUENCE {
+  originator-name                     ORName,
+  recipient-name                      ORName OPTIONAL,
+  original-encoded-information-types  OCTET STRING OPTIONAL,
+  content-type                        ContentType,
+  content-identifier                  PrintableString OPTIONAL,
+  priority                            Priority DEFAULT normal,
+  per-message-indicators              PerMessageIndicators OPTIONAL,
+  deferred-delivery-time              [0] UTCTime OPTIONAL,
+  extensions                          [1] SEQUENCE OF ExtensionField OPTIONAL,
+  content                             Content
+}
+
+MessageSubmissionResult ::= SEQUENCE {
+  message-submission-identifier  MessageIdentifier,
+  message-submission-time        [0] UTCTime,
+  content-identifier             PrintableString OPTIONAL,
+  extensions                     [1] SEQUENCE OF ExtensionField OPTIONAL
+}
+
+MessageDeliveryArgument ::= SEQUENCE {
+  message-delivery-identifier     MessageIdentifier,
+  message-delivery-time           [0] UTCTime,
+  originator-name                 ORName,
+  content-type                    ContentType,
+  content-identifier              PrintableString OPTIONAL,
+  priority                        Priority DEFAULT normal,
+  extensions                      [1] SEQUENCE OF ExtensionField OPTIONAL,
+  content                         Content
+}
+
+-- P7 Message Store Access
+MSBindArgument ::= SEQUENCE {
+  initiator-name              ORName,
+  initiator-credentials       [2] Credentials,
+  security-context            [3] OCTET STRING OPTIONAL,
+  fetch-restrictions          [4] Restrictions OPTIONAL,
+  bind-extensions             [7] SEQUENCE OF ExtensionField OPTIONAL
+}
+
+MSBindResult ::= SEQUENCE {
+  responder-credentials       [2] Credentials,
+  available-attribute-types    [4] SEQUENCE OF OBJECT IDENTIFIER OPTIONAL,
+  bind-result-extensions      [9] SEQUENCE OF ExtensionField OPTIONAL
+}
+
+Restrictions ::= SEQUENCE {
+  allowed-content-types     [0] SEQUENCE OF OBJECT IDENTIFIER OPTIONAL,
+  maximum-attribute-length  [2] INTEGER OPTIONAL
+}
+
+SummarizeArgument ::= SEQUENCE {
+  entry-class       [0] EntryClass DEFAULT delivery,
+  selector          [1] Selector,
+  summary-requests  [2] SEQUENCE OF OBJECT IDENTIFIER OPTIONAL
+}
+
+SummarizeResult ::= SEQUENCE {
+  next       [0] SequenceNumber OPTIONAL,
+  count      [1] INTEGER,
+  span       [2] Span OPTIONAL,
+  summaries  [3] SEQUENCE OF Summary OPTIONAL
+}
+
+ListArgument ::= SEQUENCE {
+  entry-class           [0] EntryClass DEFAULT delivery,
+  selector              [1] Selector,
+  requested-attributes  [3] EntryInformationSelection OPTIONAL
+}
+
+ListResult ::= SEQUENCE {
+  next       [0] SequenceNumber OPTIONAL,
+  requested  [1] SEQUENCE OF EntryInformation OPTIONAL
+}
+
+FetchArgument ::= SEQUENCE {
+  entry-class           [0] EntryClass DEFAULT delivery,
+  item                  CHOICE {
+                          search   [1] Selector,
+                          precise  [2] SequenceNumber
+                        },
+  requested-attributes  [3] EntryInformationSelection OPTIONAL
+}
+
+FetchResult ::= SEQUENCE {
+  entry-information  [0] EntryInformation OPTIONAL,
+  next               [2] SequenceNumber OPTIONAL
+}
+
+DeleteArgument ::= SEQUENCE {
+  entry-class  [0] EntryClass DEFAULT delivery,
+  items        CHOICE {
+                 selector          [1] Selector,
+                 sequence-numbers  [2] SEQUENCE OF SequenceNumber
+               }
+}
+
+-- Common Message Types
+MTSIdentifier ::= [APPLICATION 4] SEQUENCE {
+  global-domain-identifier  GlobalDomainIdentifier,
+  local-identifier          IA5String
+}
+
+MessageIdentifier ::= MTSIdentifier
+
+GlobalDomainIdentifier ::= [APPLICATION 3] SEQUENCE {
+  country-name                CountryName,
+  administration-domain-name  AdminDomainName,
+  private-domain-name         PrivateDomainName OPTIONAL
+}
+
+CountryName ::= [APPLICATION 1] CHOICE {
+  x121-dcc-code         NumericString,
+  iso-3166-alpha2-code  PrintableString
+}
+
+AdminDomainName ::= [APPLICATION 2] CHOICE {
+  numeric    NumericString,
+  printable  PrintableString
+}
+
+PrivateDomainName ::= CHOICE {
+  numeric    NumericString,
+  printable  PrintableString
+}
+
+ORName ::= [APPLICATION 0] SEQUENCE {
+  built-in-standard-attributes        BuiltInStandardAttributes,
+  built-in-domain-defined-attributes  [1] SEQUENCE OF DomainDefinedAttribute OPTIONAL,
+  extension-attributes                [2] SEQUENCE OF ExtensionAttribute OPTIONAL
+}
+
+BuiltInStandardAttributes ::= SEQUENCE {
+  country-name                CountryName OPTIONAL,
+  administration-domain-name  AdminDomainName OPTIONAL,
+  network-address             [0] NumericString OPTIONAL,
+  terminal-identifier         [1] PrintableString OPTIONAL,
+  private-domain-name         [2] PrivateDomainName OPTIONAL,
+  organization-name           [3] PrintableString OPTIONAL,
+  numeric-user-identifier     [4] NumericString OPTIONAL,
+  personal-name               [5] PersonalName OPTIONAL,
+  organizational-unit-names   [6] SEQUENCE OF PrintableString OPTIONAL
+}
+
+PersonalName ::= SEQUENCE {
+  surname               [0] PrintableString,
+  given-name            [1] PrintableString OPTIONAL,
+  initials              [2] PrintableString OPTIONAL,
+  generation-qualifier  [3] PrintableString OPTIONAL
+}
+
+DomainDefinedAttribute ::= SEQUENCE {
+  type   PrintableString,
+  value  PrintableString
+}
+
+ExtensionAttribute ::= SEQUENCE {
+  type   [0] INTEGER,
+  value  [1] OCTET STRING
+}
+
+TraceInformationElement ::= SEQUENCE {
+  global-domain-identifier     GlobalDomainIdentifier,
+  arrival-time                 UTCTime,
+  routing-action               ENUMERATED { relayed(0), rerouted(1) }
+}
+
+ExtensionField ::= SEQUENCE {
+  type        [0] INTEGER,
+  criticality [1] ENUMERATED { for-delivery(0), for-transfer(1), for-submission(2) } DEFAULT for-delivery,
+  value       [2] OCTET STRING
+}
+
+ContentType ::= CHOICE {
+  built-in  INTEGER,
+  external  OBJECT IDENTIFIER
+}
+
+Priority ::= INTEGER { normal(0), non-urgent(1), urgent(2) }
+
+PerMessageIndicators ::= BIT STRING
+
+-- MS Common Types
+EntryClass ::= INTEGER {
+  delivery(0), submission(1), draft(2), stored-message(3)
+}
+
+SequenceNumber ::= INTEGER
+
+Selector ::= SEQUENCE {
+  child-entries  [0] BOOLEAN DEFAULT FALSE,
+  range          [1] Range OPTIONAL,
+  filter         [2] Filter OPTIONAL,
+  limit          [3] INTEGER OPTIONAL
+}
+
+Range ::= CHOICE {
+  sequence-number-range  [0] NumberRange,
+  creation-time-range    [1] TimeRange
+}
+
+NumberRange ::= SEQUENCE {
+  from  [0] SequenceNumber OPTIONAL,
+  to    [1] SequenceNumber OPTIONAL
+}
+
+TimeRange ::= SEQUENCE {
+  from  [0] UTCTime OPTIONAL,
+  to    [1] UTCTime OPTIONAL
+}
+
+Filter ::= CHOICE {
+  item  [0] FilterItem,
+  and   [1] SEQUENCE OF Filter,
+  or    [2] SEQUENCE OF Filter,
+  not   [3] Filter
+}
+
+FilterItem ::= CHOICE {
+  equality           [0] AttributeValueAssertion,
+  present            [4] OBJECT IDENTIFIER,
+  approximate-match  [5] AttributeValueAssertion
+}
+
+AttributeValueAssertion ::= SEQUENCE {
+  attribute-type   OBJECT IDENTIFIER,
+  attribute-value  OCTET STRING
+}
+
+EntryInformationSelection ::= SEQUENCE OF AttributeSelection
+
+AttributeSelection ::= SEQUENCE {
+  type   OBJECT IDENTIFIER,
+  from   [0] INTEGER OPTIONAL,
+  count  [1] INTEGER OPTIONAL
+}
+
+EntryInformation ::= SEQUENCE {
+  sequence-number  SequenceNumber,
+  attributes       SEQUENCE OF Attribute OPTIONAL
+}
+
+Attribute ::= SEQUENCE {
+  type    OBJECT IDENTIFIER,
+  values  SEQUENCE OF OCTET STRING
+}
+
+Summary ::= SEQUENCE {
+  absent   [0] INTEGER OPTIONAL,
+  present  [1] SEQUENCE OF SEQUENCE {
+                 type   OBJECT IDENTIFIER,
+                 value  OCTET STRING,
+                 count  INTEGER
+               } OPTIONAL
+}
+
+Span ::= SEQUENCE {
+  lowest   [0] SequenceNumber,
+  highest  [1] SequenceNumber
+}
+
+-- MTS Bind Types
+MTSBindArgument ::= SEQUENCE {
+  initiator-name         ORName,
+  messages-waiting       [1] MessagesWaiting OPTIONAL,
+  initiator-credentials  [2] Credentials,
+  security-context       [3] OCTET STRING OPTIONAL,
+  extensions             [5] SEQUENCE OF ExtensionField OPTIONAL
+}
+
+MTSBindResult ::= SEQUENCE {
+  responder-name         ORName,
+  messages-waiting       [1] MessagesWaiting OPTIONAL,
+  responder-credentials  [2] Credentials,
+  extensions             [5] SEQUENCE OF ExtensionField OPTIONAL
+}
+
+MessagesWaiting ::= SEQUENCE {
+  urgent      [0] INTEGER OPTIONAL,
+  normal      [1] INTEGER OPTIONAL,
+  non-urgent  [2] INTEGER OPTIONAL
+}
+
+Credentials ::= CHOICE {
+  simple  PrintableString,
+  strong  [0] OCTET STRING
+}
+
+END

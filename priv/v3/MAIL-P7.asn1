@@ -1,0 +1,162 @@
+MAIL-P7 DEFINITIONS IMPLICIT TAGS ::=
+BEGIN
+
+IMPORTS
+  ORName, Content, MessageIdentifier, ExtensionField,
+  Priority, ContentType
+    FROM MAIL-P1;
+
+-- P7 Message Store Access
+MSBindArgument ::= SEQUENCE {
+  initiator-name              ORName,
+  initiator-credentials       [2] Credentials,
+  security-context            [3] OCTET STRING OPTIONAL,
+  fetch-restrictions          [4] Restrictions OPTIONAL,
+  bind-extensions             [7] SEQUENCE OF ExtensionField OPTIONAL
+}
+
+MSBindResult ::= SEQUENCE {
+  responder-credentials       [2] Credentials,
+  available-attribute-types    [4] SEQUENCE OF OBJECT IDENTIFIER OPTIONAL,
+  bind-result-extensions      [9] SEQUENCE OF ExtensionField OPTIONAL
+}
+
+Restrictions ::= SEQUENCE {
+  allowed-content-types     [0] SEQUENCE OF OBJECT IDENTIFIER OPTIONAL,
+  maximum-attribute-length  [2] INTEGER OPTIONAL
+}
+
+-- MS Operations
+SummarizeArgument ::= SEQUENCE {
+  entry-class       [0] EntryClass DEFAULT delivery,
+  selector          [1] Selector,
+  summary-requests  [2] SEQUENCE OF OBJECT IDENTIFIER OPTIONAL
+}
+
+SummarizeResult ::= SEQUENCE {
+  next       [0] SequenceNumber OPTIONAL,
+  count      [1] INTEGER,
+  span       [2] Span OPTIONAL,
+  summaries  [3] SEQUENCE OF Summary OPTIONAL
+}
+
+ListArgument ::= SEQUENCE {
+  entry-class           [0] EntryClass DEFAULT delivery,
+  selector              [1] Selector,
+  requested-attributes  [3] EntryInformationSelection OPTIONAL
+}
+
+ListResult ::= SEQUENCE {
+  next       [0] SequenceNumber OPTIONAL,
+  requested  [1] SEQUENCE OF EntryInformation OPTIONAL
+}
+
+FetchArgument ::= SEQUENCE {
+  entry-class           [0] EntryClass DEFAULT delivery,
+  item                  CHOICE {
+                          search   [1] Selector,
+                          precise  [2] SequenceNumber
+                        },
+  requested-attributes  [3] EntryInformationSelection OPTIONAL
+}
+
+FetchResult ::= SEQUENCE {
+  entry-information  [0] EntryInformation OPTIONAL,
+  next               [2] SequenceNumber OPTIONAL
+}
+
+DeleteArgument ::= SEQUENCE {
+  entry-class  [0] EntryClass DEFAULT delivery,
+  items        CHOICE {
+                 selector          [1] Selector,
+                 sequence-numbers  [2] SEQUENCE OF SequenceNumber
+               }
+}
+
+DeleteResult ::= NULL
+
+-- Common Types
+EntryClass ::= INTEGER {
+  delivery(0), submission(1), draft(2), stored-message(3)
+}
+
+SequenceNumber ::= INTEGER
+
+Selector ::= SEQUENCE {
+  child-entries  [0] BOOLEAN DEFAULT FALSE,
+  range          [1] Range OPTIONAL,
+  filter         [2] Filter OPTIONAL,
+  limit          [3] INTEGER OPTIONAL
+}
+
+Range ::= CHOICE {
+  sequence-number-range  [0] NumberRange,
+  creation-time-range    [1] TimeRange
+}
+
+NumberRange ::= SEQUENCE {
+  from  [0] SequenceNumber OPTIONAL,
+  to    [1] SequenceNumber OPTIONAL
+}
+
+TimeRange ::= SEQUENCE {
+  from  [0] UTCTime OPTIONAL,
+  to    [1] UTCTime OPTIONAL
+}
+
+Filter ::= CHOICE {
+  item  [0] FilterItem,
+  and   [1] SEQUENCE OF Filter,
+  or    [2] SEQUENCE OF Filter,
+  not   [3] Filter
+}
+
+FilterItem ::= CHOICE {
+  equality           [0] AttributeValueAssertion,
+  present            [4] OBJECT IDENTIFIER,
+  approximate-match  [5] AttributeValueAssertion
+}
+
+AttributeValueAssertion ::= SEQUENCE {
+  attribute-type   OBJECT IDENTIFIER,
+  attribute-value  OCTET STRING
+}
+
+EntryInformationSelection ::= SEQUENCE OF AttributeSelection
+
+AttributeSelection ::= SEQUENCE {
+  type   OBJECT IDENTIFIER,
+  from   [0] INTEGER OPTIONAL,
+  count  [1] INTEGER OPTIONAL
+}
+
+EntryInformation ::= SEQUENCE {
+  sequence-number  SequenceNumber,
+  attributes       SEQUENCE OF Attribute OPTIONAL
+}
+
+Attribute ::= SEQUENCE {
+  type    OBJECT IDENTIFIER,
+  values  SEQUENCE OF OCTET STRING
+}
+
+Summary ::= SEQUENCE {
+  absent   [0] INTEGER OPTIONAL,
+  present  [1] SEQUENCE OF SEQUENCE {
+                 type   OBJECT IDENTIFIER,
+                 value  OCTET STRING,
+                 count  INTEGER
+               } OPTIONAL
+}
+
+Span ::= SEQUENCE {
+  lowest   [0] SequenceNumber,
+  highest  [1] SequenceNumber
+}
+
+Credentials ::= CHOICE {
+  simple  PrintableString,
+  strong  [0] OCTET STRING
+}
+
+END
