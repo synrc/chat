@@ -1,9 +1,24 @@
 --- Протокол Месенжера Сохацького v2 для паб-саб брокерів на TLS
 --- https://tonpa.guru/stream/2023/2023-08-07 CHAT ASN.1.htm
 
-
 CHAT-v2 DEFINITIONS IMPLICIT TAGS ::=
 BEGIN
+    -- CHAT-v2 design direction
+    --
+    -- Архітектурна мета:
+    --   1. CHATProtocol містить тільки transport-level packet types.
+    --   2. Message описує тільки контент повідомлення.
+    --   3. Event є єдиним каналом runtime-подій (ack/activity/state updates).
+    --   4. Query є єдиним request/response механізмом.
+    --   5. Domain сутності (Subscription, Person, Member, Conference, Roster, Inbox view)
+    --      не повинні бути top-level packet types.
+    --
+    -- Цільова модель:
+    --   state   -> окремі domain/resource типи
+    --   command -> Query
+    --   event   -> Event
+    --
+    -- Тобто одна семантика не повинна мати кілька паралельних wire-шляхів.
 
     IMPORTS ContentInfo FROM CryptographicMessageSyntax-2009
             CertificationRequest FROM PKCS-10
@@ -251,15 +266,10 @@ BEGIN
     -- 09 CHAT-v2 Protocol Entities
 
     CHATProtocol ::= CHOICE {
-       authority    [1] Authority,
-       message      [2] Message,
-       inbox        [3] Inbox,
-       event        [4] Event,
-       query        [5] Query,
-       subscription [6] Subscription,
-       search       [7] Search,
-       roster       [8] Roster,
-       conference   [9] Conference
+       authority [1] Authority,
+       message   [2] Message,
+       event     [4] Event,
+       query     [5] Query
     }
 
     CHATMessage ::= SEQUENCE {
