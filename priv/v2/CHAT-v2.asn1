@@ -133,7 +133,7 @@ BEGIN
        refId OCTET STRING OPTIONAL, -- request correlation id
        feed MessageFeed OPTIONAL,
        target OCTET STRING OPTIONAL, -- optional routing hint; domain target belongs in payload
-       payload QueryPayload OPTIONAL, -- DSL/CMS encoded data
+       payload QueryPayload OPTIONAL, -- typed query family payload
        code INTEGER OPTIONAL
     }
 
@@ -260,14 +260,12 @@ BEGIN
     --   Query        = як це змінити / отримати
 
     Subscription ::= SEQUENCE {
-       id OCTET STRING,
-       vsn Version,
-       session OCTET STRING,
-
-       actor OCTET STRING,   -- хто ініціює або змінює підписку
-       target OCTET STRING   -- об'єкт підписки (користувач, кімната, канал тощо)
+       actor  OCTET STRING,
+       target OCTET STRING
     }
 
+    -- get/create/remove очікують actor + target
+    -- list допускає частковий фільтр
     SubscriptionQueryRequest ::= SEQUENCE {
        op     SubscriptionOp,
        actor  OCTET STRING OPTIONAL,
@@ -281,8 +279,8 @@ BEGIN
        remove (4)
     }
 
-    -- get/create/remove очікують actor + target
-    -- list допускає частковий фільтр
+    -- get/create/remove зазвичай повертають item
+    -- list повертає items
     SubscriptionQueryResult ::= SEQUENCE {
        item   Subscription OPTIONAL,
        items  SEQUENCE OF subscription Subscription OPTIONAL
