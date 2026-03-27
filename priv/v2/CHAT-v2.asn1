@@ -82,6 +82,27 @@ BEGIN
        feed MessageFeed,
        messages SEQUENCE OF message Message }
 
+    InboxOp ::= ENUMERATED {
+       get   (1),
+       erase (2)
+    }
+
+    -- get/erase працюють у межах конкретного feed
+    -- для обох операцій feed очікується
+    InboxQueryRequest ::= SEQUENCE {
+       op    InboxOp,
+       feed  MessageFeed OPTIONAL
+    }
+
+    InboxItem ::= SEQUENCE {
+       message Message
+    }
+
+    -- result повертає набір елементів inbox для feed (може бути пустим)
+    InboxQueryResult ::= SEQUENCE {
+       items SEQUENCE OF item InboxItem OPTIONAL
+    }
+
     -- 04 Event (Ack + Activity fusion)
 
 	EventType ::= ENUMERATED {
@@ -151,9 +172,6 @@ BEGIN
 
     ConferenceQueryRequest ::= OCTET STRING
     ConferenceQueryResult  ::= OCTET STRING
-
-    InboxQueryRequest ::= OCTET STRING
-    InboxQueryResult  ::= OCTET STRING
 
     ModerationQueryRequest ::= OCTET STRING
     ModerationQueryResult  ::= OCTET STRING
