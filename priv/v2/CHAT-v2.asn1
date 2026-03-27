@@ -407,6 +407,37 @@ BEGIN
        status PersonStatus
     }
 
+    PersonOp ::= ENUMERATED {
+       get    (1),
+       list   (2),
+       update (3),
+       remove (4)
+    }
+
+    -- get/remove очікують id
+    -- update використовує поля профілю
+    -- list допускає частковий фільтр
+    PersonQueryRequest ::= SEQUENCE {
+       op   PersonOp,
+
+       id   OCTET STRING OPTIONAL,
+       name OCTET STRING OPTIONAL
+    }
+
+    PersonItem ::= SEQUENCE {
+       id       OCTET STRING,
+       nickname OCTET STRING,
+       presence Presence,
+       status   PersonStatus
+    }
+
+    -- get/update зазвичай повертають item
+    -- list повертає items
+    PersonQueryResult ::= SEQUENCE {
+       item   PersonItem OPTIONAL,
+       items  SEQUENCE OF item PersonItem OPTIONAL
+    }
+
     Server ::= SEQUENCE { service OCTET STRING, port INTEGER, host OCTET STRING }
     RosterStatus ::= ENUMERATED {
        get (1), create (2), del (3), remove (4), nick (5), search (6),
