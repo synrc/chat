@@ -227,11 +227,6 @@ BEGIN
        result  [2] InboxQueryResult
     }
 
-    ModerationQueryEnvelope ::= CHOICE {
-       request [1] ModerationQueryRequest,
-       result  [2] ModerationQueryResult
-    }
-
     -- 05 Search (LDAP Search)
 
     SearchStatus ::= ENUMERATED { ok (0) }
@@ -488,6 +483,38 @@ BEGIN
     RosterQueryEnvelope ::= CHOICE {
        request [1] RosterQueryRequest,
        result  [2] RosterQueryResult
+    }
+
+    ModerationOp ::= ENUMERATED {
+       ban    (1),
+       unban  (2),
+       list   (3)
+    }
+
+    -- ban/unban очікують actor + target
+    -- list повертає список обмежень
+    ModerationQueryRequest ::= SEQUENCE {
+       op     ModerationOp,
+
+       actor  OCTET STRING OPTIONAL,
+       target OCTET STRING OPTIONAL
+    }
+
+    ModerationItem ::= SEQUENCE {
+       actor   OCTET STRING,
+       target  OCTET STRING
+    }
+
+    -- ban/unban зазвичай повертають item
+    -- list повертає items
+    ModerationQueryResult ::= SEQUENCE {
+       item   ModerationItem OPTIONAL,
+       items  SEQUENCE OF item ModerationItem OPTIONAL
+    }
+
+    ModerationQueryEnvelope ::= CHOICE {
+       request [1] ModerationQueryRequest,
+       result  [2] ModerationQueryResult
     }
 
     -- 08 Conference (RocksDB, Multi-user Conferences)
