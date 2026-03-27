@@ -457,7 +457,7 @@ BEGIN
        status MemberStatus }
 
     ConferenceType ::= ENUMERATED { group (1), channel (2), call (3) }
-    
+
     -- ConferenceStatus описує лише стан конференції як ресурсу.
     -- Command, lifecycle і події більше не живуть у Conference:
     --   create/add/remove/patch/get/delete -> Query
@@ -470,6 +470,8 @@ BEGIN
        deleted  (3)
     }
 
+    -- lastmsg не є частиною Conference state.
+    -- View-дані повинні передаватися через Query (Inbox/Search) або Event.
     Conference ::= SEQUENCE {
        id OCTET STRING,
        vsn Version,
@@ -485,7 +487,6 @@ BEGIN
        tos OCTET STRING,
        unread INTEGER,
        mentions SEQUENCE OF contact INTEGER,
-       lastmsg Message,
        update INTEGER,
        created INTEGER,
        status ConferenceStatus }
