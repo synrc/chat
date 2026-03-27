@@ -230,11 +230,6 @@ BEGIN
        result  [2] RosterQueryResult
     }
 
-    ConferenceQueryEnvelope ::= CHOICE {
-       request [1] ConferenceQueryRequest,
-       result  [2] ConferenceQueryResult
-    }
-
     InboxQueryEnvelope ::= CHOICE {
        request [1] InboxQueryRequest,
        result  [2] InboxQueryResult
@@ -490,6 +485,44 @@ BEGIN
        update INTEGER,
        created INTEGER,
        status ConferenceStatus }
+
+    ConferenceOp ::= ENUMERATED {
+       get     (1),
+       list    (2),
+       create  (3),
+       update  (4),
+       remove  (5)
+    }
+
+    -- get/remove очікують id
+    -- create/update використовують поля конференції
+    -- list допускає частковий фільтр
+    ConferenceQueryRequest ::= SEQUENCE {
+       op    ConferenceOp,
+
+       id    OCTET STRING OPTIONAL,
+       name  OCTET STRING OPTIONAL,
+       type  ConferenceType OPTIONAL
+    }
+
+    -- get/create/update зазвичай повертають item
+    -- list повертає items
+    ConferenceQueryResult ::= SEQUENCE {
+       item   ConferenceItem OPTIONAL,
+       items  SEQUENCE OF item ConferenceItem OPTIONAL
+    }
+
+    ConferenceItem ::= SEQUENCE {
+       id    OCTET STRING,
+       name  OCTET STRING,
+       type  ConferenceType,
+       status ConferenceStatus
+    }
+
+    ConferenceQueryEnvelope ::= CHOICE {
+       request [1] ConferenceQueryRequest,
+       result  [2] ConferenceQueryResult
+    }
 
     -- 09 CHAT-v2 Protocol Entities
 
