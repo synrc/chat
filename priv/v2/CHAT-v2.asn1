@@ -178,9 +178,6 @@ BEGIN
        code INTEGER OPTIONAL
     }
 
-    PresenceQueryRequest ::= OCTET STRING
-    PresenceQueryResult  ::= OCTET STRING
-
     PersonQueryRequest ::= OCTET STRING
     PersonQueryResult  ::= OCTET STRING
 
@@ -357,6 +354,31 @@ BEGIN
     -- Runtime presence-події (online/offline/typing) передаються через Event.
 
     Presence ::= ENUMERATED { offline (1), online (2) }
+
+    PresenceOp ::= ENUMERATED {
+       get  (1),
+       list (2)
+    }
+
+    -- get зазвичай очікує actor
+    -- list допускає actor і/або feed як фільтр вибірки
+    PresenceQueryRequest ::= SEQUENCE {
+       op     PresenceOp,
+       actor  OCTET STRING OPTIONAL,
+       feed   MessageFeed OPTIONAL
+    }
+
+    PresenceItem ::= SEQUENCE {
+       actor     OCTET STRING,
+       presence  Presence
+    }
+
+    -- get зазвичай повертає item
+    -- list повертає items (може бути пустим)
+    PresenceQueryResult ::= SEQUENCE {
+       item   PresenceItem OPTIONAL,
+       items  SEQUENCE OF item PresenceItem OPTIONAL
+    }
 
     PersonStatus ::= ENUMERATED { req (1), auth (2), ignore (3), internal (4),
        friend (5), lastmsg (6), ban (7), banned (8), deleted (9), nonexised (10) }
