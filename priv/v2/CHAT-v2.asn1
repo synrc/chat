@@ -110,6 +110,12 @@ BEGIN
        timestamp INTEGER OPTIONAL
     }
 
+    -- Query є єдиним request/response шаром протоколу.
+    -- Усі commands і state-запити повинні йти через Query.
+    -- Payload уже розбитий на доменні family envelope.
+    -- Внутрішні request/result payload типи тимчасово залишаються opaque
+    -- до поступової типізації кожної family окремо.
+
     QueryType ::= ENUMERATED {
        get    (1),
        set    (2),
@@ -126,9 +132,93 @@ BEGIN
 
        refId OCTET STRING OPTIONAL, -- request correlation id
        feed MessageFeed OPTIONAL,
-       target OCTET STRING OPTIONAL, -- user/conference/ message/document id
-       payload OCTET STRING OPTIONAL, -- DSL/CMS encoded data
+       target OCTET STRING OPTIONAL, -- optional routing hint; domain target belongs in payload
+       payload QueryPayload OPTIONAL, -- DSL/CMS encoded data
        code INTEGER OPTIONAL
+    }
+
+    SubscriptionQueryRequest ::= OCTET STRING
+    SubscriptionQueryResult  ::= OCTET STRING
+
+    PresenceQueryRequest ::= OCTET STRING
+    PresenceQueryResult  ::= OCTET STRING
+
+    PersonQueryRequest ::= OCTET STRING
+    PersonQueryResult  ::= OCTET STRING
+
+    MemberQueryRequest ::= OCTET STRING
+    MemberQueryResult  ::= OCTET STRING
+
+    RosterQueryRequest ::= OCTET STRING
+    RosterQueryResult  ::= OCTET STRING
+
+    ConferenceQueryRequest ::= OCTET STRING
+    ConferenceQueryResult  ::= OCTET STRING
+
+    InboxQueryRequest ::= OCTET STRING
+    InboxQueryResult  ::= OCTET STRING
+
+    SearchQueryRequest ::= OCTET STRING
+    SearchQueryResult  ::= OCTET STRING
+
+    ModerationQueryRequest ::= OCTET STRING
+    ModerationQueryResult  ::= OCTET STRING
+
+    QueryPayload ::= CHOICE {
+       subscription [1] SubscriptionQueryEnvelope,
+       presence     [2] PresenceQueryEnvelope,
+       person       [3] PersonQueryEnvelope,
+       member       [4] MemberQueryEnvelope,
+       roster       [5] RosterQueryEnvelope,
+       conference   [6] ConferenceQueryEnvelope,
+       inbox        [7] InboxQueryEnvelope,
+       search       [8] SearchQueryEnvelope,
+       moderation   [9] ModerationQueryEnvelope
+    }
+
+    SubscriptionQueryEnvelope ::= CHOICE {
+       request [1] SubscriptionQueryRequest,
+       result  [2] SubscriptionQueryResult
+    }
+
+    PresenceQueryEnvelope ::= CHOICE {
+       request [1] PresenceQueryRequest,
+       result  [2] PresenceQueryResult
+    }
+
+    PersonQueryEnvelope ::= CHOICE {
+       request [1] PersonQueryRequest,
+       result  [2] PersonQueryResult
+    }
+
+    MemberQueryEnvelope ::= CHOICE {
+       request [1] MemberQueryRequest,
+       result  [2] MemberQueryResult
+    }
+
+    RosterQueryEnvelope ::= CHOICE {
+       request [1] RosterQueryRequest,
+       result  [2] RosterQueryResult
+    }
+
+    ConferenceQueryEnvelope ::= CHOICE {
+       request [1] ConferenceQueryRequest,
+       result  [2] ConferenceQueryResult
+    }
+
+    InboxQueryEnvelope ::= CHOICE {
+       request [1] InboxQueryRequest,
+       result  [2] InboxQueryResult
+    }
+
+    SearchQueryEnvelope ::= CHOICE {
+       request [1] SearchQueryRequest,
+       result  [2] SearchQueryResult
+    }
+
+    ModerationQueryEnvelope ::= CHOICE {
+       request [1] ModerationQueryRequest,
+       result  [2] ModerationQueryResult
     }
 
     -- 05 Search (LDAP Search)
