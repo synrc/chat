@@ -137,9 +137,6 @@ BEGIN
        code INTEGER OPTIONAL
     }
 
-    SubscriptionQueryRequest ::= OCTET STRING
-    SubscriptionQueryResult  ::= OCTET STRING
-
     PresenceQueryRequest ::= OCTET STRING
     PresenceQueryResult  ::= OCTET STRING
 
@@ -269,6 +266,26 @@ BEGIN
 
        actor OCTET STRING,   -- хто ініціює або змінює підписку
        target OCTET STRING   -- об'єкт підписки (користувач, кімната, канал тощо)
+    }
+
+    SubscriptionQueryRequest ::= SEQUENCE {
+       op     SubscriptionOp,
+       actor  OCTET STRING OPTIONAL,
+       target OCTET STRING OPTIONAL
+    }
+
+    SubscriptionOp ::= ENUMERATED {
+       get    (1),
+       list   (2),
+       create (3),
+       remove (4)
+    }
+
+    -- get/create/remove очікують actor + target
+    -- list допускає частковий фільтр
+    SubscriptionQueryResult ::= SEQUENCE {
+       item   Subscription OPTIONAL,
+       items  SEQUENCE OF subscription Subscription OPTIONAL
     }
 
     -- 07 Roster (LDAP /People, /Channels, /Topics and /Servers user sub-folders)
