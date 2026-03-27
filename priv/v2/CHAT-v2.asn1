@@ -104,33 +104,53 @@ BEGIN
     }
 
     -- 04 Event (Ack + Activity fusion)
+    --
+    -- Event є єдиним каналом runtime-подій.
+    -- Події групуються за family payload, без глобального плаского enum.
+    -- Для простих family тип події задається локальним enum усередині payload.
 
-	EventType ::= ENUMERATED {
-	   received  (1),
-	   delivered (2),
-	   read      (3),
-	   edited    (4),
-	   deleted   (5),
-	   updated   (6),
-	   
-	   online    (7),
-	   offline   (8),
-	   typing    (9)
-	}
+    MessageEventType ::= ENUMERATED {
+       received  (1),
+       delivered (2),
+       read      (3),
+       edited    (4),
+       deleted   (5),
+       updated   (6)
+    }
+
+    MessageEvent ::= SEQUENCE {
+       type       MessageEventType,
+       messageId  OCTET STRING OPTIONAL,
+       feed       MessageFeed OPTIONAL,
+       actor      OCTET STRING OPTIONAL,
+       timestamp  INTEGER OPTIONAL
+    }
+
+    PresenceEventType ::= ENUMERATED {
+       online   (1),
+       offline  (2),
+       typing   (3)
+    }
+
+    PresenceEvent ::= SEQUENCE {
+       type       PresenceEventType,
+       feed       MessageFeed OPTIONAL,
+       actor      OCTET STRING OPTIONAL,
+       timestamp  INTEGER OPTIONAL
+    }
+
+    EventPayload ::= CHOICE {
+       message   [1] MessageEvent,
+       presence  [2] PresenceEvent
+    }
 
     Event ::= SEQUENCE {
        id OCTET STRING,
        vsn Version,
        session OCTET STRING,
-
-       messageId OCTET STRING OPTIONAL,
-       eventType EventType,
-
-       feed MessageFeed OPTIONAL,
-       actor OCTET STRING OPTIONAL,
-       timestamp INTEGER OPTIONAL
+       payload EventPayload
     }
-
+    
     -- Query є єдиним request/response шаром протоколу.
     -- Усі commands і state-запити повинні йти через Query.
     -- Payload уже розбитий на доменні family envelope.
