@@ -155,9 +155,6 @@ BEGIN
     InboxQueryRequest ::= OCTET STRING
     InboxQueryResult  ::= OCTET STRING
 
-    SearchQueryRequest ::= OCTET STRING
-    SearchQueryResult  ::= OCTET STRING
-
     ModerationQueryRequest ::= OCTET STRING
     ModerationQueryResult  ::= OCTET STRING
 
@@ -208,11 +205,6 @@ BEGIN
        result  [2] InboxQueryResult
     }
 
-    SearchQueryEnvelope ::= CHOICE {
-       request [1] SearchQueryRequest,
-       result  [2] SearchQueryResult
-    }
-
     ModerationQueryEnvelope ::= CHOICE {
        request [1] ModerationQueryRequest,
        result  [2] ModerationQueryResult
@@ -224,6 +216,7 @@ BEGIN
     Criteria ::= ENUMERATED { equal (0), notequal (1), like (2) }
     Scope ::= ENUMERATED { profile (0), folder (1), contact (2), member (3), room (4), chat (5), message (6) }
 
+    -- TODO кандидат на видалення
     Search ::= SEQUENCE {
        id OCTET STRING,
        vsn Version,
@@ -234,6 +227,40 @@ BEGIN
        criteria Criteria,
        type Scope,
        status SearchStatus }
+
+    SearchOp ::= ENUMERATED {
+       execute (1),
+       list    (2)
+    }
+
+    -- execute використовує field/value/criteria/type
+    -- list допускає частковий фільтр або перегляд у межах scope/dn
+    SearchQueryRequest ::= SEQUENCE {
+       op       SearchOp,
+       dn       OCTET STRING OPTIONAL,
+       field    OCTET STRING OPTIONAL,
+       value    OCTET STRING OPTIONAL,
+       criteria Criteria OPTIONAL,
+       type     Scope OPTIONAL
+    }
+
+    SearchItem ::= SEQUENCE {
+       dn       OCTET STRING OPTIONAL,
+       field    OCTET STRING OPTIONAL,
+       value    OCTET STRING OPTIONAL,
+       criteria Criteria OPTIONAL,
+       type     Scope OPTIONAL
+    }
+
+    -- result повертає список знайдених елементів (може бути пустим)
+    SearchQueryResult ::= SEQUENCE {
+       items SEQUENCE OF item SearchItem OPTIONAL
+    }
+
+    SearchQueryEnvelope ::= CHOICE {
+       request [1] SearchQueryRequest,
+       result  [2] SearchQueryResult
+    }
 
     -- 06 Subscription (зв'язок підписки між суб'єктом і ціллю)
     --
