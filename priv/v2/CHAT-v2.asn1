@@ -157,8 +157,6 @@ BEGIN
     --   Event        = що сталося (події)
     --   Query        = як це змінити / отримати
 
-    SubscriptionPresence ::= ENUMERATED { offline (1), online (2) }
-
     Subscription ::= SEQUENCE {
        id OCTET STRING,
        vsn Version,
@@ -169,6 +167,11 @@ BEGIN
     }
 
     -- 07 Roster (LDAP /People, /Channels, /Topics and /Servers user sub-folders)
+
+    -- Presence як snapshot-стан для roster/member.
+    -- Runtime presence-події (online/offline/typing) передаються через Event.
+
+    Presence ::= ENUMERATED { offline (1), online (2) }
 
     PersonStatus ::= ENUMERATED { req (1), auth (2), ignore (3), internal (4),
        friend (5), lastmsg (6), ban (7), banned (8), deleted (9), nonexised (10) }
@@ -181,7 +184,7 @@ BEGIN
        phone OCTET STRING,
        surnames SEQUENCE OF name OCTET STRING,
        lastmsg Message,
-       presence SubscriptionPresence,
+       presence Presence,
        update INTEGER,
        created INTEGER,
        settings SEQUENCE OF feature Feature OPTIONAL,
@@ -219,7 +222,7 @@ BEGIN
        alias OCTET STRING,
        update INTEGER,
        settings SEQUENCE OF feature Feature,
-       presence SubscriptionPresence,
+       presence Presence,
        status MemberStatus }
 
     ConferenceType ::= ENUMERATED { group (1), channel (2), call (3) }
