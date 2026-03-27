@@ -133,19 +133,40 @@ BEGIN
        type Scope,
        status SearchStatus }
 
-    -- 06 Subscription (MNESIA, Pub/Sub)
+    -- 06 Subscription (зв'язок підписки між суб'єктом і ціллю)
+    --
+    -- Модель спрощена до факту зв'язку (actor -> target).
+    -- Жодних статусів або presence тут більше немає.
+    --
+    -- Перенесення семантики:
+    --
+    -- Presence (online/offline/typing):
+    --   → перенесено в Event
+    --
+    -- Lifecycle дії (request/confirm/ignore/ban/unban):
+    --   → передаються через Event (як події)
+    --   → або ініціюються через Query (type=set)
+    --
+    -- Бан:
+    --   → не є частиною Subscription
+    --   → є server-side policy (обмеження доступу)
+    --   → встановлюється через Query і сигналізується через Event
+    --
+    -- Таким чином:
+    --   Subscription = state (факт зв'язку)
+    --   Event        = що сталося (події)
+    --   Query        = як це змінити / отримати
 
     SubscriptionPresence ::= ENUMERATED { offline (1), online (2) }
-    SubscriptionStatus ::= ENUMERATED { request (1), confirm (2), update (3), ignore (4), ban (5), unban (6) }
 
     Subscription ::= SEQUENCE {
        id OCTET STRING,
        vsn Version,
        session OCTET STRING,
-       nickname OCTET STRING,
-       friend OCTET STRING,
-       status SubscriptionPresence,
-       type SubscriptionStatus }
+
+       actor OCTET STRING,   -- хто ініціює або змінює підписку
+       target OCTET STRING   -- об'єкт підписки (користувач, кімната, канал тощо)
+    }
 
     -- 07 Roster (LDAP /People, /Channels, /Topics and /Servers user sub-folders)
 
