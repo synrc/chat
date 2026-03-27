@@ -362,6 +362,7 @@ BEGIN
 
     -- get зазвичай очікує actor
     -- list допускає actor і/або feed як фільтр вибірки
+    -- feed задає контекст (якщо presence залежить від feed)
     PresenceQueryRequest ::= SEQUENCE {
        op     PresenceOp,
        actor  OCTET STRING OPTIONAL,
@@ -383,6 +384,8 @@ BEGIN
     PersonStatus ::= ENUMERATED { req (1), auth (2), ignore (3), internal (4),
        friend (5), lastmsg (6), ban (7), banned (8), deleted (9), nonexised (10) }
 
+    -- lastmsg не є частиною Person state.
+    -- TODO Це view-дані, які повинні передаватися через Query (Inbox/Search) або Event.
     Person ::= SEQUENCE {
        id OCTET STRING,
        nickname OCTET STRING,
@@ -390,12 +393,16 @@ BEGIN
        names SEQUENCE OF name OCTET STRING,
        phone OCTET STRING,
        surnames SEQUENCE OF name OCTET STRING,
-       lastmsg Message,
+
        presence Presence,
+
        update INTEGER,
        created INTEGER,
+
        settings SEQUENCE OF feature Feature OPTIONAL,
-       status PersonStatus }
+
+       status PersonStatus
+    }
 
     Server ::= SEQUENCE { service OCTET STRING, port INTEGER, host OCTET STRING }
     RosterStatus ::= ENUMERATED {
