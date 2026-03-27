@@ -229,18 +229,6 @@ BEGIN
     Criteria ::= ENUMERATED { equal (0), notequal (1), like (2), ...}
     Scope ::= ENUMERATED { profile (0), folder (1), contact (2), member (3), room (4), chat (5), message (6), ...}
 
-    -- TODO кандидат на видалення
-    Search ::= SEQUENCE {
-       id OCTET STRING,
-       vsn Version,
-       session OCTET STRING,
-       dn OCTET STRING,
-       field OCTET STRING,
-       value OCTET STRING,
-       criteria Criteria,
-       type Scope,
-       status SearchStatus, ... }
-
     SearchOp ::= ENUMERATED {
        execute (1),
        list    (2),
