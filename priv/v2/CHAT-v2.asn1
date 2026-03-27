@@ -440,7 +440,7 @@ BEGIN
        admin  (2),
        owner  (3)
     }
-    
+
     Member ::= SEQUENCE {
        id OCTET STRING,
        nickname OCTET STRING,
@@ -457,8 +457,19 @@ BEGIN
        status MemberStatus }
 
     ConferenceType ::= ENUMERATED { group (1), channel (2), call (3) }
-    ConferenceStatus ::= ENUMERATED { create (1), leave (2), add (3), remove (4), removed (5),
-       join (6), joined (7), info (8), patch (9), get (10), delete (11), lastmsg (12), mute (13), unmute (14) }
+    
+    -- ConferenceStatus описує лише стан конференції як ресурсу.
+    -- Command, lifecycle і події більше не живуть у Conference:
+    --   create/add/remove/patch/get/delete -> Query
+    --   join/leave/joined/removed          -> Event
+    --   mute/unmute                        -> Query / Event
+    --   lastmsg                            -> Query (Inbox/Search) або Event
+    ConferenceStatus ::= ENUMERATED {
+       active   (1),
+       archived (2),
+       deleted  (3)
+    }
+
     Conference ::= SEQUENCE {
        id OCTET STRING,
        vsn Version,
