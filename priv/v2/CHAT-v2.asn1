@@ -184,9 +184,6 @@ BEGIN
     MemberQueryRequest ::= OCTET STRING
     MemberQueryResult  ::= OCTET STRING
 
-    RosterQueryRequest ::= OCTET STRING
-    RosterQueryResult  ::= OCTET STRING
-
     ConferenceQueryRequest ::= OCTET STRING
     ConferenceQueryResult  ::= OCTET STRING
 
@@ -223,11 +220,6 @@ BEGIN
     MemberQueryEnvelope ::= CHOICE {
        request [1] MemberQueryRequest,
        result  [2] MemberQueryResult
-    }
-
-    RosterQueryEnvelope ::= CHOICE {
-       request [1] RosterQueryRequest,
-       result  [2] RosterQueryResult
     }
 
     InboxQueryEnvelope ::= CHOICE {
@@ -465,6 +457,38 @@ BEGIN
        servers SEQUENCE OF server Server,
        update INTEGER,
        status RosterStatus }
+
+    RosterOp ::= ENUMERATED {
+       get  (1),
+       list (2)
+    }
+
+    -- get зазвичай очікує id
+    -- list допускає частковий фільтр
+    RosterQueryRequest ::= SEQUENCE {
+       op   RosterOp,
+
+       id   OCTET STRING OPTIONAL,
+       name OCTET STRING OPTIONAL
+    }
+
+    RosterItem ::= SEQUENCE {
+       id       OCTET STRING,
+       nickname OCTET STRING,
+       status   RosterStatus
+    }
+
+    -- get зазвичай повертає item
+    -- list повертає items
+    RosterQueryResult ::= SEQUENCE {
+       item   RosterItem OPTIONAL,
+       items  SEQUENCE OF item RosterItem OPTIONAL
+    }
+
+    RosterQueryEnvelope ::= CHOICE {
+       request [1] RosterQueryRequest,
+       result  [2] RosterQueryResult
+    }
 
     -- 08 Conference (RocksDB, Multi-user Conferences)
 
