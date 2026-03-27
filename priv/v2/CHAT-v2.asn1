@@ -439,9 +439,20 @@ BEGIN
     }
 
     Server ::= SEQUENCE { service OCTET STRING, port INTEGER, host OCTET STRING }
+
+    -- RosterStatus описує лише стан roster як ресурсу.
+    -- Command, mutation і lookup більше не живуть у Roster:
+    --   get/create/del/remove/add/update/list/patch -> Query
+    --   nick/search/contact/lastmsg                 -> Query / view
     RosterStatus ::= ENUMERATED {
-       get (1), create (2), del (3), remove (4), nick (5), search (6),
-       contact (7), add (8), update (9), list (10), patch (11), lastmsg (12) }
+       active   (1),
+       archived (2),
+       deleted  (3)
+    }
+
+    -- Roster є агрегованим snapshot/view ресурсом.
+    -- Операції над roster передаються через Query.
+    -- Runtime-події не живуть у Roster як моделі.
     Roster ::= SEQUENCE {
        id OCTET STRING,
        vsn Version,
