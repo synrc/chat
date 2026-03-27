@@ -164,32 +164,6 @@ BEGIN
        error  (4)
     }
 
-    Query ::= SEQUENCE {
-       id OCTET STRING,
-       vsn Version,
-       session OCTET STRING,
-
-       queryType QueryType,
-
-       refId OCTET STRING OPTIONAL, -- request correlation id
-       feed MessageFeed OPTIONAL,
-       target OCTET STRING OPTIONAL, -- optional routing hint; domain target belongs in payload
-       payload QueryPayload OPTIONAL, -- typed query family payload
-       code INTEGER OPTIONAL
-    }
-
-    PersonQueryRequest ::= OCTET STRING
-    PersonQueryResult  ::= OCTET STRING
-
-    MemberQueryRequest ::= OCTET STRING
-    MemberQueryResult  ::= OCTET STRING
-
-    ConferenceQueryRequest ::= OCTET STRING
-    ConferenceQueryResult  ::= OCTET STRING
-
-    ModerationQueryRequest ::= OCTET STRING
-    ModerationQueryResult  ::= OCTET STRING
-
     QueryPayload ::= CHOICE {
        subscription [1] SubscriptionQueryEnvelope,
        presence     [2] PresenceQueryEnvelope,
@@ -225,6 +199,20 @@ BEGIN
     InboxQueryEnvelope ::= CHOICE {
        request [1] InboxQueryRequest,
        result  [2] InboxQueryResult
+    }
+
+    Query ::= SEQUENCE {
+       id OCTET STRING,
+       vsn Version,
+       session OCTET STRING,
+
+       queryType QueryType,
+
+       refId OCTET STRING OPTIONAL, -- request correlation id
+       feed MessageFeed OPTIONAL,
+       target OCTET STRING OPTIONAL, -- optional routing hint; domain target belongs in payload
+       payload QueryPayload OPTIONAL, -- typed query family payload
+       code INTEGER OPTIONAL
     }
 
     -- 05 Search (LDAP Search)
@@ -543,6 +531,38 @@ BEGIN
        settings SEQUENCE OF feature Feature,
        presence Presence,
        status MemberStatus }
+
+    MemberOp ::= ENUMERATED {
+       get    (1),
+       list   (2),
+       add    (3),
+       remove (4),
+       update (5)
+    }
+
+    -- get/remove/update очікують actor + feed
+    -- add використовує actor + feed
+    -- list допускає фільтр за feed
+    MemberQueryRequest ::= SEQUENCE {
+       op    MemberOp,
+
+       actor OCTET STRING OPTIONAL,
+       feed  MessageFeed OPTIONAL
+    }
+
+    MemberItem ::= SEQUENCE {
+       actor   OCTET STRING,
+       feed    MessageFeed,
+       status  MemberStatus,
+       presence Presence OPTIONAL
+    }
+
+    -- get/add/update зазвичай повертають item
+    -- list повертає items
+    MemberQueryResult ::= SEQUENCE {
+       item   MemberItem OPTIONAL,
+       items  SEQUENCE OF item MemberItem OPTIONAL
+    }
 
     ConferenceType ::= ENUMERATED { group (1), channel (2), call (3) }
 
