@@ -1,9 +1,24 @@
 --- Протокол Месенжера Сохацького v2 для паб-саб брокерів на TLS
 --- https://tonpa.guru/stream/2023/2023-08-07 CHAT ASN.1.htm
 
-
 CHAT-v2 DEFINITIONS IMPLICIT TAGS ::=
 BEGIN
+    -- CHAT-v2 design direction
+    --
+    -- Архітектурна мета:
+    --   1. CHATProtocol містить тільки transport-level packet types.
+    --   2. Message описує тільки контент повідомлення.
+    --   3. Event є єдиним каналом runtime-подій (ack/activity/state updates).
+    --   4. Query є єдиним request/response механізмом.
+    --   5. Domain сутності (Subscription, Person, Member, Conference, Roster, Inbox view)
+    --      не повинні бути top-level packet types.
+    --
+    -- Цільова модель:
+    --   state   -> окремі domain/resource типи
+    --   command -> Query
+    --   event   -> Event
+    --
+    -- Тобто одна семантика не повинна мати кілька паралельних wire-шляхів.
 
     IMPORTS ContentInfo FROM CryptographicMessageSyntax-2009
             CertificationRequest FROM PKCS-10
@@ -15,14 +30,15 @@ BEGIN
     -- 01 Authority (CA)
 
     Feature ::= SEQUENCE { id OCTET STRING, key OCTET STRING, value OCTET STRING, group OCTET STRING }
-    AuthorityMethod ::= ENUMERATED { announce (0), enroll (1), authenticate (2), revoke (3), renew (4) }
+    AuthorityMethod ::= ENUMERATED { announce (0), enroll (1), authenticate (2), revoke (3), renew (4), ... }
     Authority ::= SEQUENCE {
        id OCTET STRING,
        vsn Version,
        session OCTET STRING,
        type AuthorityMethod,
        cert OCTET STRING,
-       settings SEQUENCE OF feature Feature }
+       settings SEQUENCE OF feature Feature,
+        ... }
 
     -- 02 Message (MNESIA, SQLite)
 
@@ -30,7 +46,7 @@ BEGIN
     -- Event є уніфікованим типом для всіх подій (Ack + Activity).
     -- Такий поділ мінімізує розмір базових повідомлень і не змішує семантику.
 
-    MessageType ::= ENUMERATED { normal (0), sys (1), reply (2), forward (3) }
+    MessageType ::= ENUMERATED { normal (0), sys (1), reply (2), forward (3), ... }
 
     MessageFeed ::= CHOICE { private [1] Privatebox, chan [2] Streambox, mailbox [4] Mailbox, group [8] Groupbox }
 
@@ -47,7 +63,8 @@ BEGIN
        type MessageType OPTIONAL,
        linkId OCTET STRING OPTIONAL,
        files SEQUENCE OF fileId OCTET STRING OPTIONAL,
-       mentioned SEQUENCE OF name OCTET STRING OPTIONAL
+       mentioned SEQUENCE OF name OCTET STRING OPTIONAL,
+       ...
     }
 
     -- 03 Inbox Folder Queue (MNESIA, SQLite) /Mail /Chat
@@ -57,7 +74,7 @@ BEGIN
     Groupbox ::= SEQUENCE { channel OCTET STRING }
     Mailbox ::= SEQUENCE { channel OCTET STRING }
 
-    InboxMethod ::= ENUMERATED { get (1), erase (2) }
+    InboxMethod ::= ENUMERATED { get (1), erase (2), ...}
 
     Inbox ::= SEQUENCE {
        id OCTET STRING,
@@ -65,42 +82,93 @@ BEGIN
        session OCTET STRING,
        type InboxMethod,
        feed MessageFeed,
-       messages SEQUENCE OF message Message }
+       messages SEQUENCE OF message Message,
+        ...}
+
+    InboxOp ::= ENUMERATED {
+       get   (1),
+       erase (2),
+       ...
+    }
+
+    -- get/erase працюють у межах конкретного feed
+    -- для обох операцій feed очікується
+    InboxQueryRequest ::= SEQUENCE {
+       op    InboxOp,
+       feed  MessageFeed OPTIONAL,
+       ...
+    }
+
+    InboxItem ::= SEQUENCE {
+       message Message
+    }
+
+    -- result повертає набір елементів inbox для feed (може бути пустим)
+    InboxQueryResult ::= SEQUENCE {
+       items SEQUENCE OF item InboxItem OPTIONAL,
+       ...
+    }
 
     -- 04 Event (Ack + Activity fusion)
+    --
+    -- Event є єдиним каналом runtime-подій.
+    -- Події групуються за family payload, без глобального плаского enum.
+    -- Для простих family тип події задається локальним enum усередині payload.
 
-	EventType ::= ENUMERATED {
-	   received  (1),
-	   delivered (2),
-	   read      (3),
-	   edited    (4),
-	   deleted   (5),
-	   updated   (6),
-	   
-	   online    (7),
-	   offline   (8),
-	   typing    (9)
-	}
+    MessageEventType ::= ENUMERATED {
+       received  (1),
+       delivered (2),
+       read      (3),
+       edited    (4),
+       deleted   (5),
+       updated   (6), ...}
+
+    MessageEvent ::= SEQUENCE {
+       type       MessageEventType,
+       messageId  OCTET STRING OPTIONAL,
+       feed       MessageFeed OPTIONAL,
+       actor      OCTET STRING OPTIONAL,
+       timestamp  INTEGER OPTIONAL -- unix time (ms),
+       ...
+    }
+
+    PresenceEventType ::= ENUMERATED {
+       online   (1),
+       offline  (2),
+       typing   (3), ...}
+
+    PresenceEvent ::= SEQUENCE {
+       type       PresenceEventType,
+       feed       MessageFeed OPTIONAL,
+       actor      OCTET STRING OPTIONAL,
+       timestamp  INTEGER OPTIONAL,
+       ...
+    }
+
+    EventPayload ::= CHOICE {
+       message   [1] MessageEvent,
+       presence  [2] PresenceEvent
+    }
 
     Event ::= SEQUENCE {
        id OCTET STRING,
        vsn Version,
        session OCTET STRING,
-
-       messageId OCTET STRING OPTIONAL,
-       eventType EventType,
-
-       feed MessageFeed OPTIONAL,
-       actor OCTET STRING OPTIONAL,
-       timestamp INTEGER OPTIONAL
+       payload EventPayload,
+       ...
     }
+
+    -- Query є єдиним request/response шаром протоколу.
+    -- Усі commands і state-запити повинні йти через Query.
+    -- Payload уже розбитий на доменні family envelope.
+    -- Внутрішні request/result payload типи тимчасово залишаються opaque
+    -- до поступової типізації кожної family окремо.
 
     QueryType ::= ENUMERATED {
        get    (1),
        set    (2),
        result (3),
-       error  (4)
-    }
+       error  (4), ...}
 
     Query ::= SEQUENCE {
        id OCTET STRING,
@@ -111,47 +179,196 @@ BEGIN
 
        refId OCTET STRING OPTIONAL, -- request correlation id
        feed MessageFeed OPTIONAL,
-       target OCTET STRING OPTIONAL, -- user/conference/ message/document id
-       payload OCTET STRING OPTIONAL, -- DSL/CMS encoded data
-       code INTEGER OPTIONAL
+       target OCTET STRING OPTIONAL, -- optional routing hint; domain target belongs in payload
+       payload QueryPayload OPTIONAL, -- typed query family payload
+       code INTEGER OPTIONAL,
+       ...
+    }
+
+    QueryPayload ::= CHOICE {
+       subscription [1] SubscriptionQueryEnvelope,
+       presence     [2] PresenceQueryEnvelope,
+       person       [3] PersonQueryEnvelope,
+       member       [4] MemberQueryEnvelope,
+       roster       [5] RosterQueryEnvelope,
+       conference   [6] ConferenceQueryEnvelope,
+       inbox        [7] InboxQueryEnvelope,
+       search       [8] SearchQueryEnvelope,
+       moderation   [9] ModerationQueryEnvelope,
+       ...
+    }
+
+    SubscriptionQueryEnvelope ::= CHOICE {
+       request [1] SubscriptionQueryRequest,
+       result  [2] SubscriptionQueryResult
+    }
+
+    PresenceQueryEnvelope ::= CHOICE {
+       request [1] PresenceQueryRequest,
+       result  [2] PresenceQueryResult
+    }
+
+    PersonQueryEnvelope ::= CHOICE {
+       request [1] PersonQueryRequest,
+       result  [2] PersonQueryResult
+    }
+
+    MemberQueryEnvelope ::= CHOICE {
+       request [1] MemberQueryRequest,
+       result  [2] MemberQueryResult
+    }
+
+    InboxQueryEnvelope ::= CHOICE {
+       request [1] InboxQueryRequest,
+       result  [2] InboxQueryResult
     }
 
     -- 05 Search (LDAP Search)
 
-    SearchStatus ::= ENUMERATED { ok (0) }
-    Criteria ::= ENUMERATED { equal (0), notequal (1), like (2) }
-    Scope ::= ENUMERATED { profile (0), folder (1), contact (2), member (3), room (4), chat (5), message (6) }
+    SearchStatus ::= ENUMERATED { ok (0), ...}
+    Criteria ::= ENUMERATED { equal (0), notequal (1), like (2), ...}
+    Scope ::= ENUMERATED { profile (0), folder (1), contact (2), member (3), room (4), chat (5), message (6), ...}
 
-    Search ::= SEQUENCE {
-       id OCTET STRING,
-       vsn Version,
-       session OCTET STRING,
-       dn OCTET STRING,
-       field OCTET STRING,
-       value OCTET STRING,
-       criteria Criteria,
-       type Scope,
-       status SearchStatus }
+    SearchOp ::= ENUMERATED {
+       execute (1),
+       list    (2),
+       ...
+    }
 
-    -- 06 Subscription (MNESIA, Pub/Sub)
+    -- execute використовує field/value/criteria/type
+    -- list допускає частковий фільтр або перегляд у межах scope/dn
+    SearchQueryRequest ::= SEQUENCE {
+       op       SearchOp,
+       dn       OCTET STRING OPTIONAL,
+       field    OCTET STRING OPTIONAL,
+       value    OCTET STRING OPTIONAL,
+       criteria Criteria OPTIONAL,
+       type     Scope OPTIONAL,
+       ...
+    }
 
-    SubscriptionPresence ::= ENUMERATED { offline (1), online (2) }
-    SubscriptionStatus ::= ENUMERATED { request (1), confirm (2), update (3), ignore (4), ban (5), unban (6) }
+    SearchItem ::= SEQUENCE {
+       dn       OCTET STRING OPTIONAL,
+       field    OCTET STRING OPTIONAL,
+       value    OCTET STRING OPTIONAL,
+       criteria Criteria OPTIONAL,
+       type     Scope OPTIONAL
+    }
+
+    -- result повертає список знайдених елементів (може бути пустим)
+    SearchQueryResult ::= SEQUENCE {
+       items SEQUENCE OF item SearchItem OPTIONAL,
+       ...
+    }
+
+    SearchQueryEnvelope ::= CHOICE {
+       request [1] SearchQueryRequest,
+       result  [2] SearchQueryResult
+    }
+
+    -- 06 Subscription (зв'язок підписки між суб'єктом і ціллю)
+    --
+    -- Модель спрощена до факту зв'язку (actor -> target).
+    -- Жодних статусів або presence тут більше немає.
+    --
+    -- Перенесення семантики:
+    --
+    -- Presence (online/offline/typing):
+    --   → перенесено в Event
+    --
+    -- Lifecycle дії (request/confirm/ignore/ban/unban):
+    --   → передаються через Event (як події)
+    --   → або ініціюються через Query (type=set)
+    --
+    -- Бан:
+    --   → не є частиною Subscription
+    --   → є server-side policy (обмеження доступу)
+    --   → встановлюється через Query і сигналізується через Event
+    --
+    -- Таким чином:
+    --   Subscription = state (факт зв'язку)
+    --   Event        = що сталося (події)
+    --   Query        = як це змінити / отримати
 
     Subscription ::= SEQUENCE {
-       id OCTET STRING,
-       vsn Version,
-       session OCTET STRING,
-       nickname OCTET STRING,
-       friend OCTET STRING,
-       status SubscriptionPresence,
-       type SubscriptionStatus }
+       actor  OCTET STRING,
+       target OCTET STRING,
+       ...
+    }
+
+    -- get/create/remove очікують actor + target
+    -- list допускає частковий фільтр
+    SubscriptionQueryRequest ::= SEQUENCE {
+       op     SubscriptionOp,
+       actor  OCTET STRING OPTIONAL,
+       target OCTET STRING OPTIONAL,
+       ...
+    }
+
+    SubscriptionOp ::= ENUMERATED {
+       get    (1),
+       list   (2),
+       create (3),
+       remove (4),
+       ...
+    }
+
+    -- get/create/remove зазвичай повертають item
+    -- list повертає items
+    SubscriptionQueryResult ::= SEQUENCE {
+       item   Subscription OPTIONAL,
+       items  SEQUENCE OF subscription Subscription OPTIONAL,
+       ...
+    }
 
     -- 07 Roster (LDAP /People, /Channels, /Topics and /Servers user sub-folders)
 
-    PersonStatus ::= ENUMERATED { req (1), auth (2), ignore (3), internal (4),
-       friend (5), lastmsg (6), ban (7), banned (8), deleted (9), nonexised (10) }
+    -- Presence як snapshot-стан для roster/member.
+    -- Runtime presence-події (online/offline/typing) передаються через Event.
 
+    Presence ::= ENUMERATED { offline (1), online (2), ... }
+
+    PresenceOp ::= ENUMERATED {
+       get  (1),
+       list (2), ...
+    }
+
+    -- get зазвичай очікує actor
+    -- list допускає actor і/або feed як фільтр вибірки
+    -- feed задає контекст (якщо presence залежить від feed)
+    PresenceQueryRequest ::= SEQUENCE {
+       op     PresenceOp,
+       actor  OCTET STRING OPTIONAL,
+       feed   MessageFeed OPTIONAL,
+       ...
+    }
+
+    PresenceItem ::= SEQUENCE {
+       actor     OCTET STRING,
+       presence  Presence
+    }
+
+    -- get зазвичай повертає item
+    -- list повертає items (може бути пустим)
+    PresenceQueryResult ::= SEQUENCE {
+       item   PresenceItem OPTIONAL,
+       items  SEQUENCE OF item PresenceItem OPTIONAL,
+       ...
+    }
+
+
+    -- PersonStatus описує лише стан самого profile/state запису.
+    -- Relation, lifecycle і moderation більше не живуть у Person:
+    --   req/auth/ignore/friend -> Subscription / Event
+    --   ban/banned             -> ModerationQuery / Event
+    PersonStatus ::= ENUMERATED {
+       active      (1),
+       deleted     (2),
+       nonexistent (3), ...
+    }
+
+    -- lastmsg не є частиною Person state.
+    -- View-дані повинні передаватися через Query (Inbox/Search) або Event.
     Person ::= SEQUENCE {
        id OCTET STRING,
        nickname OCTET STRING,
@@ -159,17 +376,66 @@ BEGIN
        names SEQUENCE OF name OCTET STRING,
        phone OCTET STRING,
        surnames SEQUENCE OF name OCTET STRING,
-       lastmsg Message,
-       presence SubscriptionPresence,
+
+       presence Presence,
+
        update INTEGER,
        created INTEGER,
+
        settings SEQUENCE OF feature Feature OPTIONAL,
-       status PersonStatus }
+
+       status PersonStatus,
+       ...
+    }
+
+    PersonOp ::= ENUMERATED {
+       get    (1),
+       list   (2),
+       update (3),
+       remove (4), ...
+    }
+
+    -- get/remove очікують id
+    -- update використовує поля профілю
+    -- list допускає частковий фільтр
+    PersonQueryRequest ::= SEQUENCE {
+       op   PersonOp,
+
+       id   OCTET STRING OPTIONAL,
+       name OCTET STRING OPTIONAL,
+       ...
+    }
+
+    PersonItem ::= SEQUENCE {
+       id       OCTET STRING,
+       nickname OCTET STRING,
+       presence Presence,
+       status   PersonStatus
+    }
+
+    -- get/update зазвичай повертають item
+    -- list повертає items
+    PersonQueryResult ::= SEQUENCE {
+       item   PersonItem OPTIONAL,
+       items  SEQUENCE OF item PersonItem OPTIONAL,
+       ...
+    }
 
     Server ::= SEQUENCE { service OCTET STRING, port INTEGER, host OCTET STRING }
+
+    -- RosterStatus описує лише стан roster як ресурсу.
+    -- Command, mutation і lookup більше не живуть у Roster:
+    --   get/create/del/remove/add/update/list/patch -> Query
+    --   nick/search/contact/lastmsg                 -> Query / view
     RosterStatus ::= ENUMERATED {
-       get (1), create (2), del (3), remove (4), nick (5), search (6),
-       contact (7), add (8), update (9), list (10), patch (11), lastmsg (12) }
+       active   (1),
+       archived (2),
+       deleted  (3), ...
+    }
+
+    -- Roster є агрегованим snapshot/view ресурсом.
+    -- Операції над roster передаються через Query.
+    -- Runtime-події не живуть у Roster як моделі.
     Roster ::= SEQUENCE {
        id OCTET STRING,
        vsn Version,
@@ -181,11 +447,87 @@ BEGIN
        channels SEQUENCE OF room Conference,
        servers SEQUENCE OF server Server,
        update INTEGER,
-       status RosterStatus }
+       status RosterStatus, ... }
+
+    RosterOp ::= ENUMERATED {
+       get  (1),
+       list (2), ...
+    }
+
+    -- get зазвичай очікує id
+    -- list допускає частковий фільтр
+    RosterQueryRequest ::= SEQUENCE {
+       op   RosterOp,
+
+       id   OCTET STRING OPTIONAL,
+       name OCTET STRING OPTIONAL,
+       ...
+    }
+
+    RosterItem ::= SEQUENCE {
+       id       OCTET STRING,
+       nickname OCTET STRING,
+       status   RosterStatus
+    }
+
+    -- get зазвичай повертає item
+    -- list повертає items
+    RosterQueryResult ::= SEQUENCE {
+       item   RosterItem OPTIONAL,
+       items  SEQUENCE OF item RosterItem OPTIONAL,
+       ...
+    }
+
+    RosterQueryEnvelope ::= CHOICE {
+       request [1] RosterQueryRequest,
+       result  [2] RosterQueryResult
+    }
+
+    ModerationOp ::= ENUMERATED {
+       ban    (1),
+       unban  (2),
+       list   (3), ...
+    }
+
+    -- ban/unban очікують actor + target
+    -- list повертає список обмежень
+    ModerationQueryRequest ::= SEQUENCE {
+       op     ModerationOp,
+
+       actor  OCTET STRING OPTIONAL,
+       target OCTET STRING OPTIONAL,
+       ...
+    }
+
+    ModerationItem ::= SEQUENCE {
+       actor   OCTET STRING,
+       target  OCTET STRING
+    }
+
+    -- ban/unban зазвичай повертають item
+    -- list повертає items
+    ModerationQueryResult ::= SEQUENCE {
+       item   ModerationItem OPTIONAL,
+       items  SEQUENCE OF item ModerationItem OPTIONAL,
+       ...
+    }
+
+    ModerationQueryEnvelope ::= CHOICE {
+       request [1] ModerationQueryRequest,
+       result  [2] ModerationQueryResult
+    }
 
     -- 08 Conference (RocksDB, Multi-user Conferences)
 
-    MemberStatus ::= ENUMERATED { admin (1), member (2), removed (3), patch (4), owner (5) }
+    -- MemberStatus описує лише роль учасника в конференції.
+    -- Lifecycle і mutation більше не живуть у Member:
+    --   removed        -> Event / Query
+    --   patch/update   -> Query
+    MemberStatus ::= ENUMERATED {
+       member (1),
+       admin  (2),
+       owner  (3), ...}
+
     Member ::= SEQUENCE {
        id OCTET STRING,
        nickname OCTET STRING,
@@ -198,12 +540,57 @@ BEGIN
        alias OCTET STRING,
        update INTEGER,
        settings SEQUENCE OF feature Feature,
-       presence SubscriptionPresence,
-       status MemberStatus }
+       presence Presence,
+       status MemberStatus, ... }
+
+    MemberOp ::= ENUMERATED {
+       get    (1),
+       list   (2),
+       add    (3),
+       remove (4),
+       update (5)
+    }
+
+    -- get/remove/update очікують actor + feed
+    -- add використовує actor + feed
+    -- list допускає фільтр за feed
+    MemberQueryRequest ::= SEQUENCE {
+       op    MemberOp,
+
+       actor OCTET STRING OPTIONAL,
+       feed  MessageFeed OPTIONAL
+    }
+
+    MemberItem ::= SEQUENCE {
+       actor   OCTET STRING,
+       feed    MessageFeed,
+       status  MemberStatus,
+       presence Presence OPTIONAL
+    }
+
+    -- get/add/update зазвичай повертають item
+    -- list повертає items
+    MemberQueryResult ::= SEQUENCE {
+       item   MemberItem OPTIONAL,
+       items  SEQUENCE OF item MemberItem OPTIONAL
+    }
 
     ConferenceType ::= ENUMERATED { group (1), channel (2), call (3) }
-    ConferenceStatus ::= ENUMERATED { create (1), leave (2), add (3), remove (4), removed (5),
-       join (6), joined (7), info (8), patch (9), get (10), delete (11), lastmsg (12), mute (13), unmute (14) }
+
+    -- ConferenceStatus описує лише стан конференції як ресурсу.
+    -- Command, lifecycle і події більше не живуть у Conference:
+    --   create/add/remove/patch/get/delete -> Query
+    --   join/leave/joined/removed          -> Event
+    --   mute/unmute                        -> Query / Event
+    --   lastmsg                            -> Query (Inbox/Search) або Event
+    ConferenceStatus ::= ENUMERATED {
+       active   (1),
+       archived (2),
+       deleted  (3), ...
+    }
+
+    -- lastmsg не є частиною Conference state.
+    -- View-дані повинні передаватися через Query (Inbox/Search) або Event.
     Conference ::= SEQUENCE {
        id OCTET STRING,
        vsn Version,
@@ -219,23 +606,58 @@ BEGIN
        tos OCTET STRING,
        unread INTEGER,
        mentions SEQUENCE OF contact INTEGER,
-       lastmsg Message,
        update INTEGER,
        created INTEGER,
-       status ConferenceStatus }
+       status ConferenceStatus,
+        ... }
+
+    ConferenceOp ::= ENUMERATED {
+       get     (1),
+       list    (2),
+       create  (3),
+       update  (4),
+       remove  (5), ...
+    }
+
+    -- get/remove очікують id
+    -- create/update використовують поля конференції
+    -- list допускає частковий фільтр
+    ConferenceQueryRequest ::= SEQUENCE {
+       op    ConferenceOp,
+
+       id    OCTET STRING OPTIONAL,
+       name  OCTET STRING OPTIONAL,
+       type  ConferenceType OPTIONAL,
+       ...
+    }
+
+    -- get/create/update зазвичай повертають item
+    -- list повертає items
+    ConferenceQueryResult ::= SEQUENCE {
+       item   ConferenceItem OPTIONAL,
+       items  SEQUENCE OF item ConferenceItem OPTIONAL,
+       ...
+    }
+
+    ConferenceItem ::= SEQUENCE {
+       id    OCTET STRING,
+       name  OCTET STRING,
+       type  ConferenceType,
+       status ConferenceStatus
+    }
+
+    ConferenceQueryEnvelope ::= CHOICE {
+       request [1] ConferenceQueryRequest,
+       result  [2] ConferenceQueryResult
+    }
 
     -- 09 CHAT-v2 Protocol Entities
 
     CHATProtocol ::= CHOICE {
-       authority    [1] Authority,
-       message      [2] Message,
-       inbox        [3] Inbox,
-       event        [4] Event,
-       query        [5] Query,
-       subscription [6] Subscription,
-       search       [7] Search,
-       roster       [8] Roster,
-       conference   [9] Conference
+       authority [1] Authority,
+       message   [2] Message,
+       event     [4] Event,
+       query     [5] Query
     }
 
     CHATMessage ::= SEQUENCE {
