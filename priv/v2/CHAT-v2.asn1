@@ -381,11 +381,19 @@ BEGIN
        items  SEQUENCE OF item PresenceItem OPTIONAL
     }
 
-    PersonStatus ::= ENUMERATED { req (1), auth (2), ignore (3), internal (4),
-       friend (5), lastmsg (6), ban (7), banned (8), deleted (9), nonexised (10) }
+
+    -- PersonStatus описує лише стан самого profile/state запису.
+    -- Relation, lifecycle і moderation більше не живуть у Person:
+    --   req/auth/ignore/friend -> Subscription / Event
+    --   ban/banned             -> ModerationQuery / Event
+    PersonStatus ::= ENUMERATED {
+       active      (1),
+       deleted     (2),
+       nonexistent (3)
+    }
 
     -- lastmsg не є частиною Person state.
-    -- TODO Це view-дані, які повинні передаватися через Query (Inbox/Search) або Event.
+    -- View-дані повинні передаватися через Query (Inbox/Search) або Event.
     Person ::= SEQUENCE {
        id OCTET STRING,
        nickname OCTET STRING,
