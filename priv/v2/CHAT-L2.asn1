@@ -401,15 +401,28 @@ BEGIN
 
     -- Event Core (recovery / replay)
     --
-    -- Використовується для отримання подій після певної позиції (seq).
+    -- Події зберігаються як спільний stream у межах feed.
     --
-    -- after:
-    --   повернути події з seq > after
+    -- Sequencing:
     --
-    -- limit:
-    --   обмеження кількості подій у відповіді
+    --   * seq визначений у межах feed і є монотонно зростаючим.
     --
-    -- feed задається на рівні Query.
+    -- Session:
+    --
+    --   * Кожна session окремо зберігає свою позицію (last_seq) у feed.
+    --   * Recovery виконується від імені конкретної session.
+    --
+    -- Recovery:
+    --
+    --   * Клієнт виконує Query з параметром after = last_seq.
+    --   * Сервер повертає події з seq > after.
+    --
+    -- Важливо:
+    --
+    --   * Події є спільними для всіх session у межах feed.
+    --   * Позиція (last_seq) є індивідуальною для кожної session.
+    --   * Сервер не веде окремі черги подій на session.
+
     EventQuery ::= SEQUENCE {
        after [0] INTEGER OPTIONAL,
        limit [1] INTEGER OPTIONAL,
