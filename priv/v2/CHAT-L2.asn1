@@ -528,11 +528,51 @@ BEGIN
     --   У даному протоколі він уніфікований через Query.
     --
 
+
     QueryType ::= ENUMERATED {
        get    (1),
        set    (2),
        result (3),
        error  (4), ...}
+
+    QueryError ::= ENUMERATED {
+       badRequest          (1),
+       unauthorized        (2),
+       forbidden           (3),
+       notFound            (4),
+       conflict            (5),
+       unsupportedVersion  (6),
+       gapDetected         (7),
+       rateLimited         (8),
+       internalError       (9),
+       unavailable         (10),
+       ...
+    }
+
+    -- Query Error Semantics
+    --
+    --   * Query(type=error) використовується для повернення
+    --     типізованої помилки request/response рівня.
+    --
+    --   * code визначає категорію помилки.
+    --
+    -- Retryable:
+    --
+    --   * unavailable
+    --   * rateLimited
+    --
+    -- Recoverable with client action:
+    --
+    --   * unauthorized       -> renew / authenticate
+    --   * unsupportedVersion -> fallback version
+    --   * gapDetected        -> full sync через Inbox / view Query
+    --
+    -- Fatal for request:
+    --
+    --   * badRequest
+    --   * forbidden
+    --   * notFound
+    --   * conflict
 
     Query ::= SEQUENCE {
        id Binary,
@@ -543,7 +583,7 @@ BEGIN
        feed [1] MessageFeed OPTIONAL,
        target [2] Binary OPTIONAL, -- optional routing hint; domain target belongs in payload
        payload [3] QueryPayload OPTIONAL, -- typed query family payload
-       code [4] INTEGER OPTIONAL,
+       code [4] QueryError OPTIONAL,
        ...
     }
 
