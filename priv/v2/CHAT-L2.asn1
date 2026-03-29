@@ -178,6 +178,26 @@ BEGIN
        deleted   (5),
        updated   (6), ...}
 
+    -- Delivery and Read Semantics
+    --
+    -- Події доставки і читання є session-рівня.
+    --
+    -- delivered:
+    --   означає, що повідомлення доставлено конкретній session.
+    --
+    -- read:
+    --   означає, що повідомлення прочитано конкретною session.
+    --
+    -- Multi-device:
+    --
+    --   - Один користувач може мати кілька session.
+    --   - delivered/read можуть генеруватись окремо для кожної session.
+    --
+    -- Агрегація:
+    --
+    --   - Узагальнення до рівня device або користувача
+    --     виконується сервером і не є частиною протоколу.
+
     MessageEvent ::= SEQUENCE {
        type       MessageEventType,
        messageId  [0] OCTET STRING OPTIONAL,
