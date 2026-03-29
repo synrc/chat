@@ -1122,9 +1122,32 @@ BEGIN
     --
     --   * accessToken використовується для авторизації конкретної session
     --     на transport рівні.
+    Header ::= CHOICE {
+       auth      [1] AuthHeader,
+       routing   [2] RoutingHeader,
+       tracing   [3] TracingHeader,
+       ...
+    }
+
+    AuthHeader ::= SEQUENCE {
+       accessToken Binary
+    }
+
+    RoutingHeader ::= SEQUENCE {
+       target Binary OPTIONAL,
+       feed   MessageFeed OPTIONAL,
+       ...
+    }
+
+    TracingHeader ::= SEQUENCE {
+       traceId Binary OPTIONAL,
+       spanId  Binary OPTIONAL,
+       ...
+    }
+
     CHATMessage ::= SEQUENCE {
        no INTEGER,
-       headers SEQUENCE OF header Binary,
+       headers SEQUENCE OF header Header,
        body CHATBody }
 
 END
