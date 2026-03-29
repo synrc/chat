@@ -224,6 +224,18 @@ BEGIN
     --
     --   * Події read/delivered є session-рівня,
     --     але передаються через спільний stream feed.
+    --
+    -- TODO: Event Throttling / Aggregation
+    --
+    --   * High-frequency події (typing, presence, read)
+    --     можуть генерувати значне навантаження.
+    --
+    --   * Сервер SHOULD виконувати throttling або aggregation:
+    --       - typing: обмеження частоти
+    --       - read: агрегування до "last seen"
+    --       - presence: delta-оновлення
+    --
+    --   * Конкретна стратегія не визначена у протоколі.
 
     MessageEvent ::= SEQUENCE {
        type       MessageEventType,
@@ -281,6 +293,16 @@ BEGIN
     --
     --   * seq НЕ є глобальним.
     --   * seq визначений тільки в межах feed.
+    --
+    -- TODO: Event Consistency
+    --
+    --   * Події можуть приходити поза порядком або дублюватись.
+    --
+    --   * Не визначено:
+    --       - як обробляти конфлікти (edit після delete)
+    --       - як визначати causal порядок
+    --
+    --   * Очікується client-side reconciliation.
 
     Event ::= SEQUENCE {
        id Binary,
@@ -340,6 +362,20 @@ BEGIN
     --
     --   * Клієнт у такому випадку має виконати повний sync
     --     через Query (Inbox / інші view).
+    -- 
+    --   * Клієнт НЕ повинен припускати повноту даних без перевірки seq.
+    --
+    --   * TODO: Явний сигнал gap:
+    --       - сервер MAY повертати спеціальний статус або error
+    --         для позначення втрати історії
+    --
+    -- TODO: Delivery Guarantees
+    --
+    --   * Протокол не визначає рівень гарантій доставки:
+    --       - at-most-once
+    --       - at-least-once
+    --
+    --   * Поточна модель допускає дублікати і втрати.
 
     -- XMPP відповідність:
     --
@@ -417,6 +453,17 @@ BEGIN
        request [1] InboxQuery,
        result  [2] InboxAnswer
     }
+
+    -- TODO: Pagination / Streaming
+    --
+    --   * Великі відповіді (roster, members, search)
+    --     можуть вимагати pagination.
+    --
+    --   * Можливе введення:
+    --       - continuation token
+    --       - chunked відповіді
+    --
+    --   * Не визначено у поточній версії.
 
     -- Event Core (recovery / replay)
     --
@@ -941,6 +988,16 @@ BEGIN
        query     [5] Query
     }
 
+    -- TODO: Batching / Framing
+    --
+    --   * Можливе об'єднання кількох Message/Event/Query
+    --     в одному транспортному пакеті.
+    --
+    --   * Може бути введений framing-рівень:
+    --       - batch повідомлень
+    --       - compression
+    --
+    --   * Не визначено в поточній версії протоколу.
     CHATMessage ::= SEQUENCE {
        no INTEGER,
        headers SEQUENCE OF header Binary,
