@@ -96,7 +96,7 @@ BEGIN
     --
     -- Ordering:
     --
-    --   - Порядок повідомлень гарантується тільки в межах (session, feed).
+    --   - Порядок повідомлень гарантується тільки в межах feed.
     --   - Глобальний порядок між різними session не гарантується.
     --
     -- Event ordering:
@@ -366,6 +366,7 @@ BEGIN
        bpe          [10] ProcessExtension,
        kvs          [11] StorageExtension,
        mail         [12] MailExtension, -- X.420
+       event        [13] EventCore,
        ...
     }
 
@@ -396,6 +397,33 @@ BEGIN
     InboxExtension ::= CHOICE {
        request [1] InboxQuery,
        result  [2] InboxAnswer
+    }
+
+    -- Event Core (recovery / replay)
+    --
+    -- Використовується для отримання подій після певної позиції (seq).
+    --
+    -- after:
+    --   повернути події з seq > after
+    --
+    -- limit:
+    --   обмеження кількості подій у відповіді
+    --
+    -- feed задається на рівні Query.
+    EventQuery ::= SEQUENCE {
+       after [0] INTEGER OPTIONAL,
+       limit [1] INTEGER OPTIONAL,
+       ...
+    }
+
+    EventAnswer ::= SEQUENCE {
+       events [0] SEQUENCE OF event Event OPTIONAL,
+       ...
+    }
+
+    EventCore ::= CHOICE {
+       request [1] EventQuery,
+       result  [2] EventAnswer
     }
 
     -- 05 Search (LDAP Search)
