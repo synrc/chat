@@ -63,23 +63,31 @@ BEGIN
     Feature ::= SEQUENCE { id Binary, key Binary, value Binary, group Binary }
     AuthorityMethod ::= ENUMERATED { announce (0), enroll (1), authenticate (2), revoke (3), renew (4), ... }
 
+    -- AuthRequest використовується для:
+    --   - первинної аутентифікації
+    --   - reconnect існуючої session
+    --   - renew access token через refresh token
     AuthRequest ::= SEQUENCE {
-       token    [0] Binary OPTIONAL,
-       device   [1] Binary OPTIONAL,
-       client   [2] Binary OPTIONAL,
-       phone    [3] Binary OPTIONAL,
-       sms      [4] Binary OPTIONAL,
-       os       [5] INTEGER OPTIONAL,
-       services [6] INTEGER OPTIONAL,
-       push     [7] Binary OPTIONAL,
+       accessToken  [0] Binary OPTIONAL,
+       refreshToken [1] Binary OPTIONAL,
+       device       [2] Binary OPTIONAL,
+       client       [3] Binary OPTIONAL,
+       phone        [4] Binary OPTIONAL,
+       sms          [5] Binary OPTIONAL,
+       os           [6] INTEGER OPTIONAL,
+       services     [7] INTEGER OPTIONAL,
+       push         [8] Binary OPTIONAL,
        ...
     }
 
+    -- AuthAnswer повертає токени та параметри session
+    -- після authenticate / renew.
     AuthAnswer ::= SEQUENCE {
-       token    [0] Binary OPTIONAL,
-       device   [1] Binary OPTIONAL,
-       client   [2] Binary OPTIONAL,
-       services [3] INTEGER OPTIONAL,
+       accessToken  [0] Binary OPTIONAL,
+       refreshToken [1] Binary OPTIONAL,
+       device       [2] Binary OPTIONAL,
+       client       [3] Binary OPTIONAL,
+       services     [4] INTEGER OPTIONAL,
        ...
     }
 
