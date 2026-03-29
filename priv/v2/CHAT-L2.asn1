@@ -235,6 +235,13 @@ BEGIN
     --   * Події read/delivered є session-рівня,
     --     але передаються через спільний stream feed.
     --
+    --   * Протокол використовує cursor-based модель читання.
+    --
+    --   * Read визначається як позиція (seq), а не як набір messageId.
+    --
+    --   * Деталізовані read receipts (per message / per user)
+    --     не є частиною базової моделі.
+    --
     -- TODO: Event Throttling / Aggregation
     --
     --   * High-frequency події (typing, presence, read)
