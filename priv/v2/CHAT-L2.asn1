@@ -256,10 +256,28 @@ BEGIN
        presence  [2] PresenceEvent
     }
 
+    -- Sequencing
+    --
+    -- Кожна session має власну послідовність подій (seq).
+    --
+    --   * seq є монотонно зростаючим числом у межах session.
+    --
+    -- Використання:
+    --
+    --   * reconnect і recovery
+    --   * replay пропущених подій
+    --   * виявлення duplicate і reorder
+    --
+    -- Важливо:
+    --
+    --   * seq НЕ є глобальним.
+    --   * порядок гарантується тільки в межах session.
+
     Event ::= SEQUENCE {
        id Binary,
        vsn Version,
        session Binary,
+       seq INTEGER,
        payload EventPayload,
        ...
     }
