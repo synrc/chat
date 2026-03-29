@@ -1,7 +1,9 @@
---- Протокол Месенжера Сохацького v2 для паб-саб брокерів на TLS
---- https://tonpa.guru/stream/2023/2023-08-07 CHAT ASN.1.htm
+--- Протокол Месенжера Сохацького (Будда Протокол) v2 для паб-саб брокерів на TLS
+--- https://tonpa.guru/stream/2023/2023-08-07%20CHAT%20ASN.1.htm
+--- Верифікація протоколу для узгодженого порівняння з XMPP виконана Юрієм Масловським,
+--- автором його першої імплементації для NYNJA.
 
-CHAT-v2 DEFINITIONS IMPLICIT TAGS ::=
+CHAT-L2 DEFINITIONS IMPLICIT TAGS ::=
 BEGIN
     -- CHAT-v2 design direction
     --
@@ -13,11 +15,6 @@ BEGIN
     --   5. Domain сутності (Subscription, Person, Member, Conference, Roster, Inbox view)
     --      не повинні бути top-level packet types.
     --
-    -- Цільова модель:
-    --   state   -> окремі domain/resource типи
-    --   command -> Query
-    --   event   -> Event
-    --
     -- Тобто одна семантика не повинна мати кілька паралельних wire-шляхів.
 
     IMPORTS ContentInfo FROM CryptographicMessageSyntax-2009
@@ -25,7 +22,8 @@ BEGIN
             Certificate FROM PKIX1Explicit-2009 ;
 
     Version ::= INTEGER  { v0(0), v1(1), v2(2), v3(3) }
-    OS ::= ENUMERATED { apple (1), microsoft (2), google (3), ericsson (4), nokia (5), cisco (6) }
+    Flavour ::= ENUMERATED { apple (1), microsoft (2), google (3), ericsson (4), nokia (5), cisco (6) }
+    Binary  ::= OCTET STRING
 
     -- 01 Authority (CA)
 
@@ -36,7 +34,7 @@ BEGIN
        vsn Version,
        session OCTET STRING,
        type AuthorityMethod,
-       cert OCTET STRING,
+       cert ANY,
        settings SEQUENCE OF feature Feature,
         ... }
 
@@ -48,22 +46,24 @@ BEGIN
 
     MessageType ::= ENUMERATED { normal (0), sys (1), reply (2), forward (3), ... }
 
-    MessageFeed ::= CHOICE { private [1] Privatebox, chan [2] Streambox, mailbox [4] Mailbox, group [8] Groupbox }
+    MessageFeed ::= CHOICE { private [1] Privatebox, chan [2] Streambox, mailbox [4] Mailbox, group [8] Groupbox, ... }
+
+    File ::= SEQUENCE {
+       id OCTET STRING,
+       mime OCTET STRING,
+       payload ContentInfo,
+       parentid OCTET STRING }
 
     Message ::= SEQUENCE {
-       id OCTET STRING,
+       id Binary,
        vsn Version,
-       session OCTET STRING,
-
-       -- базовий мінімум
+       session Binary,
        feed MessageFeed,
        payload ContentInfo,
-
-       -- optional атрибути
        type MessageType OPTIONAL,
-       linkId OCTET STRING OPTIONAL,
-       files SEQUENCE OF fileId OCTET STRING OPTIONAL,
-       mentioned SEQUENCE OF name OCTET STRING OPTIONAL,
+       link Binary OPTIONAL,
+       files [0] SEQUENCE OF file File OPTIONAL,
+       mentioned [1] SEQUENCE OF name Binary OPTIONAL,
        ...
     }
 
@@ -82,8 +82,8 @@ BEGIN
        session OCTET STRING,
        type InboxMethod,
        feed MessageFeed,
-       messages SEQUENCE OF message Message,
-        ...}
+       messages [0] SEQUENCE OF message Message OPTIONAL,
+        ... }
 
     InboxOp ::= ENUMERATED {
        get   (1),
@@ -93,9 +93,9 @@ BEGIN
 
     -- get/erase працюють у межах конкретного feed
     -- для обох операцій feed очікується
-    InboxQueryRequest ::= SEQUENCE {
+    InboxQuery ::= SEQUENCE {
        op    InboxOp,
-       feed  MessageFeed OPTIONAL,
+       feed  [0] MessageFeed OPTIONAL,
        ...
     }
 
@@ -104,8 +104,8 @@ BEGIN
     }
 
     -- result повертає набір елементів inbox для feed (може бути пустим)
-    InboxQueryResult ::= SEQUENCE {
-       items SEQUENCE OF item InboxItem OPTIONAL,
+    InboxAnswer ::= SEQUENCE {
+       items [0] SEQUENCE OF item InboxItem OPTIONAL,
        ...
     }
 
@@ -125,10 +125,10 @@ BEGIN
 
     MessageEvent ::= SEQUENCE {
        type       MessageEventType,
-       messageId  OCTET STRING OPTIONAL,
-       feed       MessageFeed OPTIONAL,
-       actor      OCTET STRING OPTIONAL,
-       timestamp  INTEGER OPTIONAL -- unix time (ms),
+       messageId  [0] OCTET STRING OPTIONAL,
+       feed       [1] MessageFeed OPTIONAL,
+       actor      [2] OCTET STRING OPTIONAL,
+       timestamp  [3] INTEGER OPTIONAL,
        ...
     }
 
@@ -139,9 +139,9 @@ BEGIN
 
     PresenceEvent ::= SEQUENCE {
        type       PresenceEventType,
-       feed       MessageFeed OPTIONAL,
-       actor      OCTET STRING OPTIONAL,
-       timestamp  INTEGER OPTIONAL,
+       feed       [0] MessageFeed OPTIONAL,
+       actor      [1] OCTET STRING OPTIONAL,
+       timestamp  [2] INTEGER OPTIONAL,
        ...
     }
 
@@ -174,53 +174,58 @@ BEGIN
        id OCTET STRING,
        vsn Version,
        session OCTET STRING,
-
        queryType QueryType,
-
-       refId OCTET STRING OPTIONAL, -- request correlation id
-       feed MessageFeed OPTIONAL,
-       target OCTET STRING OPTIONAL, -- optional routing hint; domain target belongs in payload
-       payload QueryPayload OPTIONAL, -- typed query family payload
-       code INTEGER OPTIONAL,
+       ref [0] OCTET STRING OPTIONAL, -- request correlation id
+       feed [1] MessageFeed OPTIONAL,
+       target [2] OCTET STRING OPTIONAL, -- optional routing hint; domain target belongs in payload
+       payload [3] QueryPayload OPTIONAL, -- typed query family payload
+       code [4] INTEGER OPTIONAL,
        ...
     }
 
     QueryPayload ::= CHOICE {
-       subscription [1] SubscriptionQueryEnvelope,
-       presence     [2] PresenceQueryEnvelope,
-       person       [3] PersonQueryEnvelope,
-       member       [4] MemberQueryEnvelope,
-       roster       [5] RosterQueryEnvelope,
-       conference   [6] ConferenceQueryEnvelope,
-       inbox        [7] InboxQueryEnvelope,
-       search       [8] SearchQueryEnvelope,
-       moderation   [9] ModerationQueryEnvelope,
+       subscription [1] SubscriptionCore,
+       presence     [2] PresenceCore,
+       person       [3] PersonCore,
+       roster       [4] RosterCore,
+       member       [5] MemberExtension,
+       conference   [6] ConferenceExtension,
+       moderation   [7] ModerationExtension,
+       inbox        [8] InboxExtension,
+       search       [9] SearchExtension,
+       bpe          [10] ProcessExtension,
+       kvs          [11] StorageExtension,
+       mail         [12] MailExtension, -- X.420
        ...
     }
 
-    SubscriptionQueryEnvelope ::= CHOICE {
-       request [1] SubscriptionQueryRequest,
-       result  [2] SubscriptionQueryResult
+    ProcessExtension ::= CHOICE { request [1] OCTET STRING, result [2] OCTET STRING }
+    StorageExtension ::= CHOICE { request [1] OCTET STRING, result [2] OCTET STRING }
+    MailExtension    ::= CHOICE { request [1] OCTET STRING, result [2] OCTET STRING }
+
+    SubscriptionCore ::= CHOICE {
+       request [1] SubscriptionQuery,
+       result  [2] SubscriptionAnswer
     }
 
-    PresenceQueryEnvelope ::= CHOICE {
-       request [1] PresenceQueryRequest,
-       result  [2] PresenceQueryResult
+    PresenceCore ::= CHOICE {
+       request [1] PresenceQuery,
+       result  [2] PresenceAnswer
     }
 
-    PersonQueryEnvelope ::= CHOICE {
-       request [1] PersonQueryRequest,
-       result  [2] PersonQueryResult
+    PersonCore ::= CHOICE {
+       request [1] PersonQuery,
+       result  [2] PersonAnswer
     }
 
-    MemberQueryEnvelope ::= CHOICE {
-       request [1] MemberQueryRequest,
-       result  [2] MemberQueryResult
+    MemberExtension ::= CHOICE {
+       request [1] MemberQuery,
+       result  [2] MemberAnswer
     }
 
-    InboxQueryEnvelope ::= CHOICE {
-       request [1] InboxQueryRequest,
-       result  [2] InboxQueryResult
+    InboxExtension ::= CHOICE {
+       request [1] InboxQuery,
+       result  [2] InboxAnswer
     }
 
     -- 05 Search (LDAP Search)
@@ -237,33 +242,33 @@ BEGIN
 
     -- execute використовує field/value/criteria/type
     -- list допускає частковий фільтр або перегляд у межах scope/dn
-    SearchQueryRequest ::= SEQUENCE {
+    SearchQuery ::= SEQUENCE {
        op       SearchOp,
-       dn       OCTET STRING OPTIONAL,
-       field    OCTET STRING OPTIONAL,
-       value    OCTET STRING OPTIONAL,
-       criteria Criteria OPTIONAL,
-       type     Scope OPTIONAL,
+       dn       [0] OCTET STRING OPTIONAL,
+       field    [1] OCTET STRING OPTIONAL,
+       value    [2] OCTET STRING OPTIONAL,
+       criteria [3] Criteria OPTIONAL,
+       type     [4] Scope OPTIONAL,
        ...
     }
 
     SearchItem ::= SEQUENCE {
-       dn       OCTET STRING OPTIONAL,
-       field    OCTET STRING OPTIONAL,
-       value    OCTET STRING OPTIONAL,
-       criteria Criteria OPTIONAL,
-       type     Scope OPTIONAL
+       dn       [0] OCTET STRING OPTIONAL,
+       field    [1] OCTET STRING OPTIONAL,
+       value    [2] OCTET STRING OPTIONAL,
+       criteria [3] Criteria OPTIONAL,
+       type     [4] Scope OPTIONAL
     }
 
     -- result повертає список знайдених елементів (може бути пустим)
-    SearchQueryResult ::= SEQUENCE {
-       items SEQUENCE OF item SearchItem OPTIONAL,
+    SearchAnswer ::= SEQUENCE {
+       items [0] SEQUENCE OF item SearchItem OPTIONAL,
        ...
     }
 
-    SearchQueryEnvelope ::= CHOICE {
-       request [1] SearchQueryRequest,
-       result  [2] SearchQueryResult
+    SearchExtension ::= CHOICE {
+       request [1] SearchQuery,
+       result  [2] SearchAnswer
     }
 
     -- 06 Subscription (зв'язок підписки між суб'єктом і ціллю)
@@ -291,17 +296,17 @@ BEGIN
     --   Query        = як це змінити / отримати
 
     Subscription ::= SEQUENCE {
-       actor  OCTET STRING,
-       target OCTET STRING,
+       actor  Binary,
+       target Binary,
        ...
     }
 
     -- get/create/remove очікують actor + target
     -- list допускає частковий фільтр
-    SubscriptionQueryRequest ::= SEQUENCE {
+    SubscriptionQuery ::= SEQUENCE {
        op     SubscriptionOp,
-       actor  OCTET STRING OPTIONAL,
-       target OCTET STRING OPTIONAL,
+       actor  [0] Binary OPTIONAL,
+       target [1] Binary OPTIONAL,
        ...
     }
 
@@ -315,9 +320,9 @@ BEGIN
 
     -- get/create/remove зазвичай повертають item
     -- list повертає items
-    SubscriptionQueryResult ::= SEQUENCE {
-       item   Subscription OPTIONAL,
-       items  SEQUENCE OF subscription Subscription OPTIONAL,
+    SubscriptionAnswer ::= SEQUENCE {
+       item   [0] Subscription OPTIONAL,
+       items  [1] SEQUENCE OF subscription Subscription OPTIONAL,
        ...
     }
 
@@ -336,10 +341,10 @@ BEGIN
     -- get зазвичай очікує actor
     -- list допускає actor і/або feed як фільтр вибірки
     -- feed задає контекст (якщо presence залежить від feed)
-    PresenceQueryRequest ::= SEQUENCE {
+    PresenceQuery ::= SEQUENCE {
        op     PresenceOp,
-       actor  OCTET STRING OPTIONAL,
-       feed   MessageFeed OPTIONAL,
+       actor  [0] OCTET STRING OPTIONAL,
+       feed   [1] MessageFeed OPTIONAL,
        ...
     }
 
@@ -350,9 +355,9 @@ BEGIN
 
     -- get зазвичай повертає item
     -- list повертає items (може бути пустим)
-    PresenceQueryResult ::= SEQUENCE {
-       item   PresenceItem OPTIONAL,
-       items  SEQUENCE OF item PresenceItem OPTIONAL,
+    PresenceAnswer ::= SEQUENCE {
+       item   [0] PresenceItem OPTIONAL,
+       items  [1] SEQUENCE OF item PresenceItem OPTIONAL,
        ...
     }
 
@@ -376,14 +381,10 @@ BEGIN
        names SEQUENCE OF name OCTET STRING,
        phone OCTET STRING,
        surnames SEQUENCE OF name OCTET STRING,
-
        presence Presence,
-
        update INTEGER,
        created INTEGER,
-
        settings SEQUENCE OF feature Feature OPTIONAL,
-
        status PersonStatus,
        ...
     }
@@ -398,11 +399,12 @@ BEGIN
     -- get/remove очікують id
     -- update використовує поля профілю
     -- list допускає частковий фільтр
-    PersonQueryRequest ::= SEQUENCE {
+
+    PersonQuery ::= SEQUENCE {
        op   PersonOp,
 
-       id   OCTET STRING OPTIONAL,
-       name OCTET STRING OPTIONAL,
+       id   [0] OCTET STRING OPTIONAL,
+       name [1] OCTET STRING OPTIONAL,
        ...
     }
 
@@ -415,9 +417,10 @@ BEGIN
 
     -- get/update зазвичай повертають item
     -- list повертає items
-    PersonQueryResult ::= SEQUENCE {
-       item   PersonItem OPTIONAL,
-       items  SEQUENCE OF item PersonItem OPTIONAL,
+
+    PersonAnswer ::= SEQUENCE {
+       item   [0] PersonItem OPTIONAL,
+       items  [1] SEQUENCE OF item PersonItem OPTIONAL,
        ...
     }
 
@@ -427,6 +430,7 @@ BEGIN
     -- Command, mutation і lookup більше не живуть у Roster:
     --   get/create/del/remove/add/update/list/patch -> Query
     --   nick/search/contact/lastmsg                 -> Query / view
+
     RosterStatus ::= ENUMERATED {
        active   (1),
        archived (2),
@@ -436,6 +440,7 @@ BEGIN
     -- Roster є агрегованим snapshot/view ресурсом.
     -- Операції над roster передаються через Query.
     -- Runtime-події не живуть у Roster як моделі.
+
     Roster ::= SEQUENCE {
        id OCTET STRING,
        vsn Version,
@@ -456,11 +461,11 @@ BEGIN
 
     -- get зазвичай очікує id
     -- list допускає частковий фільтр
-    RosterQueryRequest ::= SEQUENCE {
-       op   RosterOp,
 
-       id   OCTET STRING OPTIONAL,
-       name OCTET STRING OPTIONAL,
+    RosterQuery ::= SEQUENCE {
+       op   RosterOp,
+       id   [0] OCTET STRING OPTIONAL,
+       name [1] OCTET STRING OPTIONAL,
        ...
     }
 
@@ -472,15 +477,16 @@ BEGIN
 
     -- get зазвичай повертає item
     -- list повертає items
-    RosterQueryResult ::= SEQUENCE {
-       item   RosterItem OPTIONAL,
-       items  SEQUENCE OF item RosterItem OPTIONAL,
+
+    RosterAnswer ::= SEQUENCE {
+       item   [0] RosterItem OPTIONAL,
+       items  [1] SEQUENCE OF item RosterItem OPTIONAL,
        ...
     }
 
-    RosterQueryEnvelope ::= CHOICE {
-       request [1] RosterQueryRequest,
-       result  [2] RosterQueryResult
+    RosterCore ::= CHOICE {
+       request [1] RosterQuery,
+       result  [2] RosterAnswer
     }
 
     ModerationOp ::= ENUMERATED {
@@ -491,11 +497,11 @@ BEGIN
 
     -- ban/unban очікують actor + target
     -- list повертає список обмежень
-    ModerationQueryRequest ::= SEQUENCE {
-       op     ModerationOp,
 
-       actor  OCTET STRING OPTIONAL,
-       target OCTET STRING OPTIONAL,
+    ModerationQuery ::= SEQUENCE {
+       op     ModerationOp,
+       actor  [0] OCTET STRING OPTIONAL,
+       target [1] OCTET STRING OPTIONAL,
        ...
     }
 
@@ -506,15 +512,16 @@ BEGIN
 
     -- ban/unban зазвичай повертають item
     -- list повертає items
-    ModerationQueryResult ::= SEQUENCE {
-       item   ModerationItem OPTIONAL,
-       items  SEQUENCE OF item ModerationItem OPTIONAL,
+
+    ModerationAnswer ::= SEQUENCE {
+       item   [0] ModerationItem OPTIONAL,
+       items  [1] SEQUENCE OF item ModerationItem OPTIONAL,
        ...
     }
 
-    ModerationQueryEnvelope ::= CHOICE {
-       request [1] ModerationQueryRequest,
-       result  [2] ModerationQueryResult
+    ModerationExtension ::= CHOICE {
+       request [1] ModerationQuery,
+       result  [2] ModerationAnswer
     }
 
     -- 08 Conference (RocksDB, Multi-user Conferences)
@@ -554,11 +561,12 @@ BEGIN
     -- get/remove/update очікують actor + feed
     -- add використовує actor + feed
     -- list допускає фільтр за feed
-    MemberQueryRequest ::= SEQUENCE {
+
+    MemberQuery ::= SEQUENCE {
        op    MemberOp,
 
-       actor OCTET STRING OPTIONAL,
-       feed  MessageFeed OPTIONAL
+       actor [0] OCTET STRING OPTIONAL,
+       feed  [1] MessageFeed OPTIONAL
     }
 
     MemberItem ::= SEQUENCE {
@@ -570,9 +578,10 @@ BEGIN
 
     -- get/add/update зазвичай повертають item
     -- list повертає items
-    MemberQueryResult ::= SEQUENCE {
-       item   MemberItem OPTIONAL,
-       items  SEQUENCE OF item MemberItem OPTIONAL
+
+    MemberAnswer ::= SEQUENCE {
+       item   [0] MemberItem OPTIONAL,
+       items  [1] SEQUENCE OF item MemberItem OPTIONAL
     }
 
     ConferenceType ::= ENUMERATED { group (1), channel (2), call (3) }
@@ -583,6 +592,7 @@ BEGIN
     --   join/leave/joined/removed          -> Event
     --   mute/unmute                        -> Query / Event
     --   lastmsg                            -> Query (Inbox/Search) або Event
+
     ConferenceStatus ::= ENUMERATED {
        active   (1),
        archived (2),
@@ -591,6 +601,7 @@ BEGIN
 
     -- lastmsg не є частиною Conference state.
     -- View-дані повинні передаватися через Query (Inbox/Search) або Event.
+
     Conference ::= SEQUENCE {
        id OCTET STRING,
        vsn Version,
@@ -622,20 +633,21 @@ BEGIN
     -- get/remove очікують id
     -- create/update використовують поля конференції
     -- list допускає частковий фільтр
-    ConferenceQueryRequest ::= SEQUENCE {
-       op    ConferenceOp,
 
-       id    OCTET STRING OPTIONAL,
-       name  OCTET STRING OPTIONAL,
-       type  ConferenceType OPTIONAL,
+    ConferenceQuery ::= SEQUENCE {
+       op    ConferenceOp,
+       id    [0] OCTET STRING OPTIONAL,
+       name  [1] OCTET STRING OPTIONAL,
+       type  [2] ConferenceType OPTIONAL,
        ...
     }
 
     -- get/create/update зазвичай повертають item
     -- list повертає items
-    ConferenceQueryResult ::= SEQUENCE {
-       item   ConferenceItem OPTIONAL,
-       items  SEQUENCE OF item ConferenceItem OPTIONAL,
+
+    ConferenceAnswer ::= SEQUENCE {
+       item   [0] ConferenceItem OPTIONAL,
+       items  [1] SEQUENCE OF item ConferenceItem OPTIONAL,
        ...
     }
 
@@ -646,9 +658,9 @@ BEGIN
        status ConferenceStatus
     }
 
-    ConferenceQueryEnvelope ::= CHOICE {
-       request [1] ConferenceQueryRequest,
-       result  [2] ConferenceQueryResult
+    ConferenceExtension ::= CHOICE {
+       request [1] ConferenceQuery,
+       result  [2] ConferenceAnswer
     }
 
     -- 09 CHAT-v2 Protocol Entities
