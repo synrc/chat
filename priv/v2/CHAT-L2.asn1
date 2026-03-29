@@ -68,6 +68,16 @@ BEGIN
     }
 
     -- 03 Inbox Folder Queue (MNESIA, SQLite) /Mail /Chat
+    -- XMPP відповідність:
+    --
+    --   inbox / message retrieval:
+    --     → XEP-0313 (Message Archive Management)
+    --
+    -- Зауваження:
+    --
+    --   У XMPP це окремий extension.
+    --   Тут це частина core Query моделі.
+    --
 
     Privatebox ::= SEQUENCE { address OCTET STRING }
     Streambox ::= SEQUENCE { channel OCTET STRING }
@@ -115,6 +125,18 @@ BEGIN
     -- Події групуються за family payload, без глобального плаского enum.
     -- Для простих family тип події задається локальним enum усередині payload.
 
+    -- XMPP відповідність:
+    --
+    --   delivered / received / read:
+    --     → XEP-0184 (Message Delivery Receipts)
+    --
+    --   deleted (message retraction):
+    --     → XEP-0425 (Message Retraction)
+    --
+    --   edited / updated:
+    --     → XEP-0308 (Last Message Correction)
+    --
+
     MessageEventType ::= ENUMERATED {
        received  (1),
        delivered (2),
@@ -131,6 +153,15 @@ BEGIN
        timestamp  [3] INTEGER OPTIONAL,
        ...
     }
+
+    -- XMPP відповідність:
+    --
+    --   online / offline:
+    --     → RFC 3921 (Presence)
+    --
+    --   typing:
+    --     → XEP-0085 (Chat State Notifications)
+    --
 
     PresenceEventType ::= ENUMERATED {
        online   (1),
@@ -163,6 +194,18 @@ BEGIN
     -- Payload уже розбитий на доменні family envelope.
     -- Внутрішні request/result payload типи тимчасово залишаються opaque
     -- до поступової типізації кожної family окремо.
+
+    -- XMPP відповідність:
+    --
+    --   Query (request/response):
+    --     → XEP-0004 (Data Forms)
+    --     → XEP-0030 (Service Discovery)
+    --
+    -- Зауваження:
+    --
+    --   У XMPP request/response розподілений по різних stanza.
+    --   У даному протоколі він уніфікований через Query.
+    --
 
     QueryType ::= ENUMERATED {
        get    (1),
@@ -294,6 +337,20 @@ BEGIN
     --   Subscription = state (факт зв'язку)
     --   Event        = що сталося (події)
     --   Query        = як це змінити / отримати
+
+    -- XMPP відповідність:
+    --
+    --   subscription (actor → target):
+    --     → RFC 3921 (Roster + Presence Subscriptions)
+    --
+    -- Зауваження:
+    --
+    --   У XMPP subscription і presence lifecycle змішані.
+    --   У даному протоколі:
+    --     - Subscription = лише факт зв'язку
+    --     - Lifecycle події → Event
+    --     - Команди → Query
+    --
 
     Subscription ::= SEQUENCE {
        actor  Binary,
@@ -440,6 +497,17 @@ BEGIN
     -- Roster є агрегованим snapshot/view ресурсом.
     -- Операції над roster передаються через Query.
     -- Runtime-події не живуть у Roster як моделі.
+
+    -- XMPP відповідність:
+    --
+    --   roster:
+    --     → RFC 3921 (Roster Management)
+    --
+    -- Зауваження:
+    --
+    --   У даному протоколі roster є snapshot/view ресурсом,
+    --   а не джерелом runtime-подій.
+    --
 
     Roster ::= SEQUENCE {
        id OCTET STRING,
@@ -592,6 +660,20 @@ BEGIN
     --   join/leave/joined/removed          -> Event
     --   mute/unmute                        -> Query / Event
     --   lastmsg                            -> Query (Inbox/Search) або Event
+
+    -- XMPP відповідність:
+    --
+    --   conference / group / channel:
+    --     → XEP-0045 (Multi-User Chat)
+    --
+    -- Зауваження:
+    --
+    --   У XMPP багато логіки зашито в stanza.
+    --   Тут модель розділена:
+    --     - Conference = state
+    --     - Event = runtime події
+    --     - Query = команди
+    --
 
     ConferenceStatus ::= ENUMERATED {
        active   (1),
