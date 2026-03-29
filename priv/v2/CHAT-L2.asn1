@@ -1027,19 +1027,28 @@ BEGIN
        query     [5] Query
     }
 
-    -- TODO: Batching / Framing
+    -- Transport Batching / Framing
     --
-    --   * Можливе об'єднання кількох Message/Event/Query
-    --     в одному транспортному пакеті.
+    --   * Транспортний контейнер може нести:
+    --       - один пакет протоколу
+    --       - або batch з кількох пакетів
     --
-    --   * Може бути введений framing-рівень:
-    --       - batch повідомлень
-    --       - compression
+    --   * Batching використовується для:
+    --       - зменшення transport overhead
+    --       - групування дрібних Event/Query/Message
     --
-    --   * Не визначено в поточній версії протоколу.
+    --   * Порядок елементів у batch зберігається.
+    --
+    --   * Batch є transport-оптимізацією і не змінює семантику
+    --     окремих Message/Event/Query.
+    CHATBody ::= CHOICE {
+       single [1] CHATProtocol,
+       batch  [2] SEQUENCE OF packet CHATProtocol
+    }
+
     CHATMessage ::= SEQUENCE {
        no INTEGER,
        headers SEQUENCE OF header Binary,
-       body CHATProtocol }
+       body CHATBody }
 
 END
