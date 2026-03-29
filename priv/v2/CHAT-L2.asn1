@@ -62,6 +62,25 @@ BEGIN
 
     Feature ::= SEQUENCE { id Binary, key Binary, value Binary, group Binary }
     AuthorityMethod ::= ENUMERATED { announce (0), enroll (1), authenticate (2), revoke (3), renew (4), ... }
+    -- Authority Method Semantics
+    --
+    -- announce:
+    --   * server capabilities / bootstrap metadata
+    --
+    -- enroll:
+    --   * первинна реєстрація device/client або сертифіката
+    --
+    -- authenticate:
+    --   * створює нову session
+    --   * або відновлює існуючу session через session + accessToken
+    --
+    -- renew:
+    --   * перевидає accessToken через refreshToken
+    --   * може також повертати новий refreshToken
+    --
+    -- revoke:
+    --   * інвалідує accessToken конкретної session
+    --   * або всі session, пов'язані з device/client
 
     -- AuthRequest використовується для:
     --   - первинної аутентифікації
@@ -1094,6 +1113,15 @@ BEGIN
        batch  [2] SEQUENCE OF packet CHATProtocol
     }
 
+    -- Transport headers
+    --
+    --   * headers можуть містити:
+    --       - accessToken
+    --       - routing metadata
+    --       - tracing / delivery metadata
+    --
+    --   * accessToken використовується для авторизації конкретної session
+    --     на transport рівні.
     CHATMessage ::= SEQUENCE {
        no INTEGER,
        headers SEQUENCE OF header Binary,
