@@ -219,6 +219,11 @@ BEGIN
     --
     --   - Узагальнення до рівня device або користувача
     --     виконується сервером і не є частиною протоколу.
+    --
+    -- Зауваження:
+    --
+    --   * Події read/delivered є session-рівня,
+    --     але передаються через спільний stream feed.
 
     MessageEvent ::= SEQUENCE {
        type       MessageEventType,
