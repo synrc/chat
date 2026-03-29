@@ -1130,7 +1130,7 @@ BEGIN
     }
 
     AuthHeader ::= SEQUENCE {
-       accessToken Binary
+       accessToken [0] Binary
     }
 
     RoutingHeader ::= SEQUENCE {
@@ -1140,8 +1140,8 @@ BEGIN
     }
 
     TracingHeader ::= SEQUENCE {
-       traceId Binary OPTIONAL,
-       spanId  Binary OPTIONAL,
+       traceId [0] Binary OPTIONAL,
+       spanId  [1] Binary OPTIONAL,
        ...
     }
 
