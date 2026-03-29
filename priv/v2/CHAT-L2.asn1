@@ -57,6 +57,37 @@ BEGIN
     --
     --   * Поле session у Message/Event/Query/Authority означає
     --     контекст конкретного клієнтського інстансу.
+    --
+    -- Session Lifecycle Policy
+    --
+    --   * Session створюється тільки через Authority.authenticate.
+    --
+    --   * Session має життєвий цикл:
+    --       - active
+    --       - expired
+    --       - revoked
+    --
+    --   * reconnect не створює нову session,
+    --     а відновлює існуючу session за умови, що:
+    --       - session існує
+    --       - accessToken валідний
+    --       - session не expired і не revoked
+    --
+    --   * renew не створює session,
+    --     а лише перевидає accessToken через refreshToken.
+    --
+    --   * authenticate з refreshToken MAY:
+    --       - відновити існуючу session
+    --       - або створити нову session,
+    --         якщо попередня session втрачена або expired
+    --
+    --   * revoke accessToken інвалідує конкретну session.
+    --
+    --   * revoke refreshToken MAY інвалідувати всі session,
+    --     пов'язані з device/client.
+    --
+    --   * Session MAY мати server-side TTL і завершуватись
+    --     після періоду неактивності.
 
     -- 01 Authority (CA)
 
@@ -183,7 +214,7 @@ BEGIN
     --
     --   - seq використовується для впорядкування і recovery,
     --     але не замінює Event.id як ідентифікатор події.
-    
+
     Message ::= SEQUENCE {
        id Binary,
        vsn Version,
