@@ -25,6 +25,39 @@ BEGIN
     Flavour ::= ENUMERATED { apple (1), microsoft (2), google (3), ericsson (4), nokia (5), cisco (6) }
     Binary  ::= OCTET STRING
 
+    -- Session Semantics
+    --
+    -- Протокол розрізняє три рівні:
+    --
+    --   Identity: користувач
+    --   Device: пристрій (телефон, браузер, десктоп)
+    --   Session: runtime-екземпляр клієнта (запуск застосунку або вкладка)
+    --
+    -- Session представляє конкретний клієнтський інстанс.
+    --
+    -- Властивості:
+    --
+    --   * Один користувач MAY мати кілька device.
+    --   * Один device MAY мати кілька session.
+    --   * Session є незалежними одна від одної.
+    --
+    -- Важливо:
+    --
+    --   * Session НЕ є транспортним з'єднанням.
+    --   * Session НЕ є користувачем.
+    --   * Session переживає reconnect.
+    --
+    -- Життєвий цикл:
+    --
+    --   * Session створюється під час authenticate.
+    --   * Session ідентифікується через session_id.
+    --   * Session MAY бути відновлена після reconnect.
+    --
+    -- Використання:
+    --
+    --   * Поле session у Message/Event/Query/Authority означає
+    --     контекст конкретного клієнтського інстансу.
+
     -- 01 Authority (CA)
 
     Feature ::= SEQUENCE { id OCTET STRING, key OCTET STRING, value OCTET STRING, group OCTET STRING }
