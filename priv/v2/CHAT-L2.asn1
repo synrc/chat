@@ -175,7 +175,15 @@ BEGIN
     --
     --   - Протокол допускає дублікати і reorder.
     --   - Клієнт і сервер повинні бути ідемпотентними.
-
+    --
+    -- Event Idempotency:
+    --
+    --   - Повторна доставка Event з тим самим id не повинна
+    --     створювати дублікати побічних ефектів.
+    --
+    --   - seq використовується для впорядкування і recovery,
+    --     але не замінює Event.id як ідентифікатор події.
+    
     Message ::= SEQUENCE {
        id Binary,
        vsn Version,
@@ -461,13 +469,21 @@ BEGIN
     --       - сервер MAY повертати спеціальний статус або error
     --         для позначення втрати історії
     --
-    -- TODO: Delivery Guarantees
+    -- Delivery Guarantees
     --
-    --   * Протокол не визначає рівень гарантій доставки:
-    --       - at-most-once
-    --       - at-least-once
+    --   * Базова модель доставки для Message і Event є at-least-once.
     --
-    --   * Поточна модель допускає дублікати і втрати.
+    --   * Протокол допускає повторну доставку пакетів після retry
+    --     або reconnect.
+    --
+    --   * Message і Event повинні бути ідемпотентними:
+    --       - Message: через унікальний Message.id
+    --       - Event: через Event.id і/або seq у межах feed
+    --
+    --   * received / delivered / read є application-level подіями
+    --     і не означають exact-once гарантії transport-рівня.
+    --
+    --   * Exactly-once не є ціллю базової моделі протоколу.
 
     -- XMPP відповідність:
     --
@@ -1130,7 +1146,7 @@ BEGIN
     }
 
     AuthHeader ::= SEQUENCE {
-       accessToken [0] Binary
+       accessToken Binary
     }
 
     RoutingHeader ::= SEQUENCE {
