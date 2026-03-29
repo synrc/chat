@@ -60,12 +60,12 @@ BEGIN
 
     -- 01 Authority (CA)
 
-    Feature ::= SEQUENCE { id OCTET STRING, key OCTET STRING, value OCTET STRING, group OCTET STRING }
+    Feature ::= SEQUENCE { id Binary, key Binary, value Binary, group Binary }
     AuthorityMethod ::= ENUMERATED { announce (0), enroll (1), authenticate (2), revoke (3), renew (4), ... }
     Authority ::= SEQUENCE {
-       id OCTET STRING,
+       id Binary,
        vsn Version,
-       session OCTET STRING,
+       session Binary,
        type AuthorityMethod,
        cert ANY,
        settings SEQUENCE OF feature Feature,
@@ -82,10 +82,10 @@ BEGIN
     MessageFeed ::= CHOICE { private [1] Privatebox, chan [2] Streambox, mailbox [4] Mailbox, group [8] Groupbox, ... }
 
     File ::= SEQUENCE {
-       id OCTET STRING,
-       mime OCTET STRING,
+       id Binary,
+       mime Binary,
        payload ContentInfo,
-       parentid OCTET STRING }
+       parentid Binary }
 
     -- Idempotency and Ordering
     --
@@ -108,7 +108,7 @@ BEGIN
     --
     --   - Протокол допускає дублікати і reorder.
     --   - Клієнт і сервер повинні бути ідемпотентними.
-    
+
     Message ::= SEQUENCE {
        id Binary,
        vsn Version,
@@ -134,17 +134,17 @@ BEGIN
     --   Тут це частина core Query моделі.
     --
 
-    Privatebox ::= SEQUENCE { address OCTET STRING }
-    Streambox ::= SEQUENCE { channel OCTET STRING }
-    Groupbox ::= SEQUENCE { channel OCTET STRING }
-    Mailbox ::= SEQUENCE { channel OCTET STRING }
+    Privatebox ::= SEQUENCE { address Binary }
+    Streambox ::= SEQUENCE { channel Binary }
+    Groupbox ::= SEQUENCE { channel Binary }
+    Mailbox ::= SEQUENCE { channel Binary }
 
     InboxMethod ::= ENUMERATED { get (1), erase (2), ...}
 
     Inbox ::= SEQUENCE {
-       id OCTET STRING,
+       id Binary,
        vsn Version,
-       session OCTET STRING,
+       session Binary,
        type InboxMethod,
        feed MessageFeed,
        messages [0] SEQUENCE OF message Message OPTIONAL,
@@ -222,9 +222,9 @@ BEGIN
 
     MessageEvent ::= SEQUENCE {
        type       MessageEventType,
-       messageId  [0] OCTET STRING OPTIONAL,
+       messageId  [0] Binary OPTIONAL,
        feed       [1] MessageFeed OPTIONAL,
-       actor      [2] OCTET STRING OPTIONAL,
+       actor      [2] Binary OPTIONAL,
        timestamp  [3] INTEGER OPTIONAL,
        ...
     }
@@ -246,7 +246,7 @@ BEGIN
     PresenceEvent ::= SEQUENCE {
        type       PresenceEventType,
        feed       [0] MessageFeed OPTIONAL,
-       actor      [1] OCTET STRING OPTIONAL,
+       actor      [1] Binary OPTIONAL,
        timestamp  [2] INTEGER OPTIONAL,
        ...
     }
@@ -257,9 +257,9 @@ BEGIN
     }
 
     Event ::= SEQUENCE {
-       id OCTET STRING,
+       id Binary,
        vsn Version,
-       session OCTET STRING,
+       session Binary,
        payload EventPayload,
        ...
     }
@@ -308,13 +308,13 @@ BEGIN
        error  (4), ...}
 
     Query ::= SEQUENCE {
-       id OCTET STRING,
+       id Binary,
        vsn Version,
-       session OCTET STRING,
+       session Binary,
        queryType QueryType,
-       ref [0] OCTET STRING OPTIONAL, -- request correlation id
+       ref [0] Binary OPTIONAL, -- request correlation id
        feed [1] MessageFeed OPTIONAL,
-       target [2] OCTET STRING OPTIONAL, -- optional routing hint; domain target belongs in payload
+       target [2] Binary OPTIONAL, -- optional routing hint; domain target belongs in payload
        payload [3] QueryPayload OPTIONAL, -- typed query family payload
        code [4] INTEGER OPTIONAL,
        ...
@@ -336,9 +336,9 @@ BEGIN
        ...
     }
 
-    ProcessExtension ::= CHOICE { request [1] OCTET STRING, result [2] OCTET STRING }
-    StorageExtension ::= CHOICE { request [1] OCTET STRING, result [2] OCTET STRING }
-    MailExtension    ::= CHOICE { request [1] OCTET STRING, result [2] OCTET STRING }
+    ProcessExtension ::= CHOICE { request [1] Binary, result [2] Binary }
+    StorageExtension ::= CHOICE { request [1] Binary, result [2] Binary }
+    MailExtension    ::= CHOICE { request [1] Binary, result [2] Binary }
 
     SubscriptionCore ::= CHOICE {
        request [1] SubscriptionQuery,
@@ -381,18 +381,18 @@ BEGIN
     -- list допускає частковий фільтр або перегляд у межах scope/dn
     SearchQuery ::= SEQUENCE {
        op       SearchOp,
-       dn       [0] OCTET STRING OPTIONAL,
-       field    [1] OCTET STRING OPTIONAL,
-       value    [2] OCTET STRING OPTIONAL,
+       dn       [0] Binary OPTIONAL,
+       field    [1] Binary OPTIONAL,
+       value    [2] Binary OPTIONAL,
        criteria [3] Criteria OPTIONAL,
        type     [4] Scope OPTIONAL,
        ...
     }
 
     SearchItem ::= SEQUENCE {
-       dn       [0] OCTET STRING OPTIONAL,
-       field    [1] OCTET STRING OPTIONAL,
-       value    [2] OCTET STRING OPTIONAL,
+       dn       [0] Binary OPTIONAL,
+       field    [1] Binary OPTIONAL,
+       value    [2] Binary OPTIONAL,
        criteria [3] Criteria OPTIONAL,
        type     [4] Scope OPTIONAL
     }
@@ -494,13 +494,13 @@ BEGIN
     -- feed задає контекст (якщо presence залежить від feed)
     PresenceQuery ::= SEQUENCE {
        op     PresenceOp,
-       actor  [0] OCTET STRING OPTIONAL,
+       actor  [0] Binary OPTIONAL,
        feed   [1] MessageFeed OPTIONAL,
        ...
     }
 
     PresenceItem ::= SEQUENCE {
-       actor     OCTET STRING,
+       actor     Binary,
        presence  Presence
     }
 
@@ -526,12 +526,12 @@ BEGIN
     -- lastmsg не є частиною Person state.
     -- View-дані повинні передаватися через Query (Inbox/Search) або Event.
     Person ::= SEQUENCE {
-       id OCTET STRING,
-       nickname OCTET STRING,
-       avatar OCTET STRING,
-       names SEQUENCE OF name OCTET STRING,
-       phone OCTET STRING,
-       surnames SEQUENCE OF name OCTET STRING,
+       id Binary,
+       nickname Binary,
+       avatar Binary,
+       names SEQUENCE OF name Binary,
+       phone Binary,
+       surnames SEQUENCE OF name Binary,
        presence Presence,
        update INTEGER,
        created INTEGER,
@@ -554,14 +554,14 @@ BEGIN
     PersonQuery ::= SEQUENCE {
        op   PersonOp,
 
-       id   [0] OCTET STRING OPTIONAL,
-       name [1] OCTET STRING OPTIONAL,
+       id   [0] Binary OPTIONAL,
+       name [1] Binary OPTIONAL,
        ...
     }
 
     PersonItem ::= SEQUENCE {
-       id       OCTET STRING,
-       nickname OCTET STRING,
+       id       Binary,
+       nickname Binary,
        presence Presence,
        status   PersonStatus
     }
@@ -575,7 +575,7 @@ BEGIN
        ...
     }
 
-    Server ::= SEQUENCE { service OCTET STRING, port INTEGER, host OCTET STRING }
+    Server ::= SEQUENCE { service Binary, port INTEGER, host Binary }
 
     -- RosterStatus описує лише стан roster як ресурсу.
     -- Command, mutation і lookup більше не живуть у Roster:
@@ -604,11 +604,11 @@ BEGIN
     --
 
     Roster ::= SEQUENCE {
-       id OCTET STRING,
+       id Binary,
        vsn Version,
-       session OCTET STRING,
-       nickname OCTET STRING,
-       keys SEQUENCE OF key OCTET STRING,
+       session Binary,
+       nickname Binary,
+       keys SEQUENCE OF key Binary,
        people SEQUENCE OF contact Person,
        topics SEQUENCE OF room Conference,
        channels SEQUENCE OF room Conference,
@@ -626,14 +626,14 @@ BEGIN
 
     RosterQuery ::= SEQUENCE {
        op   RosterOp,
-       id   [0] OCTET STRING OPTIONAL,
-       name [1] OCTET STRING OPTIONAL,
+       id   [0] Binary OPTIONAL,
+       name [1] Binary OPTIONAL,
        ...
     }
 
     RosterItem ::= SEQUENCE {
-       id       OCTET STRING,
-       nickname OCTET STRING,
+       id       Binary,
+       nickname Binary,
        status   RosterStatus
     }
 
@@ -662,14 +662,14 @@ BEGIN
 
     ModerationQuery ::= SEQUENCE {
        op     ModerationOp,
-       actor  [0] OCTET STRING OPTIONAL,
-       target [1] OCTET STRING OPTIONAL,
+       actor  [0] Binary OPTIONAL,
+       target [1] Binary OPTIONAL,
        ...
     }
 
     ModerationItem ::= SEQUENCE {
-       actor   OCTET STRING,
-       target  OCTET STRING
+       actor   Binary,
+       target  Binary
     }
 
     -- ban/unban зазвичай повертають item
@@ -698,15 +698,15 @@ BEGIN
        owner  (3), ...}
 
     Member ::= SEQUENCE {
-       id OCTET STRING,
-       nickname OCTET STRING,
+       id Binary,
+       nickname Binary,
        feed MessageFeed,
-       feeds SEQUENCE OF feed OCTET STRING,
-       phone OCTET STRING,
-       avatar OCTET STRING,
-       names SEQUENCE OF name OCTET STRING,
-       surnames SEQUENCE OF name OCTET STRING,
-       alias OCTET STRING,
+       feeds SEQUENCE OF feed Binary,
+       phone Binary,
+       avatar Binary,
+       names SEQUENCE OF name Binary,
+       surnames SEQUENCE OF name Binary,
+       alias Binary,
        update INTEGER,
        settings SEQUENCE OF feature Feature,
        presence Presence,
@@ -727,12 +727,12 @@ BEGIN
     MemberQuery ::= SEQUENCE {
        op    MemberOp,
 
-       actor [0] OCTET STRING OPTIONAL,
+       actor [0] Binary OPTIONAL,
        feed  [1] MessageFeed OPTIONAL
     }
 
     MemberItem ::= SEQUENCE {
-       actor   OCTET STRING,
+       actor   Binary,
        feed    MessageFeed,
        status  MemberStatus,
        presence Presence OPTIONAL
@@ -779,18 +779,18 @@ BEGIN
     -- View-дані повинні передаватися через Query (Inbox/Search) або Event.
 
     Conference ::= SEQUENCE {
-       id OCTET STRING,
+       id Binary,
        vsn Version,
-       session OCTET STRING,
-       name OCTET STRING,
-       links SEQUENCE OF link OCTET STRING,
-       description OCTET STRING,
+       session Binary,
+       name Binary,
+       links SEQUENCE OF link Binary,
+       description Binary,
        settings SEQUENCE OF feature Feature,
        members SEQUENCE OF member Member,
        admins SEQUENCE OF member Member,
-       data SEQUENCE OF fileId OCTET STRING OPTIONAL,
+       data SEQUENCE OF fileId Binary OPTIONAL,
        type ConferenceType,
-       tos OCTET STRING,
+       tos Binary,
        unread INTEGER,
        mentions SEQUENCE OF contact INTEGER,
        update INTEGER,
@@ -812,8 +812,8 @@ BEGIN
 
     ConferenceQuery ::= SEQUENCE {
        op    ConferenceOp,
-       id    [0] OCTET STRING OPTIONAL,
-       name  [1] OCTET STRING OPTIONAL,
+       id    [0] Binary OPTIONAL,
+       name  [1] Binary OPTIONAL,
        type  [2] ConferenceType OPTIONAL,
        ...
     }
@@ -828,8 +828,8 @@ BEGIN
     }
 
     ConferenceItem ::= SEQUENCE {
-       id    OCTET STRING,
-       name  OCTET STRING,
+       id    Binary,
+       name  Binary,
        type  ConferenceType,
        status ConferenceStatus
     }
@@ -850,7 +850,7 @@ BEGIN
 
     CHATMessage ::= SEQUENCE {
        no INTEGER,
-       headers SEQUENCE OF header OCTET STRING,
+       headers SEQUENCE OF header Binary,
        body CHATProtocol }
 
 END
