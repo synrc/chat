@@ -576,6 +576,15 @@ BEGIN
     --
     --   * Сервер MAY не передавати кожну read подію окремо.
     --
+    --   * Клієнт повинен явно повідомляти read як оновлення cursor у feed.
+    --
+    --   * Мінімально read має нести:
+    --       - feed
+    --       - readSeq
+    --
+    --   * messageId може використовуватись як допоміжний reference,
+    --     але не повинен бути єдиним джерелом істини для read state.
+    --
     -- Delivery:
     --
     --   * delivered події MAY агрегуватись або пропускатись,
@@ -594,6 +603,7 @@ BEGIN
        feed       [1] MessageFeed OPTIONAL,
        actor      [2] Binary OPTIONAL,
        timestamp  [3] INTEGER OPTIONAL,
+       readSeq    [4] INTEGER OPTIONAL,
        ...
     }
 
