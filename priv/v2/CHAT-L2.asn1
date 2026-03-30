@@ -1515,7 +1515,7 @@ BEGIN
     --   * Query (continuation) → snapshot/view модель.
     --
     --   * Консистентність між ними не гарантується.
-    
+
     CHATProtocol ::= CHOICE {
        authority [1] Authority,
        message   [2] Message,
