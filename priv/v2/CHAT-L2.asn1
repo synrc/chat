@@ -226,6 +226,54 @@ BEGIN
        ...
     }
 
+    -- Authority / Certificate Trust Model
+    --
+    --   * Authority є trust endpoint для:
+    --       - enroll
+    --       - authenticate
+    --       - renew
+    --       - revoke
+    --
+    --   * Authority MAY виступати як:
+    --       - certification authority
+    --       - registration authority
+    --       - auth/session authority
+    --
+    -- Trust Root:
+    --
+    --   * Клієнт повинен мати довіру до Authority поза межами
+    --     самого transport протоколу.
+    --
+    --   * TLS захищає transport channel, але не замінює
+    --     довіру до Authority як issuer / validator.
+    --
+    -- Certificates:
+    --
+    --   * cert використовується для:
+    --       - certificate request під час enroll
+    --       - certificate delivery / renewal
+    --       - certificate validation context
+    --
+    --   * Точний формат cert визначається контекстом AuthorityMethod.
+    --
+    -- Enroll:
+    --
+    --   * enroll MAY приймати CertificationRequest
+    --     і повертати Certificate.
+    --
+    -- Authenticate:
+    --
+    --   * authenticate MAY використовувати:
+    --       - token-based auth
+    --       - certificate-based auth
+    --       - або комбінований режим
+    --
+    -- Revoke:
+    --
+    --   * revoke MAY інвалідовувати:
+    --       - session / token
+    --       - certificate
+    --       - або device/client binding
     Authority ::= SEQUENCE {
        id Binary,
        vsn Version,
@@ -233,6 +281,11 @@ BEGIN
        type AuthorityMethod,
        request [0] AuthRequest OPTIONAL,
        result  [1] AuthAnswer OPTIONAL,
+
+       -- cert несе certificate-related payload залежно від type:
+       --   - CertificationRequest для enroll
+       --   - Certificate для renew / delivery
+       --   - validation context для authenticate
        cert ANY OPTIONAL,
        settings SEQUENCE OF feature Feature OPTIONAL,
         ... }
