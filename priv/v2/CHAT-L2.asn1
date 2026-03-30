@@ -17,9 +17,28 @@ BEGIN
     --
     -- Тобто одна семантика не повинна мати кілька паралельних wire-шляхів.
 
-    IMPORTS ContentInfo FROM CryptographicMessageSyntax-2009
-            CertificationRequest FROM PKCS-10
-            Certificate FROM PKIX1Explicit-2009 ;
+    -- IMPORTS ContentInfo FROM CryptographicMessageSyntax-2009
+            -- CertificationRequest FROM PKCS-10
+            -- Certificate FROM PKIX1Explicit-2009 ;
+
+    -- NOTE:
+    --   PKIX / PKCS ASN.1 модулі (Certificate, CertificationRequest)
+    --   навмисно не імпортуються.
+    --
+    --   Причина:
+    --     протокол не виконує parsing або валідацію сертифікатів,
+    --     а лише транспортує їх як opaque binary payload.
+    --
+    --   Повний PKIX стек має глибокі залежності
+    --   (PKIX-CommonTypes, AlgorithmInformation і т.д.),
+    --   які не резолвляться erlc без повного набору модулів.
+    --
+    --   Тому сертифікати і CSR представлені як OCTET STRING,
+    --   а їх інтерпретація є поза межами цього протоколу
+    --   (crypto / application layer).
+
+    CertificationRequest ::= OCTET STRING
+    Certificate ::= OCTET STRING -- DER encoded X.509
 
     Version ::= INTEGER  { v0(0), v1(1), v2(2), v3(3) }
 
@@ -48,6 +67,15 @@ BEGIN
     Flavour ::= ENUMERATED { apple (1), microsoft (2), google (3), ericsson (4), nokia (5), cisco (6) }
     Binary  ::= OCTET STRING
     Continuation ::= OCTET STRING
+
+    -- NOTE:
+    --   ContentInfo (CMS / PKCS#7) не використовується як структурований тип.
+    --
+    --   Протокол не виконує parsing або валідацію CMS payload,
+    --   а лише транспортує дані як opaque binary.
+    --
+    --   Тому ContentInfo представлено як OCTET STRING.
+    ContentInfo ::= OCTET STRING
 
     -- Session Semantics
     --
