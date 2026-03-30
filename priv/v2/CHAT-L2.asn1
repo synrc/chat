@@ -22,6 +22,29 @@ BEGIN
             Certificate FROM PKIX1Explicit-2009 ;
 
     Version ::= INTEGER  { v0(0), v1(1), v2(2), v3(3) }
+
+    -- Version Semantics
+    --
+    --   * vsn визначає wire-версію конкретного повідомлення.
+    --
+    --   * Клієнт і сервер MAY підтримувати кілька версій протоколу.
+    --
+    -- Compatibility:
+    --
+    --   * Якщо отримана версія підтримується, повідомлення
+    --     обробляється за правилами цієї версії.
+    --
+    --   * Якщо версія не підтримується, сервер SHOULD повертати:
+    --
+    --       Query(type=error, code=unsupportedVersion)
+    --
+    -- Forward compatibility:
+    --
+    --   * Невідомі extension-поля SHOULD ігноруватись.
+    --
+    --   * Розширення через "..." не повинні ламати сумісність
+    --     зі старішими реалізаціями.
+
     Flavour ::= ENUMERATED { apple (1), microsoft (2), google (3), ericsson (4), nokia (5), cisco (6) }
     Binary  ::= OCTET STRING
     Continuation ::= OCTET STRING
@@ -133,6 +156,18 @@ BEGIN
     --
     --   * Відкликання refreshToken може інвалідовувати
     --     всі session, пов'язані з device/client.
+    --
+    -- Version Negotiation
+    --
+    --   * Під час authenticate клієнт MAY передати supportedVsn:
+    --     перелік підтримуваних wire-версій.
+    --
+    --   * Сервер MAY вибрати сумісну версію і повернути її
+    --     в AuthAnswer.selectedVsn.
+    --
+    --   * Якщо спільної версії немає, сервер SHOULD повертати:
+    --
+    --       Query(type=error, code=unsupportedVersion)
     AuthRequest ::= SEQUENCE {
        accessToken  [0] Binary OPTIONAL,
        refreshToken [1] Binary OPTIONAL,
@@ -143,6 +178,7 @@ BEGIN
        os           [6] INTEGER OPTIONAL,
        services     [7] INTEGER OPTIONAL,
        push         [8] Binary OPTIONAL,
+       supportedVsn [9] SEQUENCE OF version Version OPTIONAL,
        ...
     }
 
@@ -156,6 +192,7 @@ BEGIN
        device       [2] Binary OPTIONAL,
        client       [3] Binary OPTIONAL,
        services     [4] INTEGER OPTIONAL,
+       selectedVsn  [5] Version OPTIONAL,
        ...
     }
 
@@ -456,7 +493,7 @@ BEGIN
     --   * Для складних сценаріїв (collaborative editing)
     --     можуть знадобитись CRDT або version vectors
     --     (поза межами базового протоколу).
-    
+
     Event ::= SEQUENCE {
        id Binary,
        vsn Version,
