@@ -116,6 +116,36 @@ BEGIN
     -- 01 Authority (CA)
 
     Feature ::= SEQUENCE { id Binary, key Binary, value Binary, group Binary }
+    -- Feature / Capability Negotiation
+    --
+    --   * Feature використовується для опису можливостей клієнта і сервера.
+    --
+    --   * Feature.id визначає тип capability.
+    --
+    --   * key/value можуть використовуватись для параметризації feature.
+    --
+    -- Usage:
+    --
+    --   * Сервер MAY передавати список підтримуваних feature
+    --     через Authority.settings (announce / authenticate).
+    --
+    --   * Клієнт MAY передавати підтримувані feature
+    --     через AuthRequest (через settings або окреме поле).
+    --
+    -- Negotiation:
+    --
+    --   * Клієнт і сервер повинні використовувати тільки
+    --     перетин підтримуваних feature.
+    --
+    --   * Невідомі feature повинні ігноруватись.
+    --
+    -- Приклади:
+    --
+    --   * typingOptimized
+    --   * readCursor
+    --   * batchTransport
+    --   * federationRouting
+        
     AuthorityMethod ::= ENUMERATED { announce (0), enroll (1), authenticate (2), revoke (3), renew (4), ... }
     -- Authority Method Semantics
     --
