@@ -145,7 +145,7 @@ BEGIN
     --   * readCursor
     --   * batchTransport
     --   * federationRouting
-        
+
     AuthorityMethod ::= ENUMERATED { announce (0), enroll (1), authenticate (2), revoke (3), renew (4), ... }
     -- Authority Method Semantics
     --
@@ -1373,6 +1373,50 @@ BEGIN
        batch  [2] SEQUENCE OF packet CHATProtocol
     }
 
+    -- Security / Trust Boundaries
+    --
+    --   * TLS захищає transport channel між сусідніми вузлами,
+    --     але не гарантує end-to-end недоторканність payload.
+    --
+    -- Trust Model:
+    --
+    --   * Клієнт довіряє authoritative broker/server тільки в межах:
+    --       - routing
+    --       - auth/session validation
+    --       - replay / retention policy
+    --
+    --   * Проміжні broker в federation вважаються transport-trusted,
+    --     але не payload-trusted.
+    --
+    -- Mutable by broker:
+    --
+    --   * headers
+    --   * routing metadata
+    --   * tracing metadata
+    --
+    -- Not mutable by broker:
+    --
+    --   * Message.payload
+    --   * Event.payload
+    --   * Query.payload
+    --
+    --   * Проміжні broker не повинні змінювати domain payload,
+    --     навіть якщо вони форвардять пакет.
+    --
+    -- Token Handling:
+    --
+    --   * accessToken є transport credential і може перевірятись
+    --     broker/server вузлом, який термінує transport session.
+    --
+    --   * refreshToken не повинен передаватись поза auth flow
+    --     (Authority.authenticate / Authority.renew).
+    --
+    -- End-to-End Security:
+    --
+    --   * Якщо потрібна end-to-end цілісність або конфіденційність,
+    --     вона повинна забезпечуватись на рівні payload
+    --     (поза межами базового transport протоколу).
+    --
     -- Transport headers
     --
     --   * headers можуть містити:
