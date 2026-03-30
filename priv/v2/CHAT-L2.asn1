@@ -427,7 +427,7 @@ BEGIN
     --     а лише оптимізують доставку подій.
     --   * typing інтерпретується як короткоживучий стан,
     --     а не як кожна окрема подія натискання клавіші.
-        
+
     MessageEvent ::= SEQUENCE {
        type       MessageEventType,
        messageId  [0] Binary OPTIONAL,
@@ -1363,9 +1363,51 @@ BEGIN
        accessToken Binary
     }
 
+    -- Routing / Federation Semantics
+    --
+    --   * RoutingHeader використовується для transport-level маршрутизації
+    --     між broker/server вузлами.
+    --
+    --   * target є optional routing hint для адресації кінцевого ресурсу
+    --     або вузла призначення.
+    --
+    --   * feed задає логічний контекст маршрутизації повідомлення.
+    --
+    -- Authority:
+    --
+    --   * Для кожного feed існує authoritative broker/server,
+    --     який відповідає за:
+    --       - порядок подій у feed
+    --       - seq у межах feed
+    --       - retention / replay policy
+    --
+    -- Federation:
+    --
+    --   * Проміжні broker MAY форвардити пакети до authoritative вузла
+    --     або до наступного маршруту.
+    --
+    --   * Проміжні broker не повинні змінювати семантику payload.
+    --
+    --   * Проміжні broker MAY додавати transport metadata у headers,
+    --     але не повинні змінювати Message/Event/Query payload.
+    --
+    -- Ordering:
+    --
+    --   * Порядок подій гарантується тільки authoritative вузлом feed.
+    --
+    --   * Federation не гарантує глобальний порядок між різними feed
+    --     або різними маршрутами.
+    --
+    -- Error Handling:
+    --
+    --   * Якщо маршрут невідомий або недоступний,
+    --     сервер SHOULD повертати Query(type=error, code=notFound)
+    --     або Query(type=error, code=unavailable).
+
     RoutingHeader ::= SEQUENCE {
-       target Binary OPTIONAL,
-       feed   MessageFeed OPTIONAL,
+       target [0] Binary OPTIONAL,
+       feed   [1] MessageFeed OPTIONAL,
+       broker [2] Binary OPTIONAL,
        ...
     }
 
