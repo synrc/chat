@@ -25,17 +25,148 @@ BEGIN
     Flavour ::= ENUMERATED { apple (1), microsoft (2), google (3), ericsson (4), nokia (5), cisco (6) }
     Binary  ::= OCTET STRING
 
+    -- Session Semantics
+    --
+    -- Протокол розрізняє три рівні:
+    --
+    --   Identity: користувач
+    --   Device: пристрій (телефон, браузер, десктоп)
+    --   Session: runtime-екземпляр клієнта (запуск застосунку або вкладка)
+    --
+    -- Session представляє конкретний клієнтський інстанс.
+    --
+    -- Властивості:
+    --
+    --   * Один користувач MAY мати кілька device.
+    --   * Один device MAY мати кілька session.
+    --   * Session є незалежними одна від одної.
+    --
+    -- Важливо:
+    --
+    --   * Session НЕ є транспортним з'єднанням.
+    --   * Session НЕ є користувачем.
+    --   * Session переживає reconnect.
+    --
+    -- Життєвий цикл:
+    --
+    --   * Session створюється під час authenticate.
+    --   * Session ідентифікується через session_id.
+    --   * Session MAY бути відновлена після reconnect.
+    --
+    -- Використання:
+    --
+    --   * Поле session у Message/Event/Query/Authority означає
+    --     контекст конкретного клієнтського інстансу.
+    --
+    -- Session Lifecycle Policy
+    --
+    --   * Session створюється тільки через Authority.authenticate.
+    --
+    --   * Session має життєвий цикл:
+    --       - active
+    --       - expired
+    --       - revoked
+    --
+    --   * reconnect не створює нову session,
+    --     а відновлює існуючу session за умови, що:
+    --       - session існує
+    --       - accessToken валідний
+    --       - session не expired і не revoked
+    --
+    --   * renew не створює session,
+    --     а лише перевидає accessToken через refreshToken.
+    --
+    --   * authenticate з refreshToken MAY:
+    --       - відновити існуючу session
+    --       - або створити нову session,
+    --         якщо попередня session втрачена або expired
+    --
+    --   * revoke accessToken інвалідує конкретну session.
+    --
+    --   * revoke refreshToken MAY інвалідувати всі session,
+    --     пов'язані з device/client.
+    --
+    --   * Session MAY мати server-side TTL і завершуватись
+    --     після періоду неактивності.
+
     -- 01 Authority (CA)
 
-    Feature ::= SEQUENCE { id OCTET STRING, key OCTET STRING, value OCTET STRING, group OCTET STRING }
+    Feature ::= SEQUENCE { id Binary, key Binary, value Binary, group Binary }
     AuthorityMethod ::= ENUMERATED { announce (0), enroll (1), authenticate (2), revoke (3), renew (4), ... }
+    -- Authority Method Semantics
+    --
+    -- announce:
+    --   * server capabilities / bootstrap metadata
+    --
+    -- enroll:
+    --   * первинна реєстрація device/client або сертифіката
+    --
+    -- authenticate:
+    --   * створює нову session
+    --   * або відновлює існуючу session через session + accessToken
+    --
+    -- renew:
+    --   * перевидає accessToken через refreshToken
+    --   * може також повертати новий refreshToken
+    --
+    -- revoke:
+    --   * інвалідує accessToken конкретної session
+    --   * або всі session, пов'язані з device/client
+
+    -- AuthRequest використовується для:
+    --   - первинної аутентифікації
+    --   - reconnect існуючої session
+    --   - renew access token через refresh token
+    -- Token Scope
+    --
+    --   * accessToken прив'язаний до конкретної session
+    --     і використовується для transport authorization / reconnect.
+    --
+    --   * refreshToken прив'язаний до device/client
+    --     і використовується для перевидачі accessToken.
+    --
+    --   * Один device MAY мати кілька session.
+    --
+    --   * Відкликання accessToken повинно впливати тільки
+    --     на відповідну session.
+    --
+    --   * Відкликання refreshToken може інвалідовувати
+    --     всі session, пов'язані з device/client.
+    AuthRequest ::= SEQUENCE {
+       accessToken  [0] Binary OPTIONAL,
+       refreshToken [1] Binary OPTIONAL,
+       device       [2] Binary OPTIONAL,
+       client       [3] Binary OPTIONAL,
+       phone        [4] Binary OPTIONAL,
+       sms          [5] Binary OPTIONAL,
+       os           [6] INTEGER OPTIONAL,
+       services     [7] INTEGER OPTIONAL,
+       push         [8] Binary OPTIONAL,
+       ...
+    }
+
+    -- AuthAnswer повертає токени та параметри session
+    -- після authenticate / renew.
+    -- accessToken авторизує конкретну session.
+    -- refreshToken дозволяє перевидачу accessToken для device/client.
+    AuthAnswer ::= SEQUENCE {
+       accessToken  [0] Binary OPTIONAL,
+       refreshToken [1] Binary OPTIONAL,
+       device       [2] Binary OPTIONAL,
+       client       [3] Binary OPTIONAL,
+       services     [4] INTEGER OPTIONAL,
+       ...
+    }
+
     Authority ::= SEQUENCE {
-       id OCTET STRING,
+       id Binary,
        vsn Version,
-       session OCTET STRING,
+       session Binary,
        type AuthorityMethod,
-       cert ANY,
-       settings SEQUENCE OF feature Feature,
+       request [0] AuthRequest OPTIONAL,
+       result  [1] AuthAnswer OPTIONAL,
+       cert ANY OPTIONAL,
+       settings SEQUENCE OF feature Feature OPTIONAL,
         ... }
 
     -- 02 Message (MNESIA, SQLite)
@@ -49,10 +180,40 @@ BEGIN
     MessageFeed ::= CHOICE { private [1] Privatebox, chan [2] Streambox, mailbox [4] Mailbox, group [8] Groupbox, ... }
 
     File ::= SEQUENCE {
-       id OCTET STRING,
-       mime OCTET STRING,
+       id Binary,
+       mime Binary,
        payload ContentInfo,
-       parentid OCTET STRING }
+       parentid Binary }
+
+    -- Idempotency and Ordering
+    --
+    -- Idempotency:
+    --
+    --   - Message.id повинен бути глобально унікальним.
+    --   - Повторна відправка Message з тим самим id не повинна створювати дублі.
+    --
+    -- Ordering:
+    --
+    --   - Порядок повідомлень гарантується тільки в межах feed.
+    --   - Глобальний порядок між різними session не гарантується.
+    --
+    -- Event ordering:
+    --
+    --   - Події можуть приходити не в строгому порядку.
+    --   - Клієнт повинен обробляти можливу перестановку подій.
+    --
+    -- Важливо:
+    --
+    --   - Протокол допускає дублікати і reorder.
+    --   - Клієнт і сервер повинні бути ідемпотентними.
+    --
+    -- Event Idempotency:
+    --
+    --   - Повторна доставка Event з тим самим id не повинна
+    --     створювати дублікати побічних ефектів.
+    --
+    --   - seq використовується для впорядкування і recovery,
+    --     але не замінює Event.id як ідентифікатор події.
 
     Message ::= SEQUENCE {
        id Binary,
@@ -79,17 +240,17 @@ BEGIN
     --   Тут це частина core Query моделі.
     --
 
-    Privatebox ::= SEQUENCE { address OCTET STRING }
-    Streambox ::= SEQUENCE { channel OCTET STRING }
-    Groupbox ::= SEQUENCE { channel OCTET STRING }
-    Mailbox ::= SEQUENCE { channel OCTET STRING }
+    Privatebox ::= SEQUENCE { address Binary }
+    Streambox ::= SEQUENCE { channel Binary }
+    Groupbox ::= SEQUENCE { channel Binary }
+    Mailbox ::= SEQUENCE { channel Binary }
 
     InboxMethod ::= ENUMERATED { get (1), erase (2), ...}
 
     Inbox ::= SEQUENCE {
-       id OCTET STRING,
+       id Binary,
        vsn Version,
-       session OCTET STRING,
+       session Binary,
        type InboxMethod,
        feed MessageFeed,
        messages [0] SEQUENCE OF message Message OPTIONAL,
@@ -145,11 +306,65 @@ BEGIN
        deleted   (5),
        updated   (6), ...}
 
+    -- Delivery and Read Semantics
+    --
+    -- Події доставки і читання є session-рівня.
+    --
+    -- delivered:
+    --   означає, що повідомлення доставлено конкретній session.
+    --
+    -- read:
+    --   означає, що повідомлення прочитано конкретною session.
+    --
+    -- Multi-device:
+    --
+    --   - Один користувач може мати кілька session.
+    --   - delivered/read можуть генеруватись окремо для кожної session.
+    --
+    -- Агрегація:
+    --
+    --   - Узагальнення до рівня device або користувача
+    --     виконується сервером і не є частиною протоколу.
+    --
+    -- Read cursor:
+    --
+    --   - Read події можуть інтерпретуватись як cursor (позиція)
+    --     у межах feed.
+    --
+    --   - Кожна session може мати власний read cursor.
+    --
+    --   - Unread визначається як різниця між поточним seq feed
+    --     і read cursor.
+    --
+    -- Зауваження:
+    --
+    --   * Події read/delivered є session-рівня,
+    --     але передаються через спільний stream feed.
+    --
+    --   * Протокол використовує cursor-based модель читання.
+    --
+    --   * Read визначається як позиція (seq), а не як набір messageId.
+    --
+    --   * Деталізовані read receipts (per message / per user)
+    --     не є частиною базової моделі.
+    --
+    -- TODO: Event Throttling / Aggregation
+    --
+    --   * High-frequency події (typing, presence, read)
+    --     можуть генерувати значне навантаження.
+    --
+    --   * Сервер SHOULD виконувати throttling або aggregation:
+    --       - typing: обмеження частоти
+    --       - read: агрегування до "last seen"
+    --       - presence: delta-оновлення
+    --
+    --   * Конкретна стратегія не визначена у протоколі.
+
     MessageEvent ::= SEQUENCE {
        type       MessageEventType,
-       messageId  [0] OCTET STRING OPTIONAL,
+       messageId  [0] Binary OPTIONAL,
        feed       [1] MessageFeed OPTIONAL,
-       actor      [2] OCTET STRING OPTIONAL,
+       actor      [2] Binary OPTIONAL,
        timestamp  [3] INTEGER OPTIONAL,
        ...
     }
@@ -171,7 +386,7 @@ BEGIN
     PresenceEvent ::= SEQUENCE {
        type       PresenceEventType,
        feed       [0] MessageFeed OPTIONAL,
-       actor      [1] OCTET STRING OPTIONAL,
+       actor      [1] Binary OPTIONAL,
        timestamp  [2] INTEGER OPTIONAL,
        ...
     }
@@ -181,10 +396,42 @@ BEGIN
        presence  [2] PresenceEvent
     }
 
+    -- Sequencing
+    --
+    -- Події мають порядок у межах feed.
+    --
+    --   * seq є монотонно зростаючим у межах feed.
+    --
+    -- Session:
+    --
+    --   * session зберігає свою позицію (last_seq) у feed.
+    --
+    -- Використання:
+    --
+    --   * reconnect і recovery
+    --   * replay подій
+    --   * виявлення пропусків
+    --
+    -- Важливо:
+    --
+    --   * seq НЕ є глобальним.
+    --   * seq визначений тільки в межах feed.
+    --
+    -- TODO: Event Consistency
+    --
+    --   * Події можуть приходити поза порядком або дублюватись.
+    --
+    --   * Не визначено:
+    --       - як обробляти конфлікти (edit після delete)
+    --       - як визначати causal порядок
+    --
+    --   * Очікується client-side reconciliation.
+
     Event ::= SEQUENCE {
-       id OCTET STRING,
+       id Binary,
        vsn Version,
-       session OCTET STRING,
+       session Binary,
+       seq INTEGER,
        payload EventPayload,
        ...
     }
@@ -194,6 +441,80 @@ BEGIN
     -- Payload уже розбитий на доменні family envelope.
     -- Внутрішні request/result payload типи тимчасово залишаються opaque
     -- до поступової типізації кожної family окремо.
+
+    -- Reconnect Semantics
+    --
+    -- Транспортне зєднання може перериватись і відновлюватись.
+    --
+    -- Session:
+    --
+    --   - Session залишається валідною при reconnect.
+    --   - Клієнт SHOULD повторно використовувати існуючу session.
+    --
+    -- Доставка подій:
+    --
+    --   - Після reconnect клієнт MAY отримати пропущені події.
+    --   - Механізм відновлення (replay / fetch) реалізується через Query.
+    --
+    -- Важливо:
+    --
+    --   - Протокол не гарантує доставку всіх подій без повторного запиту.
+    --   - Клієнт повинен бути готовий до втрати частини історії подій.
+    --
+    -- Recovery:
+    --
+    --   - Клієнт повинен зберігати останній отриманий seq.
+    --
+    --   - Після reconnect клієнт виконує Query для отримання подій
+    --     починаючи з відомого seq.
+    --
+    --   - Сервер повертає події з seq > last_seq.
+    --
+    --   - Пропущені події відновлюються через цей механізм.
+    --
+    -- Offline:
+    --
+    --   - Офлайн режим не є окремою концепцією протоколу.
+    --
+    --   - Пропущені події відновлюються через seq (Event replay).
+    --
+    --   - У випадку втрати історії (gap) використовується Query (Inbox).
+    --
+    -- TODO: Retention and Gap Handling
+    --
+    --   * Сервер може обмежувати збереження подій у feed (retention).
+    --
+    --   * Якщо клієнт запитує after, який менший за мінімальний
+    --     доступний seq, виникає gap (втрата частини історії).
+    --
+    --   * Поведінка у випадку gap поки не визначена:
+    --       - явний сигнал клієнту (error / status)
+    --       - або неявне повернення неповних даних
+    --
+    --   * Клієнт у такому випадку має виконати повний sync
+    --     через Query (Inbox / інші view).
+    --
+    --   * Клієнт НЕ повинен припускати повноту даних без перевірки seq.
+    --
+    --   * TODO: Явний сигнал gap:
+    --       - сервер MAY повертати спеціальний статус або error
+    --         для позначення втрати історії
+    --
+    -- Delivery Guarantees
+    --
+    --   * Базова модель доставки для Message і Event є at-least-once.
+    --
+    --   * Протокол допускає повторну доставку пакетів після retry
+    --     або reconnect.
+    --
+    --   * Message і Event повинні бути ідемпотентними:
+    --       - Message: через унікальний Message.id
+    --       - Event: через Event.id і/або seq у межах feed
+    --
+    --   * received / delivered / read є application-level подіями
+    --     і не означають exact-once гарантії transport-рівня.
+    --
+    --   * Exactly-once не є ціллю базової моделі протоколу.
 
     -- XMPP відповідність:
     --
@@ -207,22 +528,62 @@ BEGIN
     --   У даному протоколі він уніфікований через Query.
     --
 
+
     QueryType ::= ENUMERATED {
        get    (1),
        set    (2),
        result (3),
        error  (4), ...}
 
+    QueryError ::= ENUMERATED {
+       badRequest          (1),
+       unauthorized        (2),
+       forbidden           (3),
+       notFound            (4),
+       conflict            (5),
+       unsupportedVersion  (6),
+       gapDetected         (7),
+       rateLimited         (8),
+       internalError       (9),
+       unavailable         (10),
+       ...
+    }
+
+    -- Query Error Semantics
+    --
+    --   * Query(type=error) використовується для повернення
+    --     типізованої помилки request/response рівня.
+    --
+    --   * code визначає категорію помилки.
+    --
+    -- Retryable:
+    --
+    --   * unavailable
+    --   * rateLimited
+    --
+    -- Recoverable with client action:
+    --
+    --   * unauthorized       -> renew / authenticate
+    --   * unsupportedVersion -> fallback version
+    --   * gapDetected        -> full sync через Inbox / view Query
+    --
+    -- Fatal for request:
+    --
+    --   * badRequest
+    --   * forbidden
+    --   * notFound
+    --   * conflict
+
     Query ::= SEQUENCE {
-       id OCTET STRING,
+       id Binary,
        vsn Version,
-       session OCTET STRING,
+       session Binary,
        queryType QueryType,
-       ref [0] OCTET STRING OPTIONAL, -- request correlation id
+       ref [0] Binary OPTIONAL, -- request correlation id
        feed [1] MessageFeed OPTIONAL,
-       target [2] OCTET STRING OPTIONAL, -- optional routing hint; domain target belongs in payload
+       target [2] Binary OPTIONAL, -- optional routing hint; domain target belongs in payload
        payload [3] QueryPayload OPTIONAL, -- typed query family payload
-       code [4] INTEGER OPTIONAL,
+       code [4] QueryError OPTIONAL,
        ...
     }
 
@@ -239,12 +600,13 @@ BEGIN
        bpe          [10] ProcessExtension,
        kvs          [11] StorageExtension,
        mail         [12] MailExtension, -- X.420
+       event        [13] EventCore,
        ...
     }
 
-    ProcessExtension ::= CHOICE { request [1] OCTET STRING, result [2] OCTET STRING }
-    StorageExtension ::= CHOICE { request [1] OCTET STRING, result [2] OCTET STRING }
-    MailExtension    ::= CHOICE { request [1] OCTET STRING, result [2] OCTET STRING }
+    ProcessExtension ::= CHOICE { request [1] Binary, result [2] Binary }
+    StorageExtension ::= CHOICE { request [1] Binary, result [2] Binary }
+    MailExtension    ::= CHOICE { request [1] Binary, result [2] Binary }
 
     SubscriptionCore ::= CHOICE {
        request [1] SubscriptionQuery,
@@ -271,6 +633,57 @@ BEGIN
        result  [2] InboxAnswer
     }
 
+    -- TODO: Pagination / Streaming
+    --
+    --   * Великі відповіді (roster, members, search)
+    --     можуть вимагати pagination.
+    --
+    --   * Можливе введення:
+    --       - continuation token
+    --       - chunked відповіді
+    --
+    --   * Не визначено у поточній версії.
+
+    -- Event Core (recovery / replay)
+    --
+    -- Події зберігаються як спільний stream у межах feed.
+    --
+    -- Sequencing:
+    --
+    --   * seq визначений у межах feed і є монотонно зростаючим.
+    --
+    -- Session:
+    --
+    --   * Кожна session окремо зберігає свою позицію (last_seq) у feed.
+    --   * Recovery виконується від імені конкретної session.
+    --
+    -- Recovery:
+    --
+    --   * Клієнт виконує Query з параметром after = last_seq.
+    --   * Сервер повертає події з seq > after.
+    --
+    -- Важливо:
+    --
+    --   * Події є спільними для всіх session у межах feed.
+    --   * Позиція (last_seq) є індивідуальною для кожної session.
+    --   * Сервер не веде окремі черги подій на session.
+
+    EventQuery ::= SEQUENCE {
+       after [0] INTEGER OPTIONAL,
+       limit [1] INTEGER OPTIONAL,
+       ...
+    }
+
+    EventAnswer ::= SEQUENCE {
+       events [0] SEQUENCE OF event Event OPTIONAL,
+       ...
+    }
+
+    EventCore ::= CHOICE {
+       request [1] EventQuery,
+       result  [2] EventAnswer
+    }
+
     -- 05 Search (LDAP Search)
 
     SearchStatus ::= ENUMERATED { ok (0), ...}
@@ -287,18 +700,18 @@ BEGIN
     -- list допускає частковий фільтр або перегляд у межах scope/dn
     SearchQuery ::= SEQUENCE {
        op       SearchOp,
-       dn       [0] OCTET STRING OPTIONAL,
-       field    [1] OCTET STRING OPTIONAL,
-       value    [2] OCTET STRING OPTIONAL,
+       dn       [0] Binary OPTIONAL,
+       field    [1] Binary OPTIONAL,
+       value    [2] Binary OPTIONAL,
        criteria [3] Criteria OPTIONAL,
        type     [4] Scope OPTIONAL,
        ...
     }
 
     SearchItem ::= SEQUENCE {
-       dn       [0] OCTET STRING OPTIONAL,
-       field    [1] OCTET STRING OPTIONAL,
-       value    [2] OCTET STRING OPTIONAL,
+       dn       [0] Binary OPTIONAL,
+       field    [1] Binary OPTIONAL,
+       value    [2] Binary OPTIONAL,
        criteria [3] Criteria OPTIONAL,
        type     [4] Scope OPTIONAL
     }
@@ -400,13 +813,13 @@ BEGIN
     -- feed задає контекст (якщо presence залежить від feed)
     PresenceQuery ::= SEQUENCE {
        op     PresenceOp,
-       actor  [0] OCTET STRING OPTIONAL,
+       actor  [0] Binary OPTIONAL,
        feed   [1] MessageFeed OPTIONAL,
        ...
     }
 
     PresenceItem ::= SEQUENCE {
-       actor     OCTET STRING,
+       actor     Binary,
        presence  Presence
     }
 
@@ -432,12 +845,12 @@ BEGIN
     -- lastmsg не є частиною Person state.
     -- View-дані повинні передаватися через Query (Inbox/Search) або Event.
     Person ::= SEQUENCE {
-       id OCTET STRING,
-       nickname OCTET STRING,
-       avatar OCTET STRING,
-       names SEQUENCE OF name OCTET STRING,
-       phone OCTET STRING,
-       surnames SEQUENCE OF name OCTET STRING,
+       id Binary,
+       nickname Binary,
+       avatar Binary,
+       names SEQUENCE OF name Binary,
+       phone Binary,
+       surnames SEQUENCE OF name Binary,
        presence Presence,
        update INTEGER,
        created INTEGER,
@@ -460,14 +873,14 @@ BEGIN
     PersonQuery ::= SEQUENCE {
        op   PersonOp,
 
-       id   [0] OCTET STRING OPTIONAL,
-       name [1] OCTET STRING OPTIONAL,
+       id   [0] Binary OPTIONAL,
+       name [1] Binary OPTIONAL,
        ...
     }
 
     PersonItem ::= SEQUENCE {
-       id       OCTET STRING,
-       nickname OCTET STRING,
+       id       Binary,
+       nickname Binary,
        presence Presence,
        status   PersonStatus
     }
@@ -481,7 +894,7 @@ BEGIN
        ...
     }
 
-    Server ::= SEQUENCE { service OCTET STRING, port INTEGER, host OCTET STRING }
+    Server ::= SEQUENCE { service Binary, port INTEGER, host Binary }
 
     -- RosterStatus описує лише стан roster як ресурсу.
     -- Command, mutation і lookup більше не живуть у Roster:
@@ -510,11 +923,11 @@ BEGIN
     --
 
     Roster ::= SEQUENCE {
-       id OCTET STRING,
+       id Binary,
        vsn Version,
-       session OCTET STRING,
-       nickname OCTET STRING,
-       keys SEQUENCE OF key OCTET STRING,
+       session Binary,
+       nickname Binary,
+       keys SEQUENCE OF key Binary,
        people SEQUENCE OF contact Person,
        topics SEQUENCE OF room Conference,
        channels SEQUENCE OF room Conference,
@@ -532,14 +945,14 @@ BEGIN
 
     RosterQuery ::= SEQUENCE {
        op   RosterOp,
-       id   [0] OCTET STRING OPTIONAL,
-       name [1] OCTET STRING OPTIONAL,
+       id   [0] Binary OPTIONAL,
+       name [1] Binary OPTIONAL,
        ...
     }
 
     RosterItem ::= SEQUENCE {
-       id       OCTET STRING,
-       nickname OCTET STRING,
+       id       Binary,
+       nickname Binary,
        status   RosterStatus
     }
 
@@ -568,14 +981,14 @@ BEGIN
 
     ModerationQuery ::= SEQUENCE {
        op     ModerationOp,
-       actor  [0] OCTET STRING OPTIONAL,
-       target [1] OCTET STRING OPTIONAL,
+       actor  [0] Binary OPTIONAL,
+       target [1] Binary OPTIONAL,
        ...
     }
 
     ModerationItem ::= SEQUENCE {
-       actor   OCTET STRING,
-       target  OCTET STRING
+       actor   Binary,
+       target  Binary
     }
 
     -- ban/unban зазвичай повертають item
@@ -604,15 +1017,15 @@ BEGIN
        owner  (3), ...}
 
     Member ::= SEQUENCE {
-       id OCTET STRING,
-       nickname OCTET STRING,
+       id Binary,
+       nickname Binary,
        feed MessageFeed,
-       feeds SEQUENCE OF feed OCTET STRING,
-       phone OCTET STRING,
-       avatar OCTET STRING,
-       names SEQUENCE OF name OCTET STRING,
-       surnames SEQUENCE OF name OCTET STRING,
-       alias OCTET STRING,
+       feeds SEQUENCE OF feed Binary,
+       phone Binary,
+       avatar Binary,
+       names SEQUENCE OF name Binary,
+       surnames SEQUENCE OF name Binary,
+       alias Binary,
        update INTEGER,
        settings SEQUENCE OF feature Feature,
        presence Presence,
@@ -633,12 +1046,12 @@ BEGIN
     MemberQuery ::= SEQUENCE {
        op    MemberOp,
 
-       actor [0] OCTET STRING OPTIONAL,
+       actor [0] Binary OPTIONAL,
        feed  [1] MessageFeed OPTIONAL
     }
 
     MemberItem ::= SEQUENCE {
-       actor   OCTET STRING,
+       actor   Binary,
        feed    MessageFeed,
        status  MemberStatus,
        presence Presence OPTIONAL
@@ -683,20 +1096,34 @@ BEGIN
 
     -- lastmsg не є частиною Conference state.
     -- View-дані повинні передаватися через Query (Inbox/Search) або Event.
+    --
+    -- TODO: Unread Semantics
+    --
+    --   * unread може бути або:
+    --       - похідним значенням (derived) від seq і read cursor
+    --       - або кешованим view-полем (server-side aggregation)
+    --
+    --   * У поточній моделі unread визначається як:
+    --       unread = current_seq(feed) - read_cursor(session)
+    --
+    --   * Поле unread у Conference НЕ є джерелом істини,
+    --     а може використовуватись як оптимізація / snapshot.
+    --
+    --   * Поведінка синхронізації unread між session не визначена.
 
     Conference ::= SEQUENCE {
-       id OCTET STRING,
+       id Binary,
        vsn Version,
-       session OCTET STRING,
-       name OCTET STRING,
-       links SEQUENCE OF link OCTET STRING,
-       description OCTET STRING,
+       session Binary,
+       name Binary,
+       links SEQUENCE OF link Binary,
+       description Binary,
        settings SEQUENCE OF feature Feature,
        members SEQUENCE OF member Member,
        admins SEQUENCE OF member Member,
-       data SEQUENCE OF fileId OCTET STRING OPTIONAL,
+       data SEQUENCE OF fileId Binary OPTIONAL,
        type ConferenceType,
-       tos OCTET STRING,
+       tos Binary,
        unread INTEGER,
        mentions SEQUENCE OF contact INTEGER,
        update INTEGER,
@@ -718,8 +1145,8 @@ BEGIN
 
     ConferenceQuery ::= SEQUENCE {
        op    ConferenceOp,
-       id    [0] OCTET STRING OPTIONAL,
-       name  [1] OCTET STRING OPTIONAL,
+       id    [0] Binary OPTIONAL,
+       name  [1] Binary OPTIONAL,
        type  [2] ConferenceType OPTIONAL,
        ...
     }
@@ -734,8 +1161,8 @@ BEGIN
     }
 
     ConferenceItem ::= SEQUENCE {
-       id    OCTET STRING,
-       name  OCTET STRING,
+       id    Binary,
+       name  Binary,
        type  ConferenceType,
        status ConferenceStatus
     }
@@ -754,9 +1181,60 @@ BEGIN
        query     [5] Query
     }
 
+    -- Transport Batching / Framing
+    --
+    --   * Транспортний контейнер може нести:
+    --       - один пакет протоколу
+    --       - або batch з кількох пакетів
+    --
+    --   * Batching використовується для:
+    --       - зменшення transport overhead
+    --       - групування дрібних Event/Query/Message
+    --
+    --   * Порядок елементів у batch зберігається.
+    --
+    --   * Batch є transport-оптимізацією і не змінює семантику
+    --     окремих Message/Event/Query.
+    CHATBody ::= CHOICE {
+       single [1] CHATProtocol,
+       batch  [2] SEQUENCE OF packet CHATProtocol
+    }
+
+    -- Transport headers
+    --
+    --   * headers можуть містити:
+    --       - accessToken
+    --       - routing metadata
+    --       - tracing / delivery metadata
+    --
+    --   * accessToken використовується для авторизації конкретної session
+    --     на transport рівні.
+    Header ::= CHOICE {
+       auth      [1] AuthHeader,
+       routing   [2] RoutingHeader,
+       tracing   [3] TracingHeader,
+       ...
+    }
+
+    AuthHeader ::= SEQUENCE {
+       accessToken Binary
+    }
+
+    RoutingHeader ::= SEQUENCE {
+       target Binary OPTIONAL,
+       feed   MessageFeed OPTIONAL,
+       ...
+    }
+
+    TracingHeader ::= SEQUENCE {
+       traceId [0] Binary OPTIONAL,
+       spanId  [1] Binary OPTIONAL,
+       ...
+    }
+
     CHATMessage ::= SEQUENCE {
        no INTEGER,
-       headers SEQUENCE OF header OCTET STRING,
-       body CHATProtocol }
+       headers SEQUENCE OF header Header,
+       body CHATBody }
 
 END
