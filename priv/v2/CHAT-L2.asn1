@@ -684,8 +684,23 @@ BEGIN
        ...
     }
 
+    -- Event Pagination / Streaming
+    --
+    --   * after задає нижню межу replay:
+    --       сервер повертає події з seq > after.
+    --
+    --   * limit задає максимальну кількість подій у відповіді.
+    --
+    --   * Якщо відповідь обрізана, сервер MAY повернути:
+    --       - nextAfter: останній seq у поточній сторінці
+    --       - hasMore: ознаку наявності наступної сторінки
+    --
+    --   * Клієнт може продовжити читання, використовуючи
+    --     nextAfter як нове значення after.
     EventAnswer ::= SEQUENCE {
-       events [0] SEQUENCE OF event Event OPTIONAL,
+       events     [0] SEQUENCE OF event Event OPTIONAL,
+       nextAfter  [1] INTEGER OPTIONAL,
+       hasMore    [2] BOOLEAN OPTIONAL,
        ...
     }
 
