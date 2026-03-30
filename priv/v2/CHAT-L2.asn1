@@ -24,6 +24,7 @@ BEGIN
     Version ::= INTEGER  { v0(0), v1(1), v2(2), v3(3) }
     Flavour ::= ENUMERATED { apple (1), microsoft (2), google (3), ericsson (4), nokia (5), cisco (6) }
     Binary  ::= OCTET STRING
+    Continuation ::= OCTET STRING
 
     -- Session Semantics
     --
@@ -594,6 +595,8 @@ BEGIN
        target [2] Binary OPTIONAL, -- optional routing hint; domain target belongs in payload
        payload [3] QueryPayload OPTIONAL, -- typed query family payload
        code [4] QueryError OPTIONAL,
+       limit    [5] INTEGER OPTIONAL,
+       continue [6] Continuation OPTIONAL,
        ...
     }
 
@@ -643,16 +646,28 @@ BEGIN
        result  [2] InboxAnswer
     }
 
-    -- TODO: Pagination / Streaming
+    -- Pagination / Streaming (view queries)
     --
-    --   * Великі відповіді (roster, members, search)
-    --     можуть вимагати pagination.
+    --   * Для snapshot/view даних (roster, members, search, conference)
+    --     використовується continuation-based pagination.
     --
-    --   * Можливе введення:
-    --       - continuation token
-    --       - chunked відповіді
+    --   * limit задає максимальний розмір сторінки.
     --
-    --   * Не визначено у поточній версії.
+    --   * continue є opaque token, який визначає позицію
+    --     у результаті запиту.
+    --
+    --   * Сервер MAY повертати:
+    --       - continue: token для наступної сторінки
+    --       - hasMore: ознаку наявності додаткових даних
+    --
+    --   * Клієнт не повинен інтерпретувати continuation token.
+    --
+    --   * Pagination не гарантує snapshot isolation:
+    --       - дані можуть змінюватись між сторінками
+    --       - можливі дублікати або пропуски
+    --
+    --   * Для повної консистентності клієнт може виконати
+    --     повторний повний запит.
 
     -- Event Core (recovery / replay)
     --
@@ -743,7 +758,9 @@ BEGIN
 
     -- result повертає список знайдених елементів (може бути пустим)
     SearchAnswer ::= SEQUENCE {
-       items [0] SEQUENCE OF item SearchItem OPTIONAL,
+       items     [0] SEQUENCE OF item SearchItem OPTIONAL,
+       continue  [1] Continuation OPTIONAL,
+       hasMore   [2] BOOLEAN OPTIONAL,
        ...
     }
 
@@ -983,10 +1000,11 @@ BEGIN
 
     -- get зазвичай повертає item
     -- list повертає items
-
     RosterAnswer ::= SEQUENCE {
-       item   [0] RosterItem OPTIONAL,
-       items  [1] SEQUENCE OF item RosterItem OPTIONAL,
+       item      [0] RosterItem OPTIONAL,
+       items     [1] SEQUENCE OF item RosterItem OPTIONAL,
+       continue  [2] Continuation OPTIONAL,
+       hasMore   [3] BOOLEAN OPTIONAL,
        ...
     }
 
@@ -1086,8 +1104,10 @@ BEGIN
     -- list повертає items
 
     MemberAnswer ::= SEQUENCE {
-       item   [0] MemberItem OPTIONAL,
-       items  [1] SEQUENCE OF item MemberItem OPTIONAL
+       item      [0] MemberItem OPTIONAL,
+       items     [1] SEQUENCE OF item MemberItem OPTIONAL,
+       continue  [2] Continuation OPTIONAL,
+       hasMore   [3] BOOLEAN OPTIONAL
     }
 
     ConferenceType ::= ENUMERATED { group (1), channel (2), call (3) }
@@ -1180,8 +1200,10 @@ BEGIN
     -- list повертає items
 
     ConferenceAnswer ::= SEQUENCE {
-       item   [0] ConferenceItem OPTIONAL,
-       items  [1] SEQUENCE OF item ConferenceItem OPTIONAL,
+       item      [0] ConferenceItem OPTIONAL,
+       items     [1] SEQUENCE OF item ConferenceItem OPTIONAL,
+       continue  [2] Continuation OPTIONAL,
+       hasMore   [3] BOOLEAN OPTIONAL,
        ...
     }
 
