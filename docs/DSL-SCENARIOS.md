@@ -109,6 +109,9 @@ send read for last
 session alice
 expect event read
 ```
+- `expect message ...` не означає `read`
+- `read` виникає тільки після явної дії клієнта
+- `delivered` і `read` мають перевірятись окремо
 
 ---
 
