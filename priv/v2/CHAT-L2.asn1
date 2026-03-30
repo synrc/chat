@@ -1267,20 +1267,28 @@ BEGIN
 
     -- lastmsg не є частиною Conference state.
     -- View-дані повинні передаватися через Query (Inbox/Search) або Event.
+    -- unread є cached/session-scoped view значенням.
     --
-    -- TODO: Unread Semantics
+    -- Unread Semantics
     --
-    --   * unread може бути або:
-    --       - похідним значенням (derived) від seq і read cursor
-    --       - або кешованим view-полем (server-side aggregation)
+    --   * unread є session-scoped view, а не глобальним станом користувача.
     --
-    --   * У поточній моделі unread визначається як:
+    --   * Джерелом істини для unread є read cursor у межах feed.
+    --
+    --   * unread обчислюється як похідне значення:
+    --
     --       unread = current_seq(feed) - read_cursor(session)
     --
-    --   * Поле unread у Conference НЕ є джерелом істини,
-    --     а може використовуватись як оптимізація / snapshot.
+    --   * Поле unread у Conference є snapshot/cache полем
+    --     і не є джерелом істини.
     --
-    --   * Поведінка синхронізації unread між session не визначена.
+    --   * Різні session одного користувача MAY мати різні unread значення.
+    --
+    --   * Протокол не гарантує автоматичну синхронізацію unread
+    --     між session, device або користувачем.
+    --
+    --   * Узагальнення unread до рівня device або користувача
+    --     є server-side policy / view logic.
 
     Conference ::= SEQUENCE {
        id Binary,
