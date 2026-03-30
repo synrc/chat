@@ -274,6 +274,14 @@ BEGIN
     --       - session / token
     --       - certificate
     --       - або device/client binding
+
+    AuthorityCert ::= CHOICE {
+       request     [1] CertificationRequest,
+       certificate [2] Certificate,
+       chain       [3] SEQUENCE OF certificate Certificate,
+       ...
+    }
+
     Authority ::= SEQUENCE {
        id Binary,
        vsn Version,
@@ -282,11 +290,14 @@ BEGIN
        request [0] AuthRequest OPTIONAL,
        result  [1] AuthAnswer OPTIONAL,
 
-       -- cert несе certificate-related payload залежно від type:
+       -- cert містить certificate-related payload:
+       --   - request     (CertificationRequest) для enroll
+       --   - certificate (Certificate) для delivery / renew
+       --   - chain       (Certificate chain) для trust bootstrap
        --   - CertificationRequest для enroll
        --   - Certificate для renew / delivery
        --   - validation context для authenticate
-       cert ANY OPTIONAL,
+       cert [2] AuthorityCert OPTIONAL,
        settings SEQUENCE OF feature Feature OPTIONAL,
         ... }
 
