@@ -62,6 +62,25 @@ expect event message.received from alice body "hi"
 Simple = sugar  
 Exact = truth
 
+### Read duality
+
+Simple:
+
+```
+send read for last
+```
+
+Exact:
+
+```
+send read feed private:alice seq 123
+```
+
+`send read for last` є sugar над cursor-based read update.
+У точній формі read повинен явно визначати:
+- feed
+- seq
+
 ---
 
 ## Scenario 1. Basic delivery
@@ -104,6 +123,8 @@ send message to bob "hi"
 
 session bob
 expect message from alice body "hi"
+
+session bob
 send read for last
 
 session alice
@@ -111,11 +132,47 @@ expect event read
 ```
 - `expect message ...` не означає `read`
 - `read` виникає тільки після явної дії клієнта
+- `read` є cursor-based update, а не просто reference на message id
 - `delivered` і `read` мають перевірятись окремо
 
 ---
 
-## Scenario 3. Multi-session
+## Scenario 3. Read cursor
+
+```
+scenario read cursor
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+
+session bob
+expect message from alice body "m1"
+expect message from alice body "m2"
+
+session bob
+send read for last
+
+session alice
+expect event read
+```
+
+- `send read for last` означає оновлення read cursor до seq останнього отриманого повідомлення
+- read cursor є монотонним
+- повторний read з меншим seq повинен ігноруватись
+- `messageId` може бути допоміжним reference, але джерелом істини є `feed + seq`
+
+---
+
+## Scenario 4. Multi-session
 
 ```
 scenario multi-session read
@@ -141,10 +198,13 @@ send read for last
 session bob2
 expect no read event
 ```
+- `read` є session-scoped
+- read cursor у `bob1` не означає read cursor у `bob2`
+- unread може бути різним у різних session одного користувача
 
 ---
 
-## Scenario 4. Replay
+## Scenario 5. Replay
 
 ```
 scenario replay
@@ -170,7 +230,7 @@ expect message from alice body "hi"
 
 ---
 
-## Scenario 5. Gap
+## Scenario 6. Gap
 
 ```
 scenario gap
@@ -186,7 +246,7 @@ expect error gapDetected
 
 ---
 
-## Scenario 6. Gap recovery
+## Scenario 7. Gap recovery
 
 ```
 scenario gap recovery
@@ -204,7 +264,7 @@ expect messages
 
 ---
 
-## Scenario 7. Pagination
+## Scenario 8. Pagination
 
 ```
 scenario inbox pagination
@@ -225,7 +285,7 @@ expect result items
 
 ---
 
-## Scenario 8. Event streaming
+## Scenario 9. Event streaming
 
 ```
 scenario event streaming
@@ -243,7 +303,7 @@ expect hasMore
 
 ---
 
-## Scenario 9. Version
+## Scenario 10. Version
 
 ```
 scenario version negotiation
@@ -258,7 +318,7 @@ expect selectedVsn v2
 
 ---
 
-## Scenario 10. Federation
+## Scenario 11. Federation
 
 ```
 scenario federation routing
