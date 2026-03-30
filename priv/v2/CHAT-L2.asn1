@@ -1446,7 +1446,76 @@ BEGIN
     }
 
     -- 09 CHAT-v2 Protocol Entities
-
+    -- Server Invariants / Guarantees
+    --
+    -- Delivery Model:
+    --
+    --   * Message і Event доставляються за моделлю at-least-once.
+    --
+    --   * Повторна доставка можлива після retry або reconnect.
+    --
+    --   * Клієнт повинен бути ідемпотентним.
+    --
+    -- Ordering:
+    --
+    --   * Порядок гарантується тільки в межах одного feed.
+    --
+    --   * seq є монотонно зростаючим у межах feed.
+    --
+    --   * Глобальний порядок між feed не гарантується.
+    --
+    -- Replay:
+    --
+    --   * Сервер може відтворювати події через EventQuery (after).
+    --
+    --   * Replay гарантує тільки часткове відновлення (partial recovery).
+    --
+    -- Retention:
+    --
+    --   * Сервер може обмежувати історію подій (retention policy).
+    --
+    --   * Події можуть бути втрачені (gap).
+    --
+    -- Gap Handling:
+    --
+    --   * У випадку gap сервер сигналізує через:
+    --
+    --       Query(type=error, code=gapDetected)
+    --
+    --   * Клієнт повинен виконати повний sync через snapshot (Inbox).
+    --
+    -- Consistency:
+    --
+    --   * causal ordering не гарантується.
+    --
+    --   * Conflict resolution:
+    --       - last-write-wins (timestamp)
+    --       - delete має пріоритет над edit/update
+    --
+    -- Session:
+    --
+    --   * Session є незалежною одиницею доставки.
+    --
+    --   * Кожна session має власний:
+    --       - last_seq
+    --       - read cursor
+    --
+    --   * Сервер не веде окремі event-черги на session.
+    --
+    -- Federation:
+    --
+    --   * Authoritative broker відповідає за порядок і seq у feed.
+    --
+    --   * Проміжні broker не змінюють payload.
+    --
+    -- Snapshot vs Stream:
+    --
+    --   * Event (seq) → streaming модель (log).
+    --
+    --   * Query (continuation) → snapshot/view модель.
+    --
+    --   * Консистентність між ними не гарантується.
+    
     CHATProtocol ::= CHOICE {
        authority [1] Authority,
        message   [2] Message,
