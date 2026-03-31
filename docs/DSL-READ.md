@@ -1,0 +1,303 @@
+> See DSL-CORE.md for language definition
+
+## Scenario 1. Basic delivery
+
+```
+scenario basic delivery
+
+session alice
+connect alice@example.com
+auth password "secret"
+
+session bob
+connect bob@example.com
+auth password "secret"
+
+session alice
+send message to bob "hi"
+
+session bob
+expect message from alice body "hi"
+```
+
+---
+
+## Scenario 2. Delivery + read
+
+```
+scenario delivery + read
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "hi"
+
+session bob
+expect message from alice body "hi"
+
+session bob
+send read for last
+
+session alice
+expect message marked as read
+```
+
+- цей сценарій перевіряє, що read не відбувається автоматично
+- `expect message ...` не означає `read`
+- `read` виникає тільки після явної cursor update команди клієнта
+- `read` є cursor-based update, а не просто reference на message id
+- `delivered` і `read` мають перевірятись окремо
+- `expect message marked as read` означає оновлення read cursor, а не message-level flag
+---
+
+## Scenario 3. Read cursor
+
+```
+scenario read cursor
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+
+session bob
+expect message from alice body "m1"
+expect message from alice body "m2"
+
+session bob
+send read for last
+
+session bob
+expect read cursor updated
+```
+
+- цей сценарій перевіряє cursor semantics
+- `send read for last` означає cursor update для read до seq останнього отриманого повідомлення
+- read cursor є монотонним
+- повторний read з меншим seq повинен ігноруватись
+- `messageId` може бути допоміжним reference, але джерелом істини є `feed + seq`
+
+---
+
+## Scenario 4. Multi-session
+
+```
+scenario cross-session read sync
+
+session bob1
+connect
+auth
+
+session bob2
+connect
+auth
+
+session alice
+connect
+auth
+
+session alice
+send message to bob "hi"
+
+session bob1
+send read for last
+
+session bob2
+expect read cursor updated
+```
+
+- `read` ініціюється конкретною session, але оновлює user-level read state
+- read cursor синхронізується між усіма session користувача
+- unread є user-scoped і не повинен відрізнятись між session
+
+## Scenario 4a. Read backward ignored
+
+```
+scenario read backward ignored
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+
+session bob
+expect message from alice body "m1"
+expect message from alice body "m2"
+
+session bob
+query cursor read feed private:bob seq 2
+
+session bob
+expect read cursor updated
+
+session bob
+query cursor read feed private:bob seq 1
+
+session bob
+expect read cursor unchanged
+```
+
+- update з меншим seq не повинен зменшувати read cursor
+- read cursor є монотонним
+
+
+## Scenario 4b. Read after reconnect
+
+```
+scenario read after reconnect
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+
+session bob
+expect message from alice body "m1"
+expect message from alice body "m2"
+
+session bob
+disconnect
+wait 500ms
+reconnect
+
+session bob
+send read for last
+
+session bob
+expect read cursor updated
+```
+
+- reconnect не повинен ламати cursor update semantics
+- read після reconnect лишається валідним
+
+
+## Scenario 4c. Read wrong feed
+
+```
+scenario read wrong feed
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "hi"
+
+session bob
+expect message from alice body "hi"
+
+session bob
+query cursor read feed private:carol seq 1
+
+session bob
+expect error badRequest
+```
+
+- read update повинен бути узгоджений з feed
+- update в невалідному feed не повинен змінювати state
+
+## Scenario 4d. Read before delivery
+```
+scenario read before delivery
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+
+session bob
+query cursor read feed private:bob seq 2
+
+session bob
+expect message from alice body "m1"
+expect message from alice body "m2"
+
+session alice
+expect message marked as read
+```
+- read не прив'язаний до факту доставки повідомлення у конкретну session
+- read може обганяти delivery
+- read визначає позицію у feed, а не факт отримання повідомлення
+---
+
+## Scenario 4e. Multi-feed read isolation
+
+```
+scenario multi-feed read isolation
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session carol
+connect
+auth
+
+-- TODO: protocol currently has no explicit group creation flow
+-- assume group:room1 already exists and bob is a member
+
+session alice
+send message to bob "p1"
+
+session carol
+send message to group:room1 "g1"
+
+session bob
+expect message from alice body "p1"
+expect message from carol body "g1"
+
+session bob
+send read group:room1 for last
+
+session bob
+expect read cursor updated in group:room1
+expect read cursor unchanged in private:alice
+```
+
+- read cursor є feed-scoped
+- update в одному feed не повинен впливати на інший feed
+- private і group feed повинні бути ізольовані на рівні cursor state
+- TODO: явна модель створення/членства group має бути додана в протокол
+
