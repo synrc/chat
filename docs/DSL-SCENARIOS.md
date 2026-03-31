@@ -56,7 +56,7 @@ expect message from alice "hi"
 Exact:
 
 ```
-expect event message.received from alice body "hi"
+expect inbound message from alice body "hi"
 ```
 
 Simple = sugar  
@@ -128,7 +128,7 @@ session bob
 send read for last
 
 session alice
-expect event read
+expect event read if visibility enabled
 ```
 - `expect message ...` не означає `read`
 - `read` виникає тільки після явної дії клієнта
@@ -161,8 +161,8 @@ expect message from alice body "m2"
 session bob
 send read for last
 
-session alice
-expect event read
+session bob
+expect read cursor updated
 ```
 
 - `send read for last` означає оновлення read cursor до seq останнього отриманого повідомлення
@@ -196,7 +196,7 @@ session bob1
 send read for last
 
 session bob2
-expect no read event
+expect read cursor unchanged
 ```
 - `read` є session-scoped
 - read cursor у `bob1` не означає read cursor у `bob2`
@@ -225,7 +225,10 @@ disconnect
 wait 500ms
 reconnect
 
-expect message from alice body "hi"
+session bob
+query events after last_seq
+
+expect events
 ```
 
 ---
