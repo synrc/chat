@@ -124,6 +124,9 @@ Argument rules застосовуються до обох рівнів DSL (cano
 
 | Canonical                      | Exact                                                      |
 |--------------------------------|------------------------------------------------------------|
+| auth                           | authority authenticate request                           |
+| auth resume                    | authority authenticate request with session/accessToken  |
+| renew                          | authority renew request with refreshToken                |
 | expect message from alice "hi" | expect inbound message from alice body "hi"                |
 | send read for last             | query cursor read feed private:alice seq 123               |
 | expect more                    | expect hasMore true                                        |
@@ -169,6 +172,93 @@ query cursor read feed private:alice seq 123
 - read може виконуватись після partial replay або preview
 - read є cursor-based і не залежить від повноти історії
 - якщо потрібна явна позиція seq, використовується exact форма
+
+#### Auth semantics
+
+`auth` у canonical DSL означає первинну аутентифікацію або відновлення session,
+залежно від наявного auth context.
+
+- `auth` без додаткового context означає первинну аутентифікацію
+- `auth resume` означає спробу відновити існуючу session
+- `renew` означає перевидачу access token через refresh token
+- exact форма використовується там, де потрібно явно вказати token/session fields
+
+## Scenario 0. Basic authenticate
+
+```
+scenario basic authenticate
+
+session alice
+connect
+auth
+
+expect authenticated
+expect session created
+expect access token
+```
+- первинна аутентифікація створює session
+- після auth клієнт повинен отримати session context
+- після auth клієнт повинен отримати access token
+
+## Scenario 0a. Resume existing session
+
+```
+scenario resume existing session
+
+session alice
+connect
+auth
+
+disconnect
+wait 500ms
+reconnect
+
+auth resume
+
+expect authenticated
+expect same session
+```
+- reconnect не повинен сам по собі створювати нову session
+- `auth resume` означає спробу відновити існуючу session
+- при валідному auth context session повинна бути відновлена
+
+## Scenario 0b. Renew access token
+
+```
+scenario renew access token
+
+session alice
+connect
+auth
+
+renew
+
+expect access token refreshed
+```
+- renew не створює нову session
+- renew перевидає access token через refresh token
+
+## Scenario 0c. Revoked access token denied
+
+```
+scenario revoked access token denied
+
+session alice
+connect
+auth
+
+revoke access token
+
+disconnect
+wait 500ms
+reconnect
+
+auth resume
+
+expect error unauthorized
+```
+- revoke access token інвалідує поточну session
+- після revoke відновлення через старий access token не повинно проходити
 
 ## Scenario 1. Basic delivery
 
