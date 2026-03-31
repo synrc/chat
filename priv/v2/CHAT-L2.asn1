@@ -55,7 +55,7 @@ BEGIN
     --
     --   * Якщо версія не підтримується, сервер SHOULD повертати:
     --
-    --       Query(type=error, code=unsupportedVersion)
+    --       Query(type=error, code=unsupported)
     --
     -- Forward compatibility:
     --
@@ -225,7 +225,7 @@ BEGIN
     --
     --   * Якщо спільної версії немає, сервер SHOULD повертати:
     --
-    --       Query(type=error, code=unsupportedVersion)
+    --       Query(type=error, code=unsupported)
     AuthRequest ::= SEQUENCE {
        accessToken  [0] Binary OPTIONAL,
        refreshToken [1] Binary OPTIONAL,
@@ -890,7 +890,7 @@ BEGIN
     --
     --   * У випадку gap сервер SHOULD повертати:
     --
-    --       Query(type=error, code=gapDetected)
+    --       Query(type=error, code=gap)
     --
     --   * Це означає, що частина історії подій недоступна.
     --
@@ -965,8 +965,8 @@ BEGIN
        forbidden           (3),
        notFound            (4),
        conflict            (5),
-       unsupportedVersion  (6),
-       gapDetected         (7),
+       unsupported  (6),
+       gap         (7),
        rateLimited         (8),
        internalError       (9),
        unavailable         (10),
@@ -988,8 +988,8 @@ BEGIN
     -- Recoverable with client action:
     --
     --   * unauthorized       -> renew / authenticate
-    --   * unsupportedVersion -> fallback version
-    --   * gapDetected        -> full sync через Inbox / view Query
+    --   * unsupported -> fallback version
+    --   * gap        -> full sync через Inbox / view Query
     --
     -- Fatal for request:
     --
@@ -1789,7 +1789,7 @@ BEGIN
     --
     --   * У випадку gap сервер сигналізує через:
     --
-    --       Query(type=error, code=gapDetected)
+    --       Query(type=error, code=gap)
     --
     --   * Клієнт повинен виконати повний sync через snapshot (Inbox).
     --
