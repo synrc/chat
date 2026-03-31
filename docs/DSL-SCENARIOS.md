@@ -112,16 +112,16 @@ Argument rules застосовуються до обох рівнів DSL (cano
 
 ## Duality
 
-| Canonical                          | Exact                                             |
-|----------------------------------|----------------------------------------------------|
-| expect message from alice "hi"   | expect inbound message from alice body "hi"        |
-| send read for last               | query cursor read feed private:alice seq 123       |
-| expect more                      | expect hasMore true                                |
-| query inbox continue             | query inbox feed private:alice continue            |
-| query events bob after last_seq  | query events feed private:bob after last_seq       |
-| expect events non-empty          | expect events count > 0                            |
-| expect empty replay            | expect events = 0                               |
-| expect no duplicates           | expect result has no duplicate items/events      |
+| Canonical                          | Exact                                                      |
+|----------------------------------|------------------------------------------------------------|
+| expect message from alice "hi"   | expect inbound message from alice body "hi"                |
+| send read for last               | query cursor read feed private:alice seq 123               |
+| expect more                      | expect hasMore true                                        |
+| query inbox continue             | query inbox feed private:alice continue                    |
+| query events bob after last_seq  | query events feed private:bob after last_seq               |
+| expect events non-empty          | expect events count > 0                                    |
+| expect empty replay            | expect events = 0                                          |
+| expect no duplicates           | expect result has no duplicate items/events                |
 | expect no gaps                 | expect result covers boundary without missing items/events |
 
 Canonical = sugar  
@@ -446,7 +446,7 @@ auth
 
 query events bob after 0
 
-expect error gapDetected
+expect error gap
 ```
 
 ---
@@ -461,7 +461,7 @@ connect
 auth
 
 query events bob after 0
-expect error gapDetected
+expect error gap
 
 query inbox bob
 expect messages
@@ -477,7 +477,7 @@ connect
 auth
 
 query events bob after 0
-expect error gapDetected
+expect error gap
 
 query inbox bob
 expect messages
@@ -500,7 +500,7 @@ connect
 auth
 
 query events bob after 0
-expect error gapDetected
+expect error gap
 
 session alice
 connect
@@ -519,7 +519,7 @@ query events bob after snapshot
 expect no duplicates
 expect no gaps
 ```
-- повідомлення може з'явитись між `gapDetected` і `query inbox`
+- повідомлення може з'явитись між `gap` і `query inbox`
 - `snapshot` визначає recovery boundary між inbox і replay
 - replay після `snapshot` не повинен дублювати вже покриті дані
 - і не повинен залишати розрив між snapshot та replay
@@ -533,7 +533,7 @@ connect
 auth
 
 query events bob after 0
-expect error gapDetected
+expect error gap
 
 query inbox bob limit 10
 expect messages
