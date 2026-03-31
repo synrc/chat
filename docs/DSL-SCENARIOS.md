@@ -97,19 +97,16 @@ Argument rules застосовуються до обох рівнів DSL (cano
 
 ## Duality
 
-Simple:
+| Canonical                          | Exact                                             |
+|----------------------------------|----------------------------------------------------|
+| expect message from alice "hi"   | expect inbound message from alice body "hi"        |
+| send read for last               | send read feed private:alice seq 123               |
+| expect more                      | expect hasMore true                                |
+| query inbox continue             | query inbox feed private:alice continue            |
+| query events bob after last_seq  | query events feed private:bob after last_seq       |
+| expect events non-empty          | expect events count > 0                            |
 
-```
-expect message from alice "hi"
-```
-
-Exact:
-
-```
-expect inbound message from alice body "hi"
-```
-
-Simple = sugar  
+Canonical = sugar  
 Exact = protocol-observable semantics
 
 ### Read duality
@@ -355,7 +352,7 @@ query events bob after 100 limit 10
 
 expect events count <= 10
 expect nextAfter
-expect hasMore
+expect more
 ```
 
 ---
