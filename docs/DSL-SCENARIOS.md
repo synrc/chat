@@ -116,6 +116,7 @@ DSL підтримує symbolic cursor значення:
 - `expect access token` означає, що auth result містить access token
 - `expect access token refreshed` означає, що `renew` повернув новий access token
 - `expect events non-empty` означає, що результат містить хоча б одну подію
+- `expect not error unauthorized` означає, що запит не завершується auth-відмовою
 - `expect more` означає `expect hasMore true`
 - `expect not more` означає `expect hasMore false`
 - `expect snapshot` означає, що inbox result містить recovery anchor (`snapshotSeq`)
@@ -280,6 +281,44 @@ expect error unsupported
 - якщо клієнт пропонує лише непідтримувані параметри (наприклад version),
   auth не повинен проходити
 - сервер повинен явно сигналізувати про unsupported конфігурацію
+
+## Scenario 0e. Replay without auth
+
+```
+scenario replay without auth
+
+session bob
+connect
+
+query events bob after cursor
+
+expect error unauthorized
+```
+- replay не повинен бути доступний без успішної аутентифікації
+- connect без auth не дає права на event replay
+## Scenario 0f. Renew then replay
+
+```
+scenario renew then replay
+
+session bob
+connect
+auth
+
+disconnect
+wait 500ms
+reconnect
+
+renew
+
+expect access token refreshed
+
+query events bob after cursor
+
+expect not error unauthorized
+```
+- після renew клієнт повинен мати валідний auth context
+- після renew replay повинен знову працювати
 
 ## Scenario 1. Basic delivery
 
