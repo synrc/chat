@@ -265,6 +265,22 @@ expect error unauthorized
 - revoke access token інвалідує поточну session
 - після revoke відновлення через старий access token не повинно проходити
 
+## Scenario 0d. Unsupported auth request
+
+```
+scenario unsupported auth
+
+session alice
+connect
+
+auth supportedVsn [v3]
+
+expect error unsupported
+```
+- якщо клієнт пропонує лише непідтримувані параметри (наприклад version),
+  auth не повинен проходити
+- сервер повинен явно сигналізувати про unsupported конфігурацію
+
 ## Scenario 1. Basic delivery
 
 ```
