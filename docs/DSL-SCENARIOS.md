@@ -578,6 +578,49 @@ expect message marked as read
 - read визначає позицію у feed, а не факт отримання повідомлення
 ---
 
+## Scenario 4e. Multi-feed read isolation
+
+```
+scenario multi-feed read isolation
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session carol
+connect
+auth
+
+-- TODO: protocol currently has no explicit group creation flow
+-- assume group:room1 already exists and bob is a member
+
+session alice
+send message to bob "p1"
+
+session carol
+send message to group:room1 "g1"
+
+session bob
+expect message from alice body "p1"
+expect message from carol body "g1"
+
+session bob
+send read for last
+
+session bob
+expect read cursor updated in group:room1
+expect read cursor unchanged in private:alice
+```
+
+- read cursor є feed-scoped
+- update в одному feed не повинен впливати на інший feed
+- private і group feed повинні бути ізольовані на рівні cursor state
+- TODO: явна модель створення/членства group має бути додана в протокол
+
 ## Scenario 5. Replay
 
 ```

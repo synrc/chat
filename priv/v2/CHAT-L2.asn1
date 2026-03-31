@@ -339,6 +339,16 @@ BEGIN
 
     MessageFeed ::= CHOICE { private [1] Privatebox, chan [2] Streambox, mailbox [4] Mailbox, group [8] Groupbox, ... }
 
+    -- TODO:
+    --   Семантика group feed повинна бути узгоджена з Conference:
+    --
+    --     * хто має доступ до group feed
+    --     * як перевіряється membership
+    --     * як обробляються повідомлення для не-member
+    --
+    --   Зараз MessageFeed.group і Conference існують паралельно,
+    --   але їх зв'язок не формалізований явно.
+
     File ::= SEQUENCE {
        id Binary,
        mime Binary,
@@ -1722,6 +1732,23 @@ BEGIN
     -- get/remove очікують id
     -- create/update використовують поля конференції
     -- list допускає частковий фільтр
+    -- TODO:
+    --   Явно зафіксувати lifecycle групи (group feed):
+    --
+    --     * створення group (create Conference)
+    --     * membership (join/leave semantics)
+    --     * доступ до group feed (authorization)
+    --
+    --   Поточна модель:
+    --     - Conference описує state
+    --     - але не визначає повний lifecycle доступу до group feed
+    --
+    --   DSL сценарії припускають існування group і membership,
+    --   але протокол це явно не фіксує.
+    --
+    --   Потрібно:
+    --     - узгодити Conference ↔ MessageFeed.group semantics
+    --     - визначити, коли user має право читати/писати у group feed
 
     ConferenceQuery ::= SEQUENCE {
        op    ConferenceOp,
