@@ -485,6 +485,53 @@ send read for last
 - preview mode сам по собі не повинен імпліцитно вести до `read`
 - навіть якщо клієнт викликає read після preview,
   це не означає, що весь feed прочитано
+
+## Scenario 5b. Replay with concurrent read and new message
+
+```
+scenario replay read race
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+send message to bob "m3"
+
+session bob
+disconnect
+wait 500ms
+reconnect
+
+session bob
+query events bob after last_seq limit 2
+expect events
+
+session alice
+send message to bob "m4"
+
+session bob
+send read for last
+
+session bob
+query events bob after next
+
+expect events
+expect no duplicates
+```
+
+- під час replay приходить нове повідомлення
+- read виконується на partial replay
+- replay продовжується після read
+- система не повинна:
+    - дублювати події
+    - ламати cursor semantics
 ---
 
 ## Scenario 6. Gap
