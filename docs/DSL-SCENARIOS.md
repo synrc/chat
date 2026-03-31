@@ -433,6 +433,39 @@ query events bob after last_seq
 expect events non-empty
 ```
 
+## Scenario 5a. Preview after reconnect
+
+```
+scenario preview after reconnect
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+send message to bob "m3"
+
+session bob
+disconnect
+wait 500ms
+reconnect
+
+session bob
+query events bob after last_seq limit 1
+
+expect events count <= 1
+expect more
+```
+- після reconnect клієнт може запросити лише tail update для preview mode
+- preview mode не означає full history recovery
+- preview mode сам по собі не означає, що чат відкрито
+- preview mode сам по собі не повинен імпліцитно вести до `read`
 ---
 
 ## Scenario 6. Gap
