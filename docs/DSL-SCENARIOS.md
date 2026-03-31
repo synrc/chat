@@ -357,6 +357,36 @@ expect error badRequest
 
 - read update повинен бути узгоджений з feed
 - update в невалідному feed не повинен змінювати state
+
+## Scenario 4d. Read before delivery
+```
+scenario read before delivery
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+
+session bob
+send read bob seq 2
+
+session bob
+expect message from alice body "m1"
+expect message from alice body "m2"
+
+session alice
+expect message marked as read
+```
+- read не прив'язаний до факту доставки повідомлення у конкретну session
+- read може обганяти delivery
+- read визначає позицію у feed, а не факт отримання повідомлення
 ---
 
 ## Scenario 5. Replay
