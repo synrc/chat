@@ -61,7 +61,7 @@ DSL використовує два стилі: short і exact.
 - `query inbox bob` — `bob` інтерпретується як feed alias
 - `query events bob after 100 limit 10` — `bob` інтерпретується як feed alias
 - `send read for last` — short form для read cursor update
-- `send read bob seq 123` = `send read feed private:bob seq 123`
+- `send read bob seq 123` = `query cursor read feed private:bob seq 123`
 
 
 #### Exact style
@@ -74,7 +74,7 @@ DSL використовує два стилі: short і exact.
 
 - `query inbox feed private:bob`
 - `query events feed private:bob after 100 limit 10`
-- `send read feed private:alice seq 123`
+- `query cursor read feed private:alice seq 123`
 
 #### Default resolution
 
@@ -100,7 +100,7 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | Canonical                          | Exact                                             |
 |----------------------------------|----------------------------------------------------|
 | expect message from alice "hi"   | expect inbound message from alice body "hi"        |
-| send read for last               | send read feed private:alice seq 123               |
+| send read for last               | query cursor read feed private:alice seq 123       |
 | expect more                      | expect hasMore true                                |
 | query inbox continue             | query inbox feed private:alice continue            |
 | query events bob after last_seq  | query events feed private:bob after last_seq       |
@@ -120,10 +120,10 @@ send read for last
 Exact:
 
 ```
-send read feed private:alice seq 123
+query cursor read feed private:alice seq 123
 ```
 
-`send read for last` є sugar над cursor-based read update.
+`send read ...` у canonical є sugar над `query cursor read ...` у exact формі.
 У точній формі read повинен явно визначати:
 - feed
 - seq
@@ -180,7 +180,7 @@ expect message marked as read
 
 - цей сценарій перевіряє, що read не відбувається автоматично
 - `expect message ...` не означає `read`
-- `read` виникає тільки після явної дії клієнта
+- `read` виникає тільки після явної cursor update команди клієнта
 - `read` є cursor-based update, а не просто reference на message id
 - `delivered` і `read` мають перевірятись окремо
 - `expect message marked as read` означає оновлення read cursor, а не message-level flag
@@ -215,7 +215,7 @@ expect read cursor updated
 ```
 
 - цей сценарій перевіряє cursor semantics
-- `send read for last` означає оновлення read cursor до seq останнього отриманого повідомлення
+- `send read for last` означає cursor update для read до seq останнього отриманого повідомлення
 - read cursor є монотонним
 - повторний read з меншим seq повинен ігноруватись
 - `messageId` може бути допоміжним reference, але джерелом істини є `feed + seq`
