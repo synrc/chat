@@ -434,9 +434,27 @@ BEGIN
        message Message
     }
 
+    -- Inbox pagination semantics
+    --
+    --   * continue є opaque cursor для отримання наступної сторінки.
+    --
+    --   * hasMore є hint, що на момент формування відповіді можуть існувати
+    --     додаткові елементи.
+    --
+    --   * hasMore НЕ гарантує повноту або стабільність snapshot:
+    --       - дані можуть змінюватись між запитами
+    --       - можливі дублікати або пропуски
+    --
+    --   * клієнт не повинен покладатися на hasMore як на строгий критерій завершення.
+    --
+    --   * якщо hasMore = false, сервер на момент відповіді не бачить додаткових
+    --     елементів після цієї сторінки.
+    --
     -- result повертає набір елементів inbox для feed (може бути пустим)
     InboxAnswer ::= SEQUENCE {
-       items [0] SEQUENCE OF item InboxItem OPTIONAL,
+       items     [0] SEQUENCE OF item InboxItem OPTIONAL,
+       continue  [1] Continuation OPTIONAL,
+       hasMore   [2] BOOLEAN OPTIONAL,
        ...
     }
 
