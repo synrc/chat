@@ -90,16 +90,19 @@ DSL допускає natural alias у short form, але exact інтерпре�
 
 DSL підтримує symbolic cursor значення:
 
-- `last_seq`
+- `cursor`
 - `next`
 - `snapshot`
 
+`cursor` означає збережену replay position цієї session
+- використовується для recovery після reconnect
+- відповідає останньому відомому seq у feed для цієї session
+- не залежить від локально отриманих подій у поточному replay
 `snapshot` означає snapshot anchor, отриманий з попереднього inbox query
 
 `next` означає continuation cursor для наступної сторінки event replay
 
 `last` означає останній seq, локально отриманий у цій session
-
 - `last` не означає head feed
 - `last` не означає повний replay
 - `last` залежить від того, який обсяг подій був отриманий (preview / partial / full)
@@ -124,7 +127,7 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | send read for last               | query cursor read feed private:alice seq 123               |
 | expect more                      | expect hasMore true                                        |
 | query inbox continue             | query inbox feed private:alice continue                    |
-| query events bob after last_seq  | query events feed private:bob after last_seq               |
+| query events bob after cursor  | query events feed private:bob after cursor               |
 | expect events non-empty          | expect events count > 0                                    |
 | expect empty replay            | expect events = 0                                          |
 | expect no duplicates           | expect result has no duplicate items/events                |
@@ -443,7 +446,7 @@ wait 500ms
 reconnect
 
 session bob
-query events bob after last_seq
+query events bob after cursor
 
 expect events non-empty
 ```
@@ -472,7 +475,7 @@ wait 500ms
 reconnect
 
 session bob
-query events bob after last_seq limit 1
+query events bob after cursor limit 1
 
 expect events count <= 1
 expect more
@@ -510,7 +513,7 @@ wait 500ms
 reconnect
 
 session bob
-query events bob after last_seq limit 2
+query events bob after cursor limit 2
 expect events
 
 session alice
@@ -761,7 +764,7 @@ session bob
 connect
 auth
 
-query events bob after last_seq
+query events bob after cursor
 
 expect empty replay
 expect not more
