@@ -128,7 +128,7 @@ session bob
 send read for last
 
 session alice
-expect event read if visibility enabled
+expect message marked as read
 ```
 - `expect message ...` не означає `read`
 - `read` виникає тільки після явної дії клієнта
@@ -196,11 +196,11 @@ session bob1
 send read for last
 
 session bob2
-expect read cursor unchanged
+expect read cursor updated
 ```
-- `read` є session-scoped
-- read cursor у `bob1` не означає read cursor у `bob2`
-- unread може бути різним у різних session одного користувача
+- `read` ініціюється конкретною session, але оновлює user-level read state
+- read cursor синхронізується між усіма session користувача
+- unread є user-scoped і не повинен відрізнятись між session
 
 ---
 
