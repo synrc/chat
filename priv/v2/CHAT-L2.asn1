@@ -613,6 +613,20 @@ BEGIN
     --   * session:
     --       actor / джерело update, але не джерело істини
     --
+    -- Read vs Replay Semantics
+    --
+    --   * read cursor update завжди базується на позиції у feed (seq),
+    --     незалежно від того, чи був виконаний повний replay.
+    --
+    --   * якщо read виконується під час часткового replay (pagination),
+    --     він застосовується до останнього локально спостереженого seq
+    --     у межах цієї session.
+    --
+    --   * read НЕ означає, що клієнт бачив всі події feed до його head.
+    --
+    --   * preview або partial replay не повинні імпліцитно призводити
+    --     до повного read feed.
+    --
     -- Visibility:
     --
     --   * read/delivered події можуть доставлятись:
@@ -914,6 +928,17 @@ BEGIN
     --     і не означають exact-once гарантії transport-рівня.
     --
     --   * Exactly-once не є ціллю базової моделі протоколу.
+    --
+    -- Preview Semantics
+    --
+    --   * клієнт може використовувати Event replay з limit
+    --     для отримання лише останніх подій (preview mode).
+    --
+    --   * preview mode не означає повного відновлення історії.
+    --
+    --   * preview mode не повинен автоматично оновлювати read cursor.
+    --
+    --   * read cursor оновлюється тільки через явний CursorCore update.
 
     -- XMPP відповідність:
     --
@@ -1133,6 +1158,27 @@ BEGIN
     --     повторний повний запит.
 
     -- Event Core (recovery / replay)
+    --
+    -- EventCore usage modes
+    --
+    --   EventCore використовується у трьох режимах:
+    --
+    --   * recovery mode:
+    --       повне відновлення подій після reconnect або gap
+    --       (query events after last_seq)
+    --
+    --   * preview mode:
+    --       отримання лише tail подій для UI (наприклад список чатів)
+    --       (query events after last_seq limit N)
+    --
+    --   * streaming mode:
+    --       покрокове читання подій через pagination
+    --       (query events after next)
+    --
+    --   Важливо:
+    --
+    --   * ці режими мають різну семантику використання,
+    --     але використовують один і той самий EventCore API.
     --
     --   * EventCore використовується тільки для recovery / replay event stream.
     --

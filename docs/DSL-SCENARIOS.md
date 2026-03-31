@@ -98,6 +98,12 @@ DSL підтримує symbolic cursor значення:
 
 `next` означає continuation cursor для наступної сторінки event replay
 
+`last` означає останній seq, локально отриманий у цій session
+
+- `last` не означає head feed
+- `last` не означає повний replay
+- `last` залежить від того, який обсяг подій був отриманий (preview / partial / full)
+
 #### Expect semantics
 
 - `expect events non-empty` означає, що результат містить хоча б одну подію
@@ -147,6 +153,15 @@ query cursor read feed private:alice seq 123
 - seq
 
 ---
+
+#### Read semantics
+
+`send read for last` означає оновлення read cursor до останнього
+локально спостереженого seq у цій session.
+
+- read не означає, що клієнт бачив весь feed
+- read може виконуватись після partial replay або preview
+- read є cursor-based і не залежить від повноти історії
 
 ## Scenario 1. Basic delivery
 
@@ -461,11 +476,15 @@ query events bob after last_seq limit 1
 
 expect events count <= 1
 expect more
+
+send read for last
 ```
 - після reconnect клієнт може запросити лише tail update для preview mode
 - preview mode не означає full history recovery
 - preview mode сам по собі не означає, що чат відкрито
 - preview mode сам по собі не повинен імпліцитно вести до `read`
+- навіть якщо клієнт викликає read після preview,
+  це не означає, що весь feed прочитано
 ---
 
 ## Scenario 6. Gap
