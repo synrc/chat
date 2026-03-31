@@ -467,8 +467,6 @@ expect messages
 expect snapshotSeq
 
 query events bob after snapshotSeq
-
-expect events
 ```
 
 - після gap recovery через inbox клієнт отримує snapshot anchor

@@ -466,6 +466,22 @@ BEGIN
     --   * Це дозволяє безшовно перейти від Inbox snapshot
     --     до Event replay після gap recovery.
     --
+    --   * Для recovery semantics snapshotSeq утворює boundary між Inbox snapshot
+    --     і подальшим Event replay.
+    --
+    --   * Повідомлення і state, покриті snapshot з snapshotSeq = S,
+    --     не повинні повторно вимагати recovery через Event replay
+    --     з after = S.
+    --
+    --   * Event replay з after = snapshotSeq повинен повертати тільки події
+    --     з seq > snapshotSeq, які не покриті snapshot.
+    --
+    --   * Перехід від Inbox snapshot до Event replay через snapshotSeq
+    --     повинен бути lossless для recovery.
+    --
+    --   * Дані, покриті snapshot, не повинні губитись і не повинні
+    --     повторно з'являтись у replay після цього boundary.
+    --
     InboxAnswer ::= SEQUENCE {
        items       [0] SEQUENCE OF item InboxItem OPTIONAL,
        continue    [1] Continuation OPTIONAL,
