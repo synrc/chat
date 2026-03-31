@@ -124,6 +124,7 @@ DSL підтримує symbolic cursor значення:
 - `expect empty replay` означає, що replay result не містить подій (`events = 0`)
 - `expect no duplicates` означає, що результат не містить елементів, уже покритих попереднім snapshot або попередньою сторінкою replay
 - `expect no gaps` означає, що між попереднім recovery/snapshot boundary і поточним result немає втраченої ділянки історії
+- `expect no duplicate side effects` означає, що повторна доставка вже отриманого event/message не змінює state повторно
 
 Argument rules застосовуються до обох рівнів DSL (canonical і exact).
 
@@ -734,6 +735,36 @@ expect no duplicates
     - дублювати події
     - ламати cursor semantics
 - нові події з seq > next можуть з'являтись у наступній replay page
+
+## Scenario 5c. Duplicate event delivery
+
+```
+scenario duplicate event delivery
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+
+session bob
+expect message from alice body "m1"
+
+session bob
+expect message from alice body "m1"
+
+session bob
+expect no duplicate side effects
+```
+- протокол допускає повторну доставку event/message
+- повторна доставка того самого event не повинна створювати новий побічний ефект
+- клієнт повинен бути ідемпотентним при обробці дубліката
+- TODO: у майбутньому можна уточнити це через exact форму з явним Event.id
 ---
 
 ## Scenario 6. Gap
