@@ -77,4 +77,62 @@ expect bob not in roster
 
 ## Scenario R4. Mutual relation
 
+```
+scenario mutual relation
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+add bob to roster
+
+session bob
+add alice to roster
+
+session alice
+query roster
+expect bob in roster
+
+session bob
+query roster
+expect alice in roster
+```
+
+- mutual relation означає, що обидва користувачі додали один одного
+- обидва бачать один одного у своїх roster
+- TODO: визначити, чи mutual relation має особливу семантику (наприклад, presence, trust, encryption)
+---
+
 ## Scenario R5. One-way relation
+
+```
+scenario one-way relation
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+add bob to roster
+
+session alice
+query roster
+expect bob in roster
+
+session bob
+query roster
+expect alice not in roster
+```
+
+- relation може бути однонаправленим
+- bob не повинен бачити alice у своєму roster без власної дії
+- TODO: визначити, чи one-way relation впливає на messaging / presence / privacy
