@@ -608,7 +608,6 @@ send message to group:room1 "g1"
 session bob
 expect message from alice body "p1"
 expect message from carol body "g1"
-expect message from carol body "g1"
 
 session bob
 send read group:room1 for last
@@ -853,6 +852,46 @@ expect no gaps
 - `snapshot` має лишатися спільним recovery boundary для всього paged snapshot
 - replay після `snapshot` не повинен дублювати вже покриті дані
 - і не повинен створювати розрив між snapshot та replay
+
+## Scenario 7d. Multi-feed snapshot isolation
+
+```
+scenario multi-feed snapshot isolation
+
+session bob
+connect
+auth
+
+-- TODO: protocol currently has no explicit group creation flow
+-- assume group:room1 already exists and bob is a member
+
+query events private:alice after 0
+expect error gap
+
+query events group:room1 after 0
+expect error gap
+
+query inbox private:alice
+expect messages
+expect snapshot
+
+query inbox group:room1
+expect messages
+expect snapshot
+
+query events private:alice after snapshot
+expect no duplicates
+expect no gaps
+
+query events group:room1 after snapshot
+expect no duplicates
+expect no gaps
+```
+
+- recovery boundary є feed-scoped
+- snapshot для одного feed не повинен використовуватись як boundary для іншого
+- inbox/replay consistency повинна зберігатись незалежно в кожному feed
+- TODO: груповий feed тут використовується як already-existing feed, бо explicit group lifecycle ще не визначений
 ---
 
 ## Scenario 8. Pagination
