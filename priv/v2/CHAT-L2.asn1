@@ -520,8 +520,29 @@ BEGIN
     --
     --   * read події з меншим seq ніж поточний cursor повинні ігноруватись.
     --
+    --   * Клієнт не надсилає read як Event напряму.
+    --
+    --   * Client-originated read update передається через Query / CursorCore.
+    --
+    --   * MessageEvent(type=read) є server-emitted runtime fact
+    --     після успішного застосування cursor update.
+    --
     --   * Для відправки read клієнт повинен виконати явну дію
-    --     (наприклад, send read / update read cursor).
+    --     через Query (CursorCore.update).
+    --
+    -- Cursor / Read Model
+    --
+    --   * Query / CursorCore:
+    --       client-originated команда для оновлення або читання cursor state
+    --
+    --   * Event.message.read:
+    --       server-emitted факт про вже застосований read state
+    --
+    --   * effective cursor:
+    --       user-scoped джерело істини у межах feed
+    --
+    --   * session:
+    --       actor / джерело update, але не джерело істини
     --
     -- Visibility:
     --
@@ -549,7 +570,8 @@ BEGIN
     --   - Read події можуть інтерпретуватись як cursor (позиція)
     --     у межах feed.
     --
-    --   - Кожна session може мати власний read cursor.
+    --   - Session може мати локальний технічний cursor state,
+    --     але джерелом істини є effective cursor користувача у feed.
     --
     --   - Unread визначається як різниця між поточним seq feed
     --     і read cursor.
@@ -596,10 +618,14 @@ BEGIN
     --
     --   * Сервер MAY не передавати кожну read подію окремо.
     --
-    --   * Клієнт повинен явно повідомляти read як оновлення cursor у feed.
+    --   * Клієнт повинен явно повідомляти read як cursor update
+    --     через Query / CursorCore у межах feed.
     --
     --   * Read подія від конкретної session оновлює
     --     effective read cursor користувача.
+    --
+    --   * Cursor update ініціюється конкретною session,
+    --     але застосовується до effective read cursor користувача у feed.
     --
     --   * Мінімально read має нести:
     --       - feed
@@ -903,6 +929,7 @@ BEGIN
        kvs          [11] StorageExtension,
        mail         [12] MailExtension, -- X.420
        event        [13] EventCore,
+       cursor       [14] CursorCore,
        ...
     }
 
@@ -935,6 +962,67 @@ BEGIN
        result  [2] InboxAnswer
     }
 
+    -- Cursor Core (user/feed position state)
+    --
+    -- CursorCore використовується для оновлення і читання cursor state у межах feed.
+    --
+    -- Початкова модель:
+    --   * підтримується тільки cursor kind = read
+    --
+    -- Семантика:
+    --
+    --   * cursor update є client-originated command через Query.
+    --
+    --   * server застосовує update до effective cursor state.
+    --
+    --   * для read використовується монотонне правило:
+    --
+    --       effective_cursor(user, feed, read) = max(current, seq)
+    --
+    --   * update з меншим seq не повинен зменшувати поточний cursor.
+    --
+    --   * після успішного застосування server MAY згенерувати
+    --     відповідний Event (наприклад MessageEvent(type=read)).
+    --
+    --   * Event є фактом застосованого стану, а не client command.
+    --
+    -- Важливо:
+    --
+    --   * CursorCore не є replay API.
+    --
+    --   * replay event stream залишається в EventCore.
+    --
+    CursorKind ::= ENUMERATED {
+       read (1),
+       ...
+    }
+
+    CursorOp ::= ENUMERATED {
+       get    (1),
+       update (2),
+       ...
+    }
+
+    CursorQuery ::= SEQUENCE {
+       op    CursorOp,
+       kind  [0] CursorKind OPTIONAL,
+       feed  [1] MessageFeed OPTIONAL,
+       seq   [2] INTEGER OPTIONAL,
+       ...
+    }
+
+    CursorAnswer ::= SEQUENCE {
+       kind  [0] CursorKind OPTIONAL,
+       feed  [1] MessageFeed OPTIONAL,
+       seq   [2] INTEGER OPTIONAL,
+       ...
+    }
+
+    CursorCore ::= CHOICE {
+       request [1] CursorQuery,
+       result  [2] CursorAnswer
+    }
+
     -- Pagination / Streaming (view queries)
     --
     --   * Для snapshot/view даних (roster, members, search, conference)
@@ -959,6 +1047,11 @@ BEGIN
     --     повторний повний запит.
 
     -- Event Core (recovery / replay)
+    --
+    --   * EventCore використовується тільки для recovery / replay event stream.
+    --
+    --   * Client-originated cursor/state updates не входять до EventCore
+    --     і передаються через CursorCore.
     --
     -- Події зберігаються як спільний stream у межах feed.
     --
