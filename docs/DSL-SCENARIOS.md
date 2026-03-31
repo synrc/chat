@@ -54,7 +54,8 @@ DSL використовує два стилі: short і exact.
 - команда може мати один основний позиційний аргумент
 - тип цього аргументу визначається оператором (message/inbox/events/read)
 - усі додаткові параметри задаються через ключові слова
-- для read cursor update числовий аргумент інтерпретується як позиція у feed (seq)
+- canonical DSL не використовує числові seq значення для read
+- числові позиції використовуються тільки в exact формі
 
 Приклади:
 
@@ -62,7 +63,6 @@ DSL використовує два стилі: short і exact.
 - `query inbox bob` — `bob` інтерпретується як feed alias
 - `query events bob after 100 limit 10` — `bob` інтерпретується як feed alias
 - `send read for last` — short form для read cursor update
-- `send read bob 123` = `query cursor read feed private:bob seq 123`
 
 
 #### Exact style
@@ -126,7 +126,6 @@ Argument rules застосовуються до обох рівнів DSL (cano
 |--------------------------------|------------------------------------------------------------|
 | expect message from alice "hi" | expect inbound message from alice body "hi"                |
 | send read for last             | query cursor read feed private:alice seq 123               |
-| send read bob 123              | query cursor read feed private:bob seq 123                 |
 | expect more                    | expect hasMore true                                        |
 | query inbox continue           | query inbox feed private:alice continue                    |
 | query events bob after cursor  | query events feed private:bob after cursor               |
@@ -157,6 +156,8 @@ query cursor read feed private:alice seq 123
 - feed
 - seq
 
+Числовий read cursor update у DSL допускається тільки в exact формі.
+
 ---
 
 #### Read semantics
@@ -167,6 +168,7 @@ query cursor read feed private:alice seq 123
 - read не означає, що клієнт бачив весь feed
 - read може виконуватись після partial replay або preview
 - read є cursor-based і не залежить від повноти історії
+- якщо потрібна явна позиція seq, використовується exact форма
 
 ## Scenario 1. Basic delivery
 
@@ -313,13 +315,13 @@ expect message from alice body "m1"
 expect message from alice body "m2"
 
 session bob
-send read bob 2
+query cursor read feed private:bob seq 2
 
 session bob
 expect read cursor updated
 
 session bob
-send read bob 1
+query cursor read feed private:bob seq 1
 
 session bob
 expect read cursor unchanged
@@ -386,7 +388,7 @@ session bob
 expect message from alice body "hi"
 
 session bob
-send read carol 1
+query cursor read feed private:carol seq 1
 
 session bob
 expect error badRequest
@@ -412,7 +414,7 @@ send message to bob "m1"
 send message to bob "m2"
 
 session bob
-send read bob 2
+query cursor read feed private:bob seq 2
 
 session bob
 expect message from alice body "m1"
