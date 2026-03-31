@@ -84,12 +84,14 @@ DSL використовує два стилі: short і exact.
 - `query inbox bob` = `query inbox feed private:bob`
 - `query events bob after 100 limit 10` = `query events feed private:bob after 100 limit 10`
 - у inbox/events/read context `bob` означає feed alias
+- `query inbox continue` продовжує останній `query inbox ...` у межах того самого feed
 
 DSL допускає natural alias у short form, але exact інтерпретація завжди повинна зводитись до явного визначення feed або target.
 
 #### Expect semantics
 
 - `expect events non-empty` означає, що результат містить хоча б одну подію
+- `expect more` означає `expect hasMore true`
 
 Argument rules застосовуються до обох рівнів DSL (canonical і exact).
 
@@ -331,7 +333,7 @@ auth
 query inbox bob limit 10
 
 expect result items <= 10
-expect hasMore true
+expect more
 
 query inbox continue
 
