@@ -136,3 +136,39 @@ expect alice not in roster
 - relation може бути однонаправленим
 - bob не повинен бачити alice у своєму roster без власної дії
 - TODO: визначити, чи one-way relation впливає на messaging / presence / privacy
+---
+
+## Scenario R6. Messaging after remove from roster
+
+```
+scenario messaging after remove from roster
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+add bob to roster
+query roster
+expect bob in roster
+
+remove bob from roster
+
+query roster
+expect bob not in roster
+
+session alice
+send message to bob "hi after remove"
+
+session bob
+expect message from alice body "hi after remove"
+```
+
+- remove from roster не повинен автоматично блокувати direct p2p messaging
+- roster relation і message delivery не повинні змішуватись без окремої policy
+- цей сценарій підсилює модель, де roster є view, а не gate
+- TODO: якщо серверна policy захоче робити roster/relation gating, це має бути явно зафіксовано окремо
