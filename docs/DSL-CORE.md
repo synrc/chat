@@ -125,6 +125,8 @@ DSL підтримує symbolic cursor значення:
 - `expect no duplicates` означає, що результат не містить елементів, уже покритих попереднім snapshot або попередньою сторінкою replay
 - `expect no gaps` означає, що між попереднім recovery/snapshot boundary і поточним result немає втраченої ділянки історії
 - `expect no duplicate side effects` означає, що повторна доставка вже отриманого event/message не змінює state повторно
+- `expect message deleted` означає, що final state message є deleted
+- `expect not message body "<text>"` означає, що цей body більше не спостерігається у final state message
 
 Argument rules застосовуються до обох рівнів DSL (canonical і exact).
 
@@ -132,19 +134,22 @@ Argument rules застосовуються до обох рівнів DSL (cano
 
 | Canonical                      | Exact                                                      |
 |--------------------------------|------------------------------------------------------------|
-| auth                           | authority authenticate request                           |
-| auth resume                    | authority authenticate request with session/accessToken  |
-| renew                          | authority renew request with refreshToken                |
+| auth                           | authority authenticate request                             |
+| auth resume                    | authority authenticate request with session/accessToken    |
+| renew                          | authority renew request with refreshToken                  |
 | expect message from alice "hi" | expect inbound message from alice body "hi"                |
 | send read for last             | query cursor read feed private:alice seq 123               |
 | expect more                    | expect hasMore true                                        |
 | query inbox continue           | query inbox feed private:alice continue                    |
-| query events bob after cursor  | query events feed private:bob after cursor               |
+| query events bob after cursor  | query events feed private:bob after cursor                 |
 | expect events non-empty        | expect events count > 0                                    |
 | expect empty replay            | expect events = 0                                          |
 | expect no duplicates           | expect result has no duplicate items/events                |
 | expect no gaps                 | expect result covers boundary without missing items/events |
 | send read group:room1 for last | query cursor read feed group:room1 seq 123                 |
+| edit message "m1" body "m1 edited" | TODO exact mutation form                               |
+| delete message "m1"                | TODO exact mutation form                               |
+| expect message deleted             | expect final message state = deleted                   |
 
 Canonical = sugar  
 Exact = protocol-observable semantics
