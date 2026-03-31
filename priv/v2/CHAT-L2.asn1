@@ -461,7 +461,7 @@ BEGIN
     --   * клієнт MAY використовувати snapshotSeq як anchor
     --     для подальшого Event replay:
     --
-    --       query events after snapshotSeq
+    --       query events after snapshot
     --
     --   * Це дозволяє безшовно перейти від Inbox snapshot
     --     до Event replay після gap recovery.
@@ -481,6 +481,32 @@ BEGIN
     --
     --   * Дані, покриті snapshot, не повинні губитись і не повинні
     --     повторно з'являтись у replay після цього boundary.
+    --
+    --   * Якщо Inbox snapshot повертається у кількох сторінках,
+    --     snapshotSeq визначається на першій сторінці і залишається
+    --     спільним для всіх наступних continue у межах цього snapshot.
+    --   TODO:
+    --     можливе розширення моделі через явний snapshot identifier:
+    --       - snapshotId або аналогічний token
+    --
+    --     snapshotId може використовуватись для:
+    --       - явної прив'язки continue до конкретного snapshot
+    --       - гарантії консистентності multi-page snapshot
+    --       - відновлення snapshot після retry
+    --
+    --     поточна модель покладається на неявну семантику continue
+    --     і snapshotSeq як recovery anchor
+    --
+    --   * continue у такому випадку продовжує той самий snapshot boundary,
+    --     а не створює новий snapshot.
+    --
+    --   * Клієнт повинен інтерпретувати paged inbox recovery
+    --     як один логічний snapshot, якщо continue походить
+    --     від першої сторінки з snapshotSeq.
+    --
+    --   * Перехід до Event replay через after = snapshotSeq
+    --     є коректним після завершення читання всіх сторінок
+    --     цього snapshot.
     --
     InboxAnswer ::= SEQUENCE {
        items       [0] SEQUENCE OF item InboxItem OPTIONAL,
