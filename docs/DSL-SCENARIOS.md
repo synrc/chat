@@ -523,6 +523,34 @@ expect no gaps
 - `snapshot` визначає recovery boundary між inbox і replay
 - replay після `snapshot` не повинен дублювати вже покриті дані
 - і не повинен залишати розрив між snapshot та replay
+
+## Scenario 7c. Paged snapshot recovery
+```
+scenario paged snapshot recovery
+
+session bob
+connect
+auth
+
+query events bob after 0
+expect error gapDetected
+
+query inbox bob limit 10
+expect messages
+expect snapshot
+expect more
+
+query inbox continue
+expect messages
+
+query events bob after snapshot
+expect no duplicates
+expect no gaps
+```
+- snapshot recovery може повертатися у кілька сторінок
+- `snapshot` має лишатися спільним recovery boundary для всього paged snapshot
+- replay після `snapshot` не повинен дублювати вже покриті дані
+- і не повинен створювати розрив між snapshot та replay
 ---
 
 ## Scenario 8. Pagination
