@@ -37,7 +37,7 @@ expect message from alice body "hi"
 
 ```
 query events after 100 limit 10
-expect event message.received from alice
+expect inbound message from alice body "hi"
 ```
 
 - точний контроль
@@ -60,7 +60,7 @@ expect inbound message from alice body "hi"
 ```
 
 Simple = sugar  
-Exact = truth
+Exact = protocol-observable semantics
 
 ### Read duality
 
