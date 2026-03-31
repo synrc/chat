@@ -104,6 +104,7 @@ DSL підтримує symbolic cursor значення:
 - `expect snapshot` означає, що inbox result містить recovery anchor (`snapshotSeq`)
 - `expect empty replay` означає, що replay result не містить подій (`events = 0`)
 - `expect no duplicates` означає, що результат не містить елементів, уже покритих попереднім snapshot або попередньою сторінкою replay
+- `expect no gaps` означає, що між попереднім recovery/snapshot boundary і поточним result немає втраченої ділянки історії
 
 Argument rules застосовуються до обох рівнів DSL (canonical і exact).
 
@@ -119,6 +120,7 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | expect events non-empty          | expect events count > 0                            |
 | expect empty replay            | expect events = 0                               |
 | expect no duplicates           | expect result has no duplicate items/events      |
+| expect no gaps                 | expect result covers boundary without missing items/events |
 
 Canonical = sugar  
 Exact = protocol-observable semantics
