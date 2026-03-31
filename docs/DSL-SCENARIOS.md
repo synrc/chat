@@ -62,7 +62,8 @@ DSL використовує два стилі: short і exact.
 - `send message to bob "hi"` — `bob` інтерпретується як target alias
 - `query inbox bob` — `bob` інтерпретується як feed alias
 - `query events bob after 100 limit 10` — `bob` інтерпретується як feed alias
-- `send read for last` — short form для read cursor update
+- `send read for last` — read у дефолтному/поточному feed контексті
+- `send read <feed> for last` — read у явно вказаному feed
 
 
 #### Exact style
@@ -606,6 +607,7 @@ send message to group:room1 "g1"
 
 session bob
 expect message from alice body "p1"
+expect message from carol body "g1"
 expect message from carol body "g1"
 
 session bob
