@@ -532,6 +532,7 @@ expect no duplicates
 - система не повинна:
     - дублювати події
     - ламати cursor semantics
+- нові події з seq > next можуть з'являтись у наступній replay page
 ---
 
 ## Scenario 6. Gap

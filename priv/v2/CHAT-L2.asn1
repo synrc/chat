@@ -1222,10 +1222,25 @@ BEGIN
     --
     --   * Якщо відповідь обрізана, сервер MAY повернути:
     --       - nextAfter: останній seq у поточній сторінці
+    --         (у DSL canonical формі: next)
     --       - hasMore: ознаку наявності наступної сторінки
     --
     --   * Клієнт може продовжити читання, використовуючи
     --     nextAfter як нове значення after.
+    --
+    --   * nextAfter утворює continuation boundary для поточного replay chain.
+    --
+    --   * При продовженні replay через after = nextAfter
+    --     сервер не повинен повторно повертати події з seq <= nextAfter.
+    --
+    --   * Нові події, що з'явилися після формування попередньої сторінки,
+    --     MAY бути включені в наступну сторінку, якщо їх seq > nextAfter.
+    --
+    --   * Replay pagination через after / nextAfter повинна бути lossless
+    --     відносно continuation boundary:
+    --       - без повторного повернення вже покритих подій
+    --       - без втрати подій з seq > nextAfter
+    --
     EventAnswer ::= SEQUENCE {
        events     [0] SEQUENCE OF event Event OPTIONAL,
        nextAfter  [1] INTEGER OPTIONAL,
