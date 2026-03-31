@@ -88,11 +88,20 @@ DSL використовує два стилі: short і exact.
 
 DSL допускає natural alias у short form, але exact інтерпретація завжди повинна зводитись до явного визначення feed або target.
 
+DSL підтримує symbolic cursor значення:
+
+- `last_seq`
+- `nextAfter`
+- `snapshot`
+
+`snapshot` означає snapshot anchor, отриманий з попереднього inbox query
+
 #### Expect semantics
 
 - `expect events non-empty` означає, що результат містить хоча б одну подію
 - `expect more` означає `expect hasMore true`
 - `expect not more` означає `expect hasMore false`
+- `expect snapshot` означає, що inbox result містить recovery anchor (`snapshotSeq`)
 
 Argument rules застосовуються до обох рівнів DSL (canonical і exact).
 
@@ -464,14 +473,14 @@ expect error gapDetected
 
 query inbox bob
 expect messages
-expect snapshotSeq
+expect snapshot
 
-query events bob after snapshotSeq
+query events bob after snapshot
 ```
 
 - після gap recovery через inbox клієнт отримує snapshot anchor
-- `snapshotSeq` використовується для безшовного переходу назад у event replay
-- replay після snapshot повинен починатися з `seq > snapshotSeq`
+- `snapshot` використовується для безшовного переходу назад у event replay
+- replay після snapshot повинен починатися з `seq > snapshot`
 ---
 
 ## Scenario 8. Pagination
