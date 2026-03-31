@@ -445,16 +445,32 @@ BEGIN
     --       - дані можуть змінюватись між запитами
     --       - можливі дублікати або пропуски
     --
+    --   * snapshotSeq не означає snapshot isolation для всіх сторінок inbox,
+    --     а лише дає anchor для переходу до Event replay.
+    --
     --   * клієнт не повинен покладатися на hasMore як на строгий критерій завершення.
     --
     --   * якщо hasMore = false, сервер на момент відповіді не бачить додаткових
     --     елементів після цієї сторінки.
     --
     -- result повертає набір елементів inbox для feed (може бути пустим)
+    --
+    --   * snapshotSeq визначає максимальний seq у feed,
+    --     який гарантовано покритий цим snapshot.
+    --
+    --   * клієнт MAY використовувати snapshotSeq як anchor
+    --     для подальшого Event replay:
+    --
+    --       query events after snapshotSeq
+    --
+    --   * Це дозволяє безшовно перейти від Inbox snapshot
+    --     до Event replay після gap recovery.
+    --
     InboxAnswer ::= SEQUENCE {
-       items     [0] SEQUENCE OF item InboxItem OPTIONAL,
-       continue  [1] Continuation OPTIONAL,
-       hasMore   [2] BOOLEAN OPTIONAL,
+       items       [0] SEQUENCE OF item InboxItem OPTIONAL,
+       continue    [1] Continuation OPTIONAL,
+       hasMore     [2] BOOLEAN OPTIONAL,
+       snapshotSeq [3] INTEGER OPTIONAL,
        ...
     }
 
@@ -827,6 +843,10 @@ BEGIN
     --   * Клієнт повинен виконати повний sync через:
     --       - Inbox Query
     --       - або інші view-запити
+    --
+    --   * Якщо InboxAnswer містить snapshotSeq,
+    --     клієнт MAY продовжити recovery через Event replay
+    --     з after = snapshotSeq.
     --
     --   * Клієнт НЕ повинен припускати повноту даних,
     --     якщо seq має розрив.
