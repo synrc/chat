@@ -91,10 +91,12 @@ DSL допускає natural alias у short form, але exact інтерпре�
 DSL підтримує symbolic cursor значення:
 
 - `last_seq`
-- `nextAfter`
+- `next`
 - `snapshot`
 
 `snapshot` означає snapshot anchor, отриманий з попереднього inbox query
+
+`next` означає continuation cursor для наступної сторінки event replay
 
 #### Expect semantics
 
@@ -603,7 +605,7 @@ auth
 query events bob after 100 limit 10
 
 expect events count <= 10
-expect nextAfter
+expect next
 expect more
 ```
 ## Scenario 9a. Event replay pagination
@@ -617,9 +619,9 @@ auth
 query events bob after 100 limit 2
 
 expect events count <= 2
-expect nextAfter
+expect next
 
-query events bob after nextAfter
+query events bob after next
 
 expect events
 ```
