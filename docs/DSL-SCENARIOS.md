@@ -54,6 +54,7 @@ DSL використовує два стилі: short і exact.
 - команда може мати один основний позиційний аргумент
 - тип цього аргументу визначається оператором (message/inbox/events/read)
 - усі додаткові параметри задаються через ключові слова
+- для read cursor update числовий аргумент інтерпретується як позиція у feed (seq)
 
 Приклади:
 
@@ -61,7 +62,7 @@ DSL використовує два стилі: short і exact.
 - `query inbox bob` — `bob` інтерпретується як feed alias
 - `query events bob after 100 limit 10` — `bob` інтерпретується як feed alias
 - `send read for last` — short form для read cursor update
-- `send read bob seq 123` = `query cursor read feed private:bob seq 123`
+- `send read bob 123` = `query cursor read feed private:bob seq 123`
 
 
 #### Exact style
@@ -121,14 +122,15 @@ Argument rules застосовуються до обох рівнів DSL (cano
 
 ## Duality
 
-| Canonical                          | Exact                                                      |
-|----------------------------------|------------------------------------------------------------|
-| expect message from alice "hi"   | expect inbound message from alice body "hi"                |
-| send read for last               | query cursor read feed private:alice seq 123               |
-| expect more                      | expect hasMore true                                        |
-| query inbox continue             | query inbox feed private:alice continue                    |
+| Canonical                      | Exact                                                      |
+|--------------------------------|------------------------------------------------------------|
+| expect message from alice "hi" | expect inbound message from alice body "hi"                |
+| send read for last             | query cursor read feed private:alice seq 123               |
+| send read bob 123              | query cursor read feed private:bob seq 123                 |
+| expect more                    | expect hasMore true                                        |
+| query inbox continue           | query inbox feed private:alice continue                    |
 | query events bob after cursor  | query events feed private:bob after cursor               |
-| expect events non-empty          | expect events count > 0                                    |
+| expect events non-empty        | expect events count > 0                                    |
 | expect empty replay            | expect events = 0                                          |
 | expect no duplicates           | expect result has no duplicate items/events                |
 | expect no gaps                 | expect result covers boundary without missing items/events |
@@ -311,13 +313,13 @@ expect message from alice body "m1"
 expect message from alice body "m2"
 
 session bob
-send read bob seq 2
+send read bob 2
 
 session bob
 expect read cursor updated
 
 session bob
-send read bob seq 1
+send read bob 1
 
 session bob
 expect read cursor unchanged
@@ -384,7 +386,7 @@ session bob
 expect message from alice body "hi"
 
 session bob
-send read carol seq 1
+send read carol 1
 
 session bob
 expect error badRequest
@@ -410,7 +412,7 @@ send message to bob "m1"
 send message to bob "m2"
 
 session bob
-send read bob seq 2
+send read bob 2
 
 session bob
 expect message from alice body "m1"
