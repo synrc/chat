@@ -1331,7 +1331,46 @@ BEGIN
     --   Subscription = state (факт зв'язку)
     --   Event        = що сталося (події)
     --   Query        = як це змінити / отримати
-
+    --
+    -- P2P Relation Semantics
+    --
+    --   * Subscription описує directed relation:
+    --
+    --       actor -> target
+    --
+    --   * Це базова relation model для p2p / contact semantics.
+    --
+    --   * Subscription не є самим roster, а є джерелом relation state,
+    --     який MAY відображатись у roster/view.
+    --
+    --   * Mutual relation виникає як дві незалежні directed relation:
+    --
+    --       alice -> bob
+    --       bob   -> alice
+    --
+    --   * Протокол не вимагає, щоб relation була mutual.
+    --
+    --   * One-way relation є валідною і не повинна автоматично
+    --     створювати зворотний зв'язок.
+    --
+    -- Usage:
+    --
+    --   * Subscription MAY використовуватись для:
+    --       - roster inclusion / contact visibility
+    --       - presence visibility
+    --       - optional trust / encryption policy
+    --
+    --   * Точна policy семантика relation не є частиною базового протоколу
+    --     і визначається серверною реалізацією.
+    --
+    -- Direct Messaging:
+    --
+    --   * У базовій моделі direct private messaging не залежить
+    --     від наявності Subscription або roster entry.
+    --
+    --   * Сервер MAY додати relation-gated messaging policy у майбутньому,
+    --     але така policy повинна бути явно оголошена,
+    --     а не випливати неявно з roster model.
     -- XMPP відповідність:
     --
     --   subscription (actor → target):
@@ -1491,6 +1530,28 @@ BEGIN
     -- Roster є агрегованим snapshot/view ресурсом.
     -- Операції над roster передаються через Query.
     -- Runtime-події не живуть у Roster як моделі.
+    --
+    -- Roster / Relation Semantics
+    --
+    --   * Roster є snapshot/view ресурсом, а не джерелом істини
+    --     для p2p relation або messaging authorization.
+    --
+    --   * Видимість contact у roster SHOULD походити з relation state
+    --     (наприклад Subscription), а не навпаки.
+    --
+    --   * Add/remove у roster semantics слід інтерпретувати як зміну
+    --     roster-visible relation state, а не як transport-level дозвіл
+    --     або заборону direct messaging.
+    --
+    --   * Direct private messaging у базовій моделі MAY існувати
+    --     без roster entry.
+    --
+    --   * Видалення contact з roster саме по собі не повинно
+    --     автоматично блокувати direct messaging, якщо окрема server policy
+    --     не визначає інше.
+    --
+    --   * Якщо сервер підтримує relation-gated messaging,
+    --     ця policy повинна бути явно зафіксована окремо.
 
     -- XMPP відповідність:
     --
@@ -1520,10 +1581,28 @@ BEGIN
        get  (1),
        list (2), ...
     }
+    -- TODO:
+    --   Уточнити, чи roster має власні mutation operations
+    --   (add/remove/update), чи ці дії є лише projection
+    --   над relation model (наприклад Subscription).
+    --
+    --   Поточна preferred model:
+    --     - relation state живе окремо
+    --     - roster є snapshot/view цього state
 
     -- get зазвичай очікує id
     -- list допускає частковий фільтр
-
+    --
+    -- TODO:
+    --   Якщо буде підтримано явні roster mutations,
+    --   потрібно визначити:
+    --
+    --     * чи це локальна address-book дія
+    --     * чи це зміна directed relation
+    --     * чи впливає вона на visibility для іншої сторони
+    --
+    --   До цього моменту roster слід трактувати як view/query layer.
+    --
     RosterQuery ::= SEQUENCE {
        op   RosterOp,
        id   [0] Binary OPTIONAL,
