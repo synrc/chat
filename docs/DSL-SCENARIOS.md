@@ -92,6 +92,7 @@ DSL допускає natural alias у short form, але exact інтерпре�
 
 - `expect events non-empty` означає, що результат містить хоча б одну подію
 - `expect more` означає `expect hasMore true`
+- `expect not more` означає `expect hasMore false`
 
 Argument rules застосовуються до обох рівнів DSL (canonical і exact).
 
@@ -440,6 +441,53 @@ query inbox continue
 expect result items
 ```
 
+## Scenario 8a. Continue without initial query
+```
+scenario continue without initial query
+
+session bob
+connect
+auth
+
+query inbox continue
+
+expect error badRequest
+```
+- continue без попереднього query не має контексту
+- сервер не повинен вгадувати feed або cursor
+
+## Scenario 8b. Continue after feed change
+```
+scenario continue after feed change
+
+session bob
+connect
+auth
+
+query inbox bob limit 10
+expect result items
+
+query inbox alice continue
+
+expect error badRequest
+```
+- continue прив'язаний до конкретного feed
+- зміна feed інвалідовує continuation context
+
+## Scenario 8c. Empty page no more
+```
+scenario empty page no more
+
+session bob
+connect
+auth
+
+query inbox bob limit 10
+
+expect result items = 0
+expect not more
+```
+- пустий результат з hasMore=false означає кінець даних
 ---
 
 ## Scenario 9. Event streaming
@@ -457,7 +505,37 @@ expect events count <= 10
 expect nextAfter
 expect more
 ```
+## Scenario 9a. Event replay pagination
+```
+scenario event replay pagination
 
+session bob
+connect
+auth
+
+query events bob after 100 limit 2
+
+expect events count <= 2
+expect nextAfter
+
+query events bob after nextAfter
+
+expect events
+```
+## Scenario 9b. Replay no more
+```
+scenario replay no more
+
+session bob
+connect
+auth
+
+query events bob after last_seq
+
+expect events = 0
+expect not more
+```
+- коли немає нових подій, replay повертає пустий результат
 ---
 
 ## Scenario 10. Version
