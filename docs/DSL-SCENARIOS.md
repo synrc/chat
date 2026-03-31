@@ -609,7 +609,7 @@ expect message from alice body "p1"
 expect message from carol body "g1"
 
 session bob
-send read for last
+send read group:room1 for last
 
 session bob
 expect read cursor updated in group:room1
