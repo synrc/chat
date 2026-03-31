@@ -1003,6 +1003,19 @@ BEGIN
     --
     --   * replay event stream залишається в EventCore.
     --
+    --   * cursor rewind / mark unread не входить до базової моделі протоколу.
+    --
+    --   * Поточна модель підтримує тільки forward (монотонний) read cursor.
+    --
+    --   * Підтримка unread (backward cursor) може бути додана у майбутньому
+    --     як окремий cursor kind з явною семантикою.
+    --
+    --   TODO:
+    --     визначити semantics для unread / cursor rewind:
+    --       - чи дозволяється backward move effective cursor
+    --       - як взаємодіє з read (монотонність vs rewind)
+    --       - чи генерується окремий Event
+    --
     CursorKind ::= ENUMERATED {
        read (1),
        ...
