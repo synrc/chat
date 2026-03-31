@@ -450,6 +450,30 @@ query inbox bob
 expect messages
 ```
 
+## Scenario 7a. Gap recovery with replay anchor
+
+```
+scenario gap recovery with replay anchor
+
+session bob
+connect
+auth
+
+query events bob after 0
+expect error gapDetected
+
+query inbox bob
+expect messages
+expect snapshotSeq
+
+query events bob after snapshotSeq
+
+expect events
+```
+
+- після gap recovery через inbox клієнт отримує snapshot anchor
+- `snapshotSeq` використовується для безшовного переходу назад у event replay
+- replay після snapshot повинен починатися з `seq > snapshotSeq`
 ---
 
 ## Scenario 8. Pagination
