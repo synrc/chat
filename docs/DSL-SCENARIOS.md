@@ -110,6 +110,11 @@ DSL підтримує symbolic cursor значення:
 
 #### Expect semantics
 
+- `expect authenticated` означає, що auth request завершився успішно
+- `expect session created` означає, що створено нову session
+- `expect same session` означає, що після `auth resume` відновлено попередню session
+- `expect access token` означає, що auth result містить access token
+- `expect access token refreshed` означає, що `renew` повернув новий access token
 - `expect events non-empty` означає, що результат містить хоча б одну подію
 - `expect more` означає `expect hasMore true`
 - `expect not more` означає `expect hasMore false`
