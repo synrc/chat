@@ -516,7 +516,7 @@ BEGIN
     --
     --   * read подія SHOULD інтерпретуватись як оновлення read cursor:
     --
-    --       read_cursor(session, feed) = seq
+    --      effective_read_cursor(user, feed) = max(current, readSeq)
     --
     --   * read події з меншим seq ніж поточний cursor повинні ігноруватись.
     --
@@ -528,6 +528,8 @@ BEGIN
     --   * read/delivered події можуть доставлятись:
     --       - іншим учасникам feed (наприклад sender)
     --       - або тільки actor (implementation-dependent)
+    --       - read ініціюється конкретною session,
+    --         але його ефект поширюється на всі session користувача у межах feed.
     --
     --   * Конкретна політика доставки подій не є частиною базового протоколу
     --     і визначається серверною реалізацією.
@@ -596,12 +598,15 @@ BEGIN
     --
     --   * Клієнт повинен явно повідомляти read як оновлення cursor у feed.
     --
+    --   * Read подія від конкретної session оновлює
+    --     effective read cursor користувача.
+    --
     --   * Мінімально read має нести:
     --       - feed
     --       - readSeq
     --
     --   * messageId може використовуватись як допоміжний reference,
-    --     але не повинен бути єдиним джерелом істини для read state.
+    --     але не є джерелом істини для read state.
     --
     -- Delivery:
     --
@@ -1429,24 +1434,22 @@ BEGIN
     --
     -- Unread Semantics
     --
-    --   * unread є session-scoped view, а не глобальним станом користувача.
+    --   * unread є user-scoped view у межах feed.
     --
-    --   * Джерелом істини для unread є read cursor у межах feed.
+    --   * Джерелом істини для unread є effective read cursor(user, feed).
     --
     --   * unread обчислюється як похідне значення:
     --
-    --       unread = current_seq(feed) - read_cursor(session)
+    --       unread = current_seq(feed) - effective_read_cursor(user, feed)
     --
     --   * Поле unread у Conference є snapshot/cache полем
     --     і не є джерелом істини.
     --
-    --   * Різні session одного користувача MAY мати різні unread значення.
+    --   * Різні session одного користувача не повинні розходитись
+    --     по UX-visible unread state.
     --
-    --   * Протокол не гарантує автоматичну синхронізацію unread
-    --     між session, device або користувачем.
-    --
-    --   * Узагальнення unread до рівня device або користувача
-    --     є server-side policy / view logic.
+    --   * Session-local state може існувати,
+    --     але не є джерелом істини для unread.
 
     Conference ::= SEQUENCE {
        id Binary,
@@ -1563,8 +1566,13 @@ BEGIN
     --   * Session є незалежною одиницею доставки.
     --
     --   * Кожна session має власний:
-    --       - last_seq
-    --       - read cursor
+    --      - last_seq
+    --
+    --   * read cursor є логічно user-scoped:
+    --      - server підтримує effective read cursor(user, feed)
+    --
+    --   * session може мати локальний технічний стан,
+    --     але не є джерелом істини для read/unread
     --
     --   * Сервер не веде окремі event-черги на session.
     --
