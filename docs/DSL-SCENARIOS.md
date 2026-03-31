@@ -102,6 +102,7 @@ DSL підтримує symbolic cursor значення:
 - `expect more` означає `expect hasMore true`
 - `expect not more` означає `expect hasMore false`
 - `expect snapshot` означає, що inbox result містить recovery anchor (`snapshotSeq`)
+- `expect empty replay` означає, що replay result не містить подій (`events = 0`)
 
 Argument rules застосовуються до обох рівнів DSL (canonical і exact).
 
@@ -115,6 +116,7 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | query inbox continue             | query inbox feed private:alice continue            |
 | query events bob after last_seq  | query events feed private:bob after last_seq       |
 | expect events non-empty          | expect events count > 0                            |
+| expect empty replay            | expect events = 0                               |
 
 Canonical = sugar  
 Exact = protocol-observable semantics
@@ -593,7 +595,7 @@ auth
 
 query events bob after last_seq
 
-expect events = 0
+expect empty replay
 expect not more
 ```
 - коли немає нових подій, replay повертає пустий результат
