@@ -36,7 +36,7 @@ expect message from alice body "hi"
 ### Exact (precise)
 
 ```
-query events after 100 limit 10
+query events bob after 100 limit 10
 expect inbound message from alice body "hi"
 ```
 
@@ -44,6 +44,54 @@ expect inbound message from alice body "hi"
 - ближче до протоколу
 
 ---
+
+### Argument rules
+
+DSL використовує два стилі: short і exact.
+
+#### Short style
+
+- команда може мати один основний позиційний аргумент
+- тип цього аргументу визначається оператором (message/inbox/events/read)
+- усі додаткові параметри задаються через ключові слова
+
+Приклади:
+
+- `send message to bob "hi"` — `bob` інтерпретується як target alias
+- `query inbox bob` — `bob` інтерпретується як feed alias
+- `query events bob after 100 limit 10` — `bob` інтерпретується як feed alias
+- `send read for last` — short form для read cursor update
+- `send read bob seq 123` = `send read feed private:bob seq 123`
+
+
+#### Exact style
+
+- тип ресурсу задається явно
+- alias розгортаються у повну форму
+- exact форма використовується там, де потрібна точна protocol-level семантика
+
+Приклади:
+
+- `query inbox feed private:bob`
+- `query events feed private:bob after 100 limit 10`
+- `send read feed private:alice seq 123`
+
+#### Default resolution
+
+контекст команди визначає, як інтерпретується identifier
+
+- у message context `bob` означає user/target alias
+- `query inbox bob` = `query inbox feed private:bob`
+- `query events bob after 100 limit 10` = `query events feed private:bob after 100 limit 10`
+- у inbox/events/read context `bob` означає feed alias
+
+DSL допускає natural alias у short form, але exact інтерпретація завжди повинна зводитись до явного визначення feed або target.
+
+#### Expect semantics
+
+- `expect events non-empty` означає, що результат містить хоча б одну подію
+
+Argument rules застосовуються до обох рівнів DSL (canonical і exact).
 
 ## Duality
 
@@ -130,11 +178,13 @@ send read for last
 session alice
 expect message marked as read
 ```
+
+- цей сценарій перевіряє, що read не відбувається автоматично
 - `expect message ...` не означає `read`
 - `read` виникає тільки після явної дії клієнта
 - `read` є cursor-based update, а не просто reference на message id
 - `delivered` і `read` мають перевірятись окремо
-
+- `expect message marked as read` означає оновлення read cursor, а не message-level flag
 ---
 
 ## Scenario 3. Read cursor
@@ -165,6 +215,7 @@ session bob
 expect read cursor updated
 ```
 
+- цей сценарій перевіряє cursor semantics
 - `send read for last` означає оновлення read cursor до seq останнього отриманого повідомлення
 - read cursor є монотонним
 - повторний read з меншим seq повинен ігноруватись
@@ -175,7 +226,7 @@ expect read cursor updated
 ## Scenario 4. Multi-session
 
 ```
-scenario multi-session read
+scenario cross-session read sync
 
 session bob1
 connect
@@ -198,6 +249,7 @@ send read for last
 session bob2
 expect read cursor updated
 ```
+
 - `read` ініціюється конкретною session, але оновлює user-level read state
 - read cursor синхронізується між усіма session користувача
 - unread є user-scoped і не повинен відрізнятись між session
@@ -226,9 +278,9 @@ wait 500ms
 reconnect
 
 session bob
-query events after last_seq
+query events bob after last_seq
 
-expect events
+expect events non-empty
 ```
 
 ---
@@ -242,7 +294,7 @@ session bob
 connect
 auth
 
-query events after 0
+query events bob after 0
 
 expect error gapDetected
 ```
@@ -258,10 +310,10 @@ session bob
 connect
 auth
 
-query events after 0
+query events bob after 0
 expect error gapDetected
 
-query inbox feed bob
+query inbox bob
 expect messages
 ```
 
@@ -276,7 +328,7 @@ session bob
 connect
 auth
 
-query inbox feed bob limit 10
+query inbox bob limit 10
 
 expect result items <= 10
 expect hasMore true
@@ -297,7 +349,7 @@ session bob
 connect
 auth
 
-query events after 100 limit 10
+query events bob after 100 limit 10
 
 expect events count <= 10
 expect nextAfter
