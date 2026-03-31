@@ -487,6 +487,40 @@ query events bob after snapshot
 - після gap recovery через inbox клієнт отримує snapshot anchor
 - `snapshot` використовується для безшовного переходу назад у event replay
 - replay після snapshot повинен починатися з `seq > snapshot`
+
+## Scenario 7b. Gap recovery with concurrent message
+
+```
+scenario gap recovery with concurrent message
+
+session bob
+connect
+auth
+
+query events bob after 0
+expect error gapDetected
+
+session alice
+connect
+auth
+
+session alice
+send message to bob "m3"
+
+session bob
+query inbox bob
+expect messages
+expect snapshot
+
+session bob
+query events bob after snapshot
+expect no duplicates
+expect no gaps
+```
+- повідомлення може з'явитись між `gapDetected` і `query inbox`
+- `snapshot` визначає recovery boundary між inbox і replay
+- replay після `snapshot` не повинен дублювати вже покриті дані
+- і не повинен залишати розрив між snapshot та replay
 ---
 
 ## Scenario 8. Pagination
