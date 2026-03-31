@@ -253,6 +253,109 @@ expect read cursor updated
 - read cursor синхронізується між усіма session користувача
 - unread є user-scoped і не повинен відрізнятись між session
 
+## Scenario 4a. Read backward ignored
+
+```
+scenario read backward ignored
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+
+session bob
+expect message from alice body "m1"
+expect message from alice body "m2"
+
+session bob
+send read bob seq 2
+
+session bob
+expect read cursor updated
+
+session bob
+send read bob seq 1
+
+session bob
+expect read cursor unchanged
+```
+
+- update з меншим seq не повинен зменшувати read cursor
+- read cursor є монотонним
+
+
+## Scenario 4b. Read after reconnect
+
+```
+scenario read after reconnect
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+
+session bob
+expect message from alice body "m1"
+expect message from alice body "m2"
+
+session bob
+disconnect
+wait 500ms
+reconnect
+
+session bob
+send read for last
+
+session bob
+expect read cursor updated
+```
+
+- reconnect не повинен ламати cursor update semantics
+- read після reconnect лишається валідним
+
+
+## Scenario 4c. Read wrong feed
+
+```
+scenario read wrong feed
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "hi"
+
+session bob
+expect message from alice body "hi"
+
+session bob
+send read carol seq 1
+
+session bob
+expect error badRequest
+```
+
+- read update повинен бути узгоджений з feed
+- update в невалідному feed не повинен змінювати state
 ---
 
 ## Scenario 5. Replay
