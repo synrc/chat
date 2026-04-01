@@ -122,7 +122,13 @@ Home query:
 - не змінює message state
 - не змішує relation і messaging authorization
 - є view ресурсом для стартового стану клієнта
-- 
+
+Home query повертає shared snapshot anchor для всього home result.
+
+Цей anchor може використовуватись для подальшого
+`query events <feed> after snapshot`
+для будь-якого feed, already covered тим самим home result.
+
 DSL допускає natural alias у short form, але exact інтерпретація завжди повинна зводитись до явного визначення feed або target.
 
 DSL підтримує symbolic cursor значення:
@@ -135,7 +141,17 @@ DSL підтримує symbolic cursor значення:
 - використовується для recovery після reconnect
 - відповідає останньому відомому seq у feed для цієї session
 - не залежить від локально отриманих подій у поточному replay
-`snapshot` означає snapshot anchor, отриманий з попереднього inbox query
+  `snapshot` означає snapshot anchor, отриманий з попереднього snapshot/view query.
+
+`snapshot`, отриманий з `query inbox <feed>`, є feed-scoped recovery anchor
+і використовується тільки для цього feed.
+
+`snapshot`, отриманий з `query home`, є shared bootstrap anchor
+для всіх feed, покритих тим самим home result.
+
+При використанні в `query events <feed> after snapshot`
+shared home snapshot інтерпретується як replay boundary
+для цього конкретного feed у межах того самого home bootstrap context.
 
 `next` означає continuation cursor для наступної сторінки event replay
 
