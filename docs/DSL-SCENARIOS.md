@@ -13,6 +13,7 @@
 - [DSL-REPLAY.md](./DSL-REPLAY.md) — replay/gap/snapshot recovery / home bootstrap
 - [DSL-PAGINATION.md](./DSL-PAGINATION.md) — inbox pagination and event streaming / home bootstrap
 - [DSL-ADVANCED.md](./DSL-ADVANCED.md) — version, federation
+- [DSL-GROUP.md](./DSL-GROUP.md) — group
 
 ## Coverage
 
@@ -25,3 +26,4 @@
 - version
 - federation
 - home bootstrap
+- group

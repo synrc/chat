@@ -241,6 +241,10 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | edit message "m1" body "m1 edited" | TODO exact mutation form                                   |
 | delete message "m1"                | TODO exact mutation form                                   |
 | expect message deleted             | expect final message state = deleted                       |
+| create group room1             | query conference create name room1 type group              |
+| delete group room1             | query conference remove name room1                         |
+| add bob to group room1         | query member add actor bob feed group:room1                |
+| remove bob from group room1    | query member remove actor bob feed group:room1             |
 
 Canonical = sugar  
 Exact = protocol-observable semantics
@@ -327,4 +331,23 @@ Canonical roster DSL розділяє mutation і view:
 - relation може бути one-way або mutual
 - direct messaging у базовій моделі не залежить від наявності roster entry
 - relation-gated messaging може бути додана окремою policy, але не є частиною базової DSL semantics
+
+#### Group semantics
+
+- `create group <name>` створює conference ресурс типу group
+- creator автоматично стає owner і member
+- `add <user> to group <name>` додає member relation
+- `remove <user> from group <name>` видаляє member relation
+
+- `group:<name>` є message feed, який посилається на існуючу conference
+
+- тільки member може:
+  - send message to group:<name>
+  - query inbox/events group:<name>
+
+- non-member отримує:
+  - error forbidden
+
+- якщо group видалена:
+  - доступ до group feed → error notFound
 
