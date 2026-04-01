@@ -422,9 +422,14 @@ connect
 auth
 
 session alice
+connect
+auth
 create group room1
 add bob to group room1
+send message to bob "p1"
+send message to group:room1 "g1"
 
+session bob
 query events private:alice after 0
 expect error gap
 
