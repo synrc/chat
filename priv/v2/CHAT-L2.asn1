@@ -339,15 +339,27 @@ BEGIN
 
     MessageFeed ::= CHOICE { private [1] Privatebox, chan [2] Streambox, mailbox [4] Mailbox, group [8] Groupbox, ... }
 
-    -- TODO:
-    --   Семантика group feed повинна бути узгоджена з Conference:
+    -- Group Feed Semantics
     --
-    --     * хто має доступ до group feed
-    --     * як перевіряється membership
-    --     * як обробляються повідомлення для не-member
+    --   * MessageFeed.group посилається на існуючий Conference ресурс
+    --     типу group.
     --
-    --   Зараз MessageFeed.group і Conference існують паралельно,
-    --   але їх зв'язок не формалізований явно.
+    --   * group feed не є окремою автономною сутністю поза Conference.
+    --
+    --   * Доступ до group feed визначається membership state:
+    --       - member / owner MAY читати і писати в group feed
+    --       - non-member не повинен мати доступу до group feed
+    --
+    --   * Для non-member доступ до:
+    --       - Message send
+    --       - InboxQuery
+    --       - Event replay
+    --     повинен завершуватись Query(type=error, code=forbidden).
+    --
+    --   * Якщо відповідний Conference видалений або не існує,
+    --     group feed повинен вважатись недоступним:
+    --
+    --       Query(type=error, code=notFound)
 
     File ::= SEQUENCE {
        id Binary,
@@ -1022,7 +1034,15 @@ BEGIN
     --   * forbidden
     --   * notFound
     --   * conflict
-
+    --
+    -- Group-specific usage:
+    --
+    --   * forbidden:
+    --       non-member access до group feed / group membership protected operation
+    --
+    --   * notFound:
+    --       group/conference resource не існує або вже видалений
+    --
     Query ::= SEQUENCE {
        id Binary,
        vsn Version,
@@ -1881,6 +1901,13 @@ BEGIN
        admin  (2),
        owner  (3), ...}
 
+    -- Role Semantics
+    --
+    --   * owner має всі права member щодо доступу до group feed.
+    --
+    --   * admin/member policy може деталізуватись сервером,
+    --     але базовий доступ до group feed дозволяється всім valid members.
+
     Member ::= SEQUENCE {
        id Binary,
        nickname Binary,
@@ -1907,7 +1934,20 @@ BEGIN
     -- get/remove/update очікують actor + feed
     -- add використовує actor + feed
     -- list допускає фільтр за feed
-
+    --
+    -- Group Membership Semantics
+    --
+    --   * Member є джерелом істини для membership у Conference/group feed.
+    --
+    --   * add створює membership relation:
+    --
+    --       actor -> group feed
+    --
+    --   * remove видаляє membership relation.
+    --
+    --   * owner Conference також вважається валідним member
+    --     для доступу до group feed.
+    --
     MemberQuery ::= SEQUENCE {
        op    MemberOp,
 
@@ -1961,6 +2001,15 @@ BEGIN
        deleted  (3), ...
     }
 
+    -- Conference / Group Model
+    --
+    --   * Conference описує існування і стан group ресурсу.
+    --
+    --   * MessageFeed.group є message stream цієї conference.
+    --
+    --   * Membership і доступ до group feed не є implicit полями Conference,
+    --     а визначаються через Member relation і server-side authorization.
+    --
     -- lastmsg не є частиною Conference state.
     -- View-дані повинні передаватися через Query (Inbox/Search) або Event.
     -- unread є cached/session-scoped view значенням.
@@ -2015,24 +2064,23 @@ BEGIN
     -- get/remove очікують id
     -- create/update використовують поля конференції
     -- list допускає частковий фільтр
-    -- TODO:
-    --   Явно зафіксувати lifecycle групи (group feed):
     --
-    --     * створення group (create Conference)
-    --     * membership (join/leave semantics)
-    --     * доступ до group feed (authorization)
+    -- Group Lifecycle Semantics
     --
-    --   Поточна модель:
-    --     - Conference описує state
-    --     - але не визначає повний lifecycle доступу до group feed
+    --   * Conference є canonical state ресурсом для group.
     --
-    --   DSL сценарії припускають існування group і membership,
-    --   але протокол це явно не фіксує.
+    --   * Conference(type=group) створює group resource,
+    --     з яким пов'язаний MessageFeed.group.
     --
-    --   Потрібно:
-    --     - узгодити Conference ↔ MessageFeed.group semantics
-    --     - визначити, коли user має право читати/писати у group feed
-
+    --   * Creator Conference автоматично стає:
+    --       - owner
+    --       - і валідним member цієї group
+    --
+    --   * Membership інших користувачів керується через MemberQuery.add/remove,
+    --     а не через окрему mutation semantics усередині Conference.
+    --
+    --   * Видалення Conference робить відповідний group feed недоступним.
+    --
     ConferenceQuery ::= SEQUENCE {
        op    ConferenceOp,
        id    [0] Binary OPTIONAL,
