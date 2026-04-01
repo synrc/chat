@@ -49,6 +49,14 @@ expect inbound message from alice body "hi"
 
 DSL використовує два стилі: short і exact.
 
+#### Session context
+
+- `session <alias>` перемикає поточний actor/session context сценарію
+- усі наступні команди та очікування інтерпретуються від імені цієї session,
+  доки контекст не буде змінено наступною командою `session <alias>`
+- alias resolution для private feed (`query inbox/events/read <peer>`) залежить
+  від поточного session context
+
 #### Short style
 
 - команда може мати один основний позиційний аргумент

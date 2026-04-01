@@ -167,7 +167,7 @@ session alice
 send message to bob "m3"
 
 session bob
-query events bob after snapshot
+query events alice after snapshot
 
 expect no duplicates
 expect no gaps
