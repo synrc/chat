@@ -73,20 +73,82 @@ class DSLRunner:
         self.world = World()
         self.current_alias: str | None = None
         self.last_result: QueryResult | None = None
+        self.pending_error: str | None = None
+
+    def _reset_for_scenario(self) -> None:
+        self.world = World()
+        self.current_alias = None
+        self.last_result = None
+        self.pending_error = None
 
     # ----------------------------
     # Public API
     # ----------------------------
+
+    def _looks_like_dsl(self, line: str) -> bool:
+        prefixes = (
+            "session ",
+            "connect",
+            "disconnect",
+            "reconnect",
+            "auth",
+            "renew",
+            "revoke ",
+            "send ",
+            "add ",
+            "remove ",
+            "ban ",
+            "unban ",
+            "create group ",
+            "delete group ",
+            "query ",
+            "bootstrap home",
+            "expect ",
+            "wait ",
+        )
+        return line.startswith(prefixes)
+
     def run(self, script: str) -> None:
         for raw in script.splitlines():
             line = raw.strip()
-            if not line or line.startswith("#") or line.startswith("--"):
+
+            if not line:
                 continue
+
+            # markdown / prose
+            if (
+                    line.startswith("#")
+                    or line.startswith(">")
+                    or line.startswith("```")
+                    or line.startswith("---")
+                    or line.startswith("- ")
+            ):
+                continue
+
+            # each scenario runs in isolated state
             if line.startswith("scenario "):
+                self._reset_for_scenario()
                 continue
-            self.execute(line)
+
+            # ignore plain prose lines that are not DSL commands/expectations
+            if not self._looks_like_dsl(line):
+                continue
+
+            is_expect = line.startswith("expect ")
+
+            if is_expect:
+                self.execute(line)
+            else:
+                try:
+                    self.execute(line)
+                except ExpectationFailed as e:
+                    self.pending_error = str(e)
+                    self.last_result = QueryResult(kind="error", error=str(e))
 
     def execute(self, line: str) -> None:
+        if not line.startswith("expect "):
+            self.pending_error = None
+
         if line.startswith("session "):
             alias = line.split(maxsplit=1)[1].strip()
             self._switch_session(alias)
@@ -605,11 +667,34 @@ class DSLRunner:
             return
 
         if line == "expect error forbidden":
-            raise DSLRunnerError("'expect error forbidden' should be used only after a command that raises")
+            if self.pending_error != "error forbidden":
+                raise ExpectationFailed(line)
+            return
 
         if line == "expect error badRequest":
-            raise DSLRunnerError("'expect error badRequest' should be used only after a command that raises")
+            if self.pending_error != "error badRequest":
+                raise ExpectationFailed(line)
+            return
 
+        if line == "expect error unauthorized":
+            if self.pending_error != "error unauthorized":
+                raise ExpectationFailed(line)
+            return
+
+        if line == "expect error unsupported":
+            if self.pending_error != "error unsupported":
+                raise ExpectationFailed(line)
+            return
+
+        if line == "expect error notFound":
+            if self.pending_error != "error notFound":
+                raise ExpectationFailed(line)
+            return
+
+        if line == "expect error gap":
+            if self.pending_error != "error gap":
+                raise ExpectationFailed(line)
+            return
         m = re.match(r'expect message from (\S+) body "(.*)"$', line)
         if m:
             sender, body = m.groups()
@@ -727,5 +812,6 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
         with open(sys.argv[1]) as f:
             runner.run(f.read())
+        print(f"OK: {sys.argv[1]}")
     else:
         print("Usage: python dsl_runner.py <dsl_file>")
