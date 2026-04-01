@@ -211,6 +211,9 @@ shared home snapshot інтерпретується як replay boundary
 - `expect groups` означає, що result містить список group/conference ресурсів
 - `expect members` означає, що result містить список member для поточної group
 - `expect <name> in groups` означає, що group <name> присутня у поточному group list result
+- `expect moderation` означає, що result містить moderation list
+- `expect <user> is banned` означає, що для поточного actor існує moderation restriction щодо цього user
+- `expect <user> in moderation` означає, що user присутній у поточному moderation list result
 
 Argument rules застосовуються до обох рівнів DSL (canonical і exact).
 
@@ -262,6 +265,12 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | expect groups                  | expect result contains groups                              |
 | expect members                 | expect result contains members                             |
 | expect room1 in groups         | expect groups contain room1                                |
+| ban bob                        | query moderation ban target bob                            |
+| unban bob                      | query moderation unban target bob                          |
+| query moderation               | query moderation list                                      |
+| expect moderation              | expect result contains moderation items                    |
+| expect bob is banned           | expect moderation contains bob                             |
+| expect bob in moderation       | expect moderation contains bob                             |
 
 Canonical = sugar  
 Exact = protocol-observable semantics
@@ -372,3 +381,19 @@ Canonical roster DSL розділяє mutation і view:
 - `query groups` означає list group/conference ресурсів
 - `query members of group <name>` означає inspection membership для цієї group
 
+#### Moderation semantics
+
+- moderation є окремою policy layer
+- moderation не є roster
+- moderation не є subscription
+
+- `ban <user>` створює moderation restriction для поточного actor
+- `unban <user>` видаляє moderation restriction для поточного actor
+- `query moderation` означає inspection поточного moderation list
+
+- moderation може обмежувати direct messaging або інший доступ,
+  але не повинна неявно змінювати roster чи subscription state,
+  якщо це окремо не визначено policy сервером
+
+- у базовій DSL semantics ban інтерпретується як policy,
+  яка блокує direct messaging від banned user

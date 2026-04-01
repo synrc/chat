@@ -14,6 +14,7 @@
 - [DSL-PAGINATION.md](./DSL-PAGINATION.md) — inbox pagination and event streaming / home bootstrap
 - [DSL-ADVANCED.md](./DSL-ADVANCED.md) — version, federation
 - [DSL-GROUP.md](./DSL-GROUP.md) — group
+- [DSL-MODERATION.md](./DSL-MODERATION.md) — moderation / block policy
 
 ## Coverage
 
@@ -27,3 +28,4 @@
 - federation
 - home bootstrap
 - group
+- moderation
