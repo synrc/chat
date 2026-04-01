@@ -104,8 +104,9 @@ auth
 add bob to roster
 ban bob
 
-query roster
+query subscriptions
 
-expect bob in roster
+expect subscriptions
+expect bob in subscriptions
 ```
 ---

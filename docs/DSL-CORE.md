@@ -214,6 +214,9 @@ shared home snapshot інтерпретується як replay boundary
 - `expect moderation` означає, що result містить moderation list
 - `expect <user> is banned` означає, що для поточного actor існує moderation restriction щодо цього user
 - `expect <user> in moderation` означає, що user присутній у поточному moderation list result
+- `expect subscriptions` означає, що result містить список subscription relation
+- `expect <user> in subscriptions` означає, що user присутній у поточному subscription list result
+- `expect subscription to <user>` означає, що directed relation до цього user існує для поточного actor
 
 Argument rules застосовуються до обох рівнів DSL (canonical і exact).
 
@@ -271,6 +274,11 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | expect moderation              | expect result contains moderation items                    |
 | expect bob is banned           | expect moderation contains bob                             |
 | expect bob in moderation       | expect moderation contains bob                             |
+| query subscription bob         | query subscription get target bob                          |
+| query subscriptions            | query subscription list                                    |
+| expect subscriptions           | expect result contains subscriptions                       |
+| expect bob in subscriptions    | expect subscriptions contain bob                           |
+| expect subscription to bob     | expect subscription target bob exists                      |
 
 Canonical = sugar  
 Exact = protocol-observable semantics
@@ -317,6 +325,23 @@ query cursor read feed private:alice seq 123
 - `renew` означає перевидачу access token через refresh token
 - exact форма використовується там, де потрібно явно вказати token/session fields
 
+#### Subscription semantics
+
+- subscription є directed relation state:
+  - actor -> target
+
+- `query subscription <user>` означає inspection directed relation
+  від поточного actor до цього user
+
+- `query subscriptions` означає list directed relation
+  для поточного actor
+
+- subscription є джерелом істини для relation state,
+  тоді як roster є snapshot/view цього state
+
+- subscription inspection не означає messaging authorization policy саме по собі,
+  якщо окрема server policy не визначає інше
+- 
 #### Roster semantics
 
 Canonical roster DSL розділяє mutation і view:
