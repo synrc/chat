@@ -83,6 +83,10 @@ DSL використовує два стилі: short і exact.
 - alias розгортаються у повну форму
 - exact форма використовується там, де потрібна точна protocol-level семантика
 
+Для exact form поточний actor за замовчуванням береться з `session <alias>`,
+тому його не потрібно дублювати явно в кожній команді,
+якщо це не потрібно для спеціального розбору сценарію.
+
 Приклади:
 
 - `query inbox feed private:bob`
@@ -210,17 +214,17 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | auth                           | authority authenticate request                             |
 | auth resume                    | authority authenticate request with session/accessToken    |
 | renew                          | authority renew request with refreshToken                  |
-| add bob to roster              | TODO exact roster/relation form                            |
-| remove bob from roster         | TODO exact roster/relation form                            |
-| query roster                   | TODO exact roster query form                               |
-| bootstrap home                 | query home                                                  |
-| bootstrap home limit 20        | query home limit 20                                         |
+| add bob to roster              | query subscription create target bob                       |
+| remove bob from roster         | query subscription remove target bob                       |
+| query roster                   | query roster list                                          |
+| bootstrap home                 | query home                                                 |
+| bootstrap home limit 20        | query home limit 20                                        |
 | bootstrap home limit 20 preview 1 | query home limit 20 preview 1                           |
-| query home continue            | query home continue                                         |
-| expect feeds                   | expect result contains feeds                                |
-| expect previews                | expect result contains previews                             |
-| expect shared snapshot         | expect result contains shared snapshot anchor               |
-| expect unread                  | expect result contains unread view state                    |
+| query home continue            | query home continue                                        |
+| expect feeds                   | expect result contains feeds                               |
+| expect previews                | expect result contains previews                            |
+| expect shared snapshot         | expect result contains shared snapshot anchor              |
+| expect unread                  | expect result contains unread view state                   |
 | expect bob in roster           | expect roster contains bob                                 |
 | expect bob not in roster       | expect roster does not contain bob                         |
 | expect message from alice "hi" | expect inbound message from alice body "hi"                |
@@ -234,9 +238,9 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | expect no duplicates           | expect result has no duplicate items/events                |
 | expect no gaps                 | expect result covers boundary without missing items/events |
 | send read group:room1 for last | query cursor read feed group:room1 seq 123                 |
-| edit message "m1" body "m1 edited" | TODO exact mutation form                               |
-| delete message "m1"                | TODO exact mutation form                               |
-| expect message deleted             | expect final message state = deleted                   |
+| edit message "m1" body "m1 edited" | TODO exact mutation form                                   |
+| delete message "m1"                | TODO exact mutation form                                   |
+| expect message deleted             | expect final message state = deleted                       |
 
 Canonical = sugar  
 Exact = protocol-observable semantics
@@ -284,6 +288,27 @@ query cursor read feed private:alice seq 123
 - exact форма використовується там, де потрібно явно вказати token/session fields
 
 #### Roster semantics
+
+Canonical roster DSL розділяє mutation і view:
+
+- `add <user> to roster`
+  означає створення directed relation для поточного actor
+  і в exact формі зводиться до:
+  `query subscription create target <user>`
+
+- `remove <user> from roster`
+  означає видалення directed relation для поточного actor
+  і в exact формі зводиться до:
+  `query subscription remove target <user>`
+
+- `query roster`
+  означає запит roster view
+  і в exact формі зводиться до:
+  `query roster list`
+
+Таким чином:
+- relation state змінюється через `Subscription`
+- roster перевіряється через `Roster` як snapshot/view
 
 `add <user> to roster` означає додавання directed roster-visible relation
 для поточного користувача.
