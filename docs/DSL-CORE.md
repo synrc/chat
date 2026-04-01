@@ -341,7 +341,7 @@ query cursor read feed private:alice seq 123
 
 - subscription inspection не означає messaging authorization policy саме по собі,
   якщо окрема server policy не визначає інше
-- 
+
 #### Roster semantics
 
 Canonical roster DSL розділяє mutation і view:

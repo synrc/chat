@@ -1035,10 +1035,11 @@ BEGIN
     --   * notFound
     --   * conflict
     --
-    -- Group-specific usage:
+    -- Group / Moderation-specific usage:
     --
     --   * forbidden:
-    --       non-member access до group feed / group membership protected operation
+    --       - non-member access до group feed / group membership protected operation
+    --       - actor або target заблокований moderation policy для цієї операції
     --
     --   * notFound:
     --       group/conference resource не існує або вже видалений
@@ -1595,6 +1596,16 @@ BEGIN
     --   * Сервер MAY додати relation-gated messaging policy у майбутньому,
     --     але така policy повинна бути явно оголошена,
     --     а не випливати неявно з roster model.
+    --
+    -- Moderation interaction:
+    --
+    --   * Moderation policy є окремою від Subscription.
+    --
+    --   * Наявність Subscription не скасовує moderation restriction.
+    --
+    --   * Наявність moderation restriction не означає автоматичне
+    --     видалення Subscription relation.
+
     -- XMPP відповідність:
     --
     --   subscription (actor → target):
@@ -1617,6 +1628,19 @@ BEGIN
 
     -- get/create/remove очікують actor + target
     -- list допускає частковий фільтр
+    --
+    -- Inspection semantics:
+    --
+    --   * get використовується для inspection directed relation:
+    --
+    --       actor -> target
+    --
+    --   * list використовується для отримання relation set
+    --     у межах actor filter.
+    --
+    --   * Якщо actor не вказаний явно,
+    --     він MAY бути виведений із поточного authenticated session context.
+    --
     SubscriptionQuery ::= SEQUENCE {
        op     SubscriptionOp,
        actor  [0] Binary OPTIONAL,
@@ -1634,6 +1658,11 @@ BEGIN
 
     -- get/create/remove зазвичай повертають item
     -- list повертає items
+    --
+    --   * item означає один directed relation state
+    --   * items означає список directed relation state
+    --     для поточного actor/query context
+    --
     SubscriptionAnswer ::= SEQUENCE {
        item   [0] Subscription OPTIONAL,
        items  [1] SEQUENCE OF subscription Subscription OPTIONAL,
@@ -1855,6 +1884,30 @@ BEGIN
        result  [2] RosterAnswer
     }
 
+    -- Moderation / Policy Semantics
+    --
+    --   * Moderation є окремим policy layer,
+    --     а не relation state і не roster view.
+    --
+    --   * Moderation не повинна неявно змінювати:
+    --       - Subscription relation
+    --       - Roster snapshot/view
+    --
+    --   * ban створює policy restriction для actor -> target.
+    --
+    --   * unban видаляє цю policy restriction.
+    --
+    --   * list повертає moderation restrictions для поточного actor
+    --     або для явно заданого actor filter.
+    --
+    -- Direct Messaging:
+    --
+    --   * У базовій моделі moderation MAY блокувати direct private messaging
+    --     між actor і target.
+    --
+    --   * Така policy не означає автоматичного видалення relation state
+    --     або roster entry.
+    --
     ModerationOp ::= ENUMERATED {
        ban    (1),
        unban  (2),
@@ -1863,7 +1916,17 @@ BEGIN
 
     -- ban/unban очікують actor + target
     -- list повертає список обмежень
-
+    --
+    -- Semantics:
+    --
+    --   * actor є джерелом policy restriction
+    --   * target є суб'єктом, до якого застосовується restriction
+    --
+    --   * Якщо actor не вказаний явно,
+    --     він MAY бути виведений із поточного authenticated session context.
+    --
+    --   * ban/unban не повинні змінювати Subscription або Roster напряму.
+    --
     ModerationQuery ::= SEQUENCE {
        op     ModerationOp,
        actor  [0] Binary OPTIONAL,
@@ -1878,7 +1941,11 @@ BEGIN
 
     -- ban/unban зазвичай повертають item
     -- list повертає items
-
+    --
+    --   * item означає конкретну moderation restriction
+    --   * items означає snapshot/list moderation restrictions
+    --     у межах поточного query context
+    --
     ModerationAnswer ::= SEQUENCE {
        item   [0] ModerationItem OPTIONAL,
        items  [1] SEQUENCE OF item ModerationItem OPTIONAL,
