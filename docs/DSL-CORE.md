@@ -204,6 +204,10 @@ shared home snapshot інтерпретується як replay boundary
 - `expect not duplicate feeds` означає, що paged home result не містить feed, уже повернутих попередньою сторінкою того самого home query
 - `expect shared snapshot` означає, що result містить один snapshot anchor для всього home result
 - `expect unread` означає, що home/feed result містить unread view state
+- `expect group <name> exists` означає, що group/conference ресурс існує
+- `expect <user> is owner` означає, що user має owner role у поточній group
+- `expect <user> is member` означає, що user є member поточної group
+- `expect <user> is member of group <name>` означає, що user є member вказаної group
 
 Argument rules застосовуються до обох рівнів DSL (canonical і exact).
 
@@ -245,6 +249,10 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | delete group room1             | query conference remove name room1                         |
 | add bob to group room1         | query member add actor bob feed group:room1                |
 | remove bob from group room1    | query member remove actor bob feed group:room1             |
+| expect group room1 exists      | expect conference room1 exists                             |
+| expect alice is owner          | expect member alice role owner                             |
+| expect alice is member         | expect member alice role member-or-owner                   |
+| expect bob is member of group room1 | expect member bob in group:room1                      |
 
 Canonical = sugar  
 Exact = protocol-observable semantics
@@ -335,7 +343,7 @@ Canonical roster DSL розділяє mutation і view:
 #### Group semantics
 
 - `create group <name>` створює conference ресурс типу group
-- creator автоматично стає owner і member
+- owner у group semantics також має member access до group feed
 - `add <user> to group <name>` додає member relation
 - `remove <user> from group <name>` видаляє member relation
 

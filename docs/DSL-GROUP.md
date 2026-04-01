@@ -50,7 +50,8 @@ add bob to group room1
 session bob
 send message to group:room1 "hi"
 
-expect delivered
+session alice
+expect message from bob body "hi"
 ```
 ---
 ## GROUP-4. Non-member cannot send message
