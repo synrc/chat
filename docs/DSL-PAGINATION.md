@@ -44,7 +44,7 @@ auth
 query inbox alice limit 10
 expect result items
 
-query inbox alice continue
+query inbox carol continue
 
 expect error badRequest
 ```
