@@ -515,6 +515,7 @@ class DSLRunner:
             bob = SessionState(alias="bob", user="bob", connected=True, authenticated=True)
             bob.last_observed_seq[feed] = 3
             self.world.sessions["bob"] = bob
+            self.world.read_cursors[("bob", feed)] = 3
 
     def _paginate_items(self, items: list[Any], limit: int | None, offset: int) -> tuple[list[Any], bool, str | None, int]:
         if limit is None:
