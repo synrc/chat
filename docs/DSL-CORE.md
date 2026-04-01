@@ -88,6 +88,8 @@ DSL використовує два стилі: short і exact.
 - у message context `bob` означає user/target alias
 - `query inbox bob` = `query inbox feed private:bob`
 - `query events bob after 100 limit 10` = `query events feed private:bob after 100 limit 10`
+- `query events bob after snapshot` після `query home` означає replay у feed `private:bob`,
+  якщо цей feed був покритий попереднім home result
 - у inbox/events/read context `bob` означає feed alias
 - `query inbox continue` продовжує останній `query inbox ...` у межах того самого feed
 
@@ -152,6 +154,7 @@ DSL підтримує symbolic cursor значення:
 При використанні в `query events <feed> after snapshot`
 shared home snapshot інтерпретується як replay boundary
 для цього конкретного feed у межах того самого home bootstrap context.
+Такий replay є валідним тільки для feed, already covered тим самим home result.
 
 `next` означає continuation cursor для наступної сторінки event replay
 
@@ -185,6 +188,7 @@ shared home snapshot інтерпретується як replay boundary
 - `expect previews` означає, що result містить preview дані для feed
 - `expect not duplicate feeds` означає, що paged home result не містить feed, уже повернутих попередньою сторінкою того самого home query
 - `expect shared snapshot` означає, що result містить один snapshot anchor для всього home result
+- `expect unread` означає, що home/feed result містить unread view state
 
 Argument rules застосовуються до обох рівнів DSL (canonical і exact).
 
@@ -205,6 +209,7 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | expect feeds                   | expect result contains feeds                                |
 | expect previews                | expect result contains previews                             |
 | expect shared snapshot         | expect result contains shared snapshot anchor               |
+| expect unread                  | expect result contains unread view state                    |
 | expect bob in roster           | expect roster contains bob                                 |
 | expect bob not in roster       | expect roster does not contain bob                         |
 | expect message from alice "hi" | expect inbound message from alice body "hi"                |
