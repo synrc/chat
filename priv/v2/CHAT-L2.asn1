@@ -518,6 +518,21 @@ BEGIN
     --     є коректним після завершення читання всіх сторінок
     --     цього snapshot.
     --
+    -- Home vs Inbox snapshot
+    --
+    --   * Inbox snapshot (snapshotSeq):
+    --       - feed-scoped
+    --       - INTEGER seq
+    --
+    --   * Home snapshot:
+    --       - multi-feed
+    --       - opaque anchor (Binary)
+    --
+    --   * Обидва можуть використовуватись як boundary
+    --     для Event replay через:
+    --
+    --         query events after snapshot
+    --
     InboxAnswer ::= SEQUENCE {
        items       [0] SEQUENCE OF item InboxItem OPTIONAL,
        continue    [1] Continuation OPTIONAL,
@@ -1038,6 +1053,7 @@ BEGIN
        mail         [12] MailExtension, -- X.420
        event        [13] EventCore,
        cursor       [14] CursorCore,
+       home         [15] HomeCore,
        ...
     }
 
@@ -1144,6 +1160,134 @@ BEGIN
        result  [2] CursorAnswer
     }
 
+    -- Home Core (bootstrap / home view)
+    --
+    -- HomeCore використовується для отримання агрегованого snapshot/view
+    -- після connect/reconnect або для побудови home screen.
+    --
+    -- Семантика:
+    --
+    --   * Home є multi-feed view:
+    --       - список feed (діалоги / конференції)
+    --       - preview (останні повідомлення)
+    --       - unread/read-derived стан
+    --
+    --   * Home НЕ є джерелом істини:
+    --       - це snapshot/view, подібний до Inbox або Roster
+    --
+    --   * Home snapshot може використовуватись як anchor
+    --     для подальшого Event replay у кількох feed.
+    --
+    --   * Home snapshot є shared:
+    --       - один anchor для кількох feed
+    --       - boundary визначається для кожного feed окремо
+    --
+    --   * Home pagination використовує continuation token,
+    --     аналогічно іншим view query.
+    --
+    -- Важливо:
+    --
+    --   * Home НЕ замінює:
+    --       - Inbox (per-feed snapshot)
+    --       - Roster (relation view)
+    --
+    --   * Home є агрегованим bootstrap/view ресурсом.
+
+    HomeOp ::= ENUMERATED {
+       get  (1),
+       list (2),
+       ...
+    }
+
+    HomeQuery ::= SEQUENCE {
+       op            HomeOp,
+       previewLimit  [0] INTEGER OPTIONAL,
+       includeRoster [1] BOOLEAN OPTIONAL,
+       ...
+    }
+
+    HomeItem ::= SEQUENCE {
+       feed     MessageFeed,
+       message  [0] Message OPTIONAL,
+
+       -- headSeq — останній відомий seq у feed на момент snapshot
+       headSeq  [1] INTEGER OPTIONAL,
+
+       -- readSeq — effective read cursor користувача у feed
+       readSeq  [2] INTEGER OPTIONAL,
+
+       -- unread є derived/cached значенням:
+       --   unread = max(0, headSeq - readSeq)
+       --
+       -- unread не є джерелом істини
+       unread   [3] INTEGER OPTIONAL,
+       ...
+    }
+
+    -- Home pagination і snapshot semantics
+    --
+    --   * continue є opaque cursor для pagination home view.
+    --
+    --   * hasMore є hint про наявність додаткових feed.
+    --
+    --   * snapshot є opaque anchor для цього home snapshot:
+    --
+    --       - не є seq
+    --       - не інтерпретується клієнтом
+    --
+    --   * snapshot використовується як boundary для replay:
+    --
+    --       query events <feed> after snapshot
+    --
+    --   * replay після snapshot повинен:
+    --       - не повертати події, покриті snapshot
+    --       - повертати тільки нові події
+    --
+    --   * snapshot є shared для всіх feed у цьому HomeAnswer,
+    --     але replay boundary визначається per-feed.
+    --
+    --   * snapshot не означає однаковий seq для всіх feed.
+    --
+    -- Consistency:
+    --
+    --   * Home не гарантує snapshot isolation:
+    --       - дані можуть змінюватись під час pagination
+    --       - можливі race conditions з новими подіями
+    --
+    --   * Home snapshot узгоджений лише у межах однієї відповіді.
+    --
+    HomeAnswer ::= SEQUENCE {
+       items     [0] SEQUENCE OF item HomeItem OPTIONAL,
+       continue  [1] Continuation OPTIONAL,
+       hasMore   [2] BOOLEAN OPTIONAL,
+
+       -- shared home snapshot anchor
+       snapshot  [3] Binary OPTIONAL,
+
+        -- optional roster snapshot (view)
+        --
+        --   * roster використовується як допоміжний view для home screen
+        --     (наприклад contact list / metadata для feed)
+        --
+        --   * roster НЕ є джерелом істини для relation
+        --     і не впливає на messaging semantics
+        --
+        --   * сервер MAY повертати:
+        --       - повний roster snapshot
+        --       - або скорочений (condensed) subset
+        --
+        --   * клієнт не повинен припускати повноту roster у HomeAnswer
+        --
+        --   * для повного roster клієнт повинен використовувати RosterQuery
+       roster    [4] RosterAnswer OPTIONAL,
+       ...
+    }
+
+    HomeCore ::= CHOICE {
+       request [1] HomeQuery,
+       result  [2] HomeAnswer
+    }
+
     -- Pagination / Streaming (view queries)
     --
     --   * Для snapshot/view даних (roster, members, search, conference)
@@ -1216,6 +1360,7 @@ BEGIN
     --   * Події є спільними для всіх session у межах feed.
     --   * Позиція (last_seq) є індивідуальною для кожної session.
     --   * Сервер не веде окремі черги подій на session.
+
 
     EventQuery ::= SEQUENCE {
        after [0] INTEGER OPTIONAL,
