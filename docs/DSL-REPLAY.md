@@ -176,6 +176,41 @@ expect events
 - такі події повинні добиратися через replay після `snapshot`
 - home bootstrap і replay разом повинні давати безшовний recovery boundary
 ---
+
+## Scenario 5ad. Home bootstrap multi-feed replay
+
+```
+scenario home bootstrap multi-feed replay
+
+session bob
+connect
+auth
+
+-- assume private:alice and group:room1 exist and are returned by home query
+
+bootstrap home limit 20 preview 1
+
+expect feeds
+expect previews
+expect shared snapshot
+
+query events private:alice after snapshot
+
+expect no duplicates
+expect no gaps
+
+query events group:room1 after snapshot
+
+expect no duplicates
+expect no gaps
+```
+
+- home snapshot може використовуватись для replay у кількох feed
+- replay boundary визначається для кожного feed окремо у межах того самого home bootstrap context
+- snapshot не повинен створювати конфлікт між feed-scoped replay
+- кожен feed повинен мати узгоджений перехід від preview до replay
+- snapshot не означає, що всі feed мають однаковий seq boundary
+---
 ## Scenario 5b. Replay with concurrent read and new message
 
 ```
