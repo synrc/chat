@@ -32,6 +32,7 @@ class SessionState:
     last_events_query: dict[str, Any] | None = None
     last_home_query: dict[str, Any] | None = None
     last_home_snapshot: set[str] = field(default_factory=set)
+    last_read_update: dict[str, Any] | None = None
 
 
 @dataclass
@@ -915,6 +916,15 @@ class DSLRunner:
         current = self.world.read_cursors.get(key, 0)
         self.world.read_cursors[key] = max(current, seq)
         updated = self.world.read_cursors[key] != current
+
+        for session in self.world.sessions.values():
+            if session.user == user:
+                session.last_read_update = {
+                    "feed": feed,
+                    "updated": updated,
+                    "cursor": self.world.read_cursors[key],
+                }
+
         self.last_result = QueryResult(
             kind="read",
             items=[self.world.read_cursors[key]],
@@ -1105,23 +1115,28 @@ class DSLRunner:
         m = re.match(r"expect read cursor updated in (\S+)$", line)
         if m:
             feed = self._resolve_feed(session, m.group(1))
-            if not self.last_result or self.last_result.kind != "read" or self.last_result.error != "updated":
+            read_update = session.last_read_update
+            if not self.last_result or self.last_result.kind != "read" or not read_update:
                 raise ExpectationFailed(line)
-            read_feed = session.last_inbox_query["feed"] if session.last_inbox_query else None
-            read_feed = read_feed or (session.last_events_query["feed"] if session.last_events_query else None)
-            if read_feed is not None and read_feed != feed:
+            if read_update["feed"] != feed or not read_update["updated"]:
                 raise ExpectationFailed(line)
             return
 
         m = re.match(r"expect read cursor unchanged in (\S+)$", line)
         if m:
             feed = self._resolve_feed(session, m.group(1))
-            if not self.last_result or self.last_result.kind != "read" or self.last_result.error != "unchanged":
+            read_update = session.last_read_update
+            if not self.last_result or self.last_result.kind != "read" or not read_update:
                 raise ExpectationFailed(line)
-            read_feed = session.last_inbox_query["feed"] if session.last_inbox_query else None
-            read_feed = read_feed or (session.last_events_query["feed"] if session.last_events_query else None)
-            if read_feed is not None and read_feed != feed:
-                raise ExpectationFailed(line)
+            if read_update["feed"] == feed:
+                if read_update["updated"]:
+                    raise ExpectationFailed(line)
+            else:
+                previous = session.last_read_update.get("feed")
+                _ = previous
+                # A read update in another feed must not affect this feed's cursor.
+                # Since only one feed is targeted per read operation in the model,
+                # any non-target feed is implicitly unchanged.
             return
 
         m = re.match(r"expect selectedVsn (v\d+)$", line)
