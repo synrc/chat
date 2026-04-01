@@ -344,6 +344,7 @@ Canonical roster DSL розділяє mutation і view:
 
 - `create group <name>` створює conference ресурс типу group
 - owner у group semantics також має member access до group feed
+- creator автоматично стає owner і member
 - `add <user> to group <name>` додає member relation
 - `remove <user> from group <name>` видаляє member relation
 
