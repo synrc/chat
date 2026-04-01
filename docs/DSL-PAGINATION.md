@@ -8,7 +8,7 @@ session bob
 connect
 auth
 
-query inbox bob limit 10
+query inbox alice limit 10
 
 expect result items <= 10
 expect more
@@ -41,7 +41,7 @@ session bob
 connect
 auth
 
-query inbox bob limit 10
+query inbox alice limit 10
 expect result items
 
 query inbox alice continue
@@ -59,7 +59,7 @@ session bob
 connect
 auth
 
-query inbox bob limit 10
+query inbox alice limit 10
 
 expect result items = 0
 expect not more
@@ -157,7 +157,7 @@ session bob
 connect
 auth
 
-query events bob after 100 limit 10
+query events alice after 100 limit 10
 
 expect events count <= 10
 expect next
@@ -171,12 +171,12 @@ session bob
 connect
 auth
 
-query events bob after 100 limit 2
+query events alice after 100 limit 2
 
 expect events count <= 2
 expect next
 
-query events bob after next
+query events alice after next
 
 expect events
 ```
@@ -188,7 +188,7 @@ session bob
 connect
 auth
 
-query events bob after cursor
+query events alice after cursor
 
 expect empty replay
 expect not more
