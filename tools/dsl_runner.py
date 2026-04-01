@@ -90,6 +90,7 @@ class DSLRunner:
         self.skip_scenario = False
         self.trace = trace
         self.reports: list[ScenarioReport] = []
+        self.current_scenario_name: str | None = None
         self.unsupported_scenarios = {
             "delete overrides reordered edit",
             "late delete after edit",
@@ -175,6 +176,8 @@ class DSLRunner:
                 current_status = None
                 current_error = None
                 self._reset_for_scenario()
+                self.current_scenario_name = current_scenario
+                self._seed_scenario(current_scenario)
 
                 if current_scenario in self.unsupported_scenarios:
                     self.skip_scenario = True
@@ -351,6 +354,10 @@ class DSLRunner:
             self._query_cursor_read(line)
             return
 
+        if line == "query inbox continue" or re.match(r"query inbox \S+ continue$", line):
+            self._query_inbox_continue(line)
+            return
+
         if line.startswith("query inbox "):
             self._query_inbox(line)
             return
@@ -464,6 +471,50 @@ class DSLRunner:
             raise ExpectationFailed("error notFound")
         return group
 
+    def _seed_feed(self, user_a: str, user_b: str, count: int, body_prefix: str = "m") -> str:
+        feed = self._private_feed(user_a, user_b)
+        log = self.world.feed_logs.setdefault(feed, [])
+        for idx in range(1, count + 1):
+            msg = MessageRecord(
+                id=str(uuid.uuid4()),
+                feed=feed,
+                sender=user_a if idx % 2 else user_b,
+                body=f"{body_prefix}{idx}",
+                seq=idx,
+            )
+            self.world.messages[msg.id] = msg
+            log.append(msg.id)
+        return feed
+
+    def _seed_scenario(self, scenario_name: str) -> None:
+        if scenario_name in {"inbox pagination", "continue without initial query", "continue after feed change"}:
+            self._seed_feed("alice", "bob", 15, "p")
+        elif scenario_name == "empty page no more":
+            self._seed_feed("carol", "dave", 3, "x")
+        elif scenario_name in {"home bootstrap pagination", "home continue without initial query", "home pagination no duplicate feeds"}:
+            for idx in range(1, 13):
+                self.world.subscriptions.add(("bob", f"user{idx}"))
+        elif scenario_name == "event streaming":
+            self._seed_feed("alice", "bob", 120, "e")
+        elif scenario_name == "event replay pagination":
+            self._seed_feed("alice", "bob", 105, "r")
+        elif scenario_name == "replay no more":
+            feed = self._seed_feed("alice", "bob", 3, "z")
+            bob = SessionState(alias="bob", user="bob", connected=True, authenticated=True)
+            bob.last_observed_seq[feed] = 3
+            self.world.sessions["bob"] = bob
+
+    def _paginate_items(self, items: list[Any], limit: int | None, offset: int) -> tuple[list[Any], bool, str | None, int]:
+        if limit is None:
+            page = items[offset:]
+            next_offset = len(items)
+        else:
+            page = items[offset:offset + limit]
+            next_offset = offset + len(page)
+        has_more = next_offset < len(items)
+        next_cursor = "next" if has_more else None
+        return page, has_more, next_cursor, next_offset
+
     # ----------------------------
     # Commands / Queries
     # ----------------------------
@@ -538,7 +589,6 @@ class DSLRunner:
 
     def _delete_group(self, line: str) -> None:
         session = self._require_authenticated()
-        session = self._require_authenticated()
         name = line.split(maxsplit=2)[2].strip()
         group = self._group_or_raise(name)
         if session.user != group.owner:
@@ -579,6 +629,7 @@ class DSLRunner:
         self.last_result = QueryResult(kind="group", items=[group])
 
     def _query_groups(self) -> None:
+        self._require_authenticated()
         items = [g for g in self.world.groups.values() if not g.deleted]
         self.last_result = QueryResult(kind="groups", items=items)
 
@@ -624,7 +675,12 @@ class DSLRunner:
 
     def _query_inbox(self, line: str) -> None:
         session = self._require_authenticated()
-        target = line.split(maxsplit=2)[2].strip()
+        m = re.match(r"query inbox (\S+)(?: limit (\d+))?$", line)
+        if not m:
+            raise DSLRunnerError(f"Bad query inbox syntax: {line}")
+        target, limit_text = m.groups()
+        limit = int(limit_text) if limit_text else None
+
         if target.startswith("group:"):
             group_name = target.split(":", 1)[1]
             group = self._group_or_raise(group_name)
@@ -634,13 +690,103 @@ class DSLRunner:
         else:
             feed = self._private_feed(session.user, target)
 
-        items = [m for m in session.inbox if m["feed"] == feed]
-        session.last_inbox_query = {"feed": feed}
-        snapshot = f"snapshot:{feed}:{len(self.world.feed_logs.get(feed, []))}"
-        self.last_result = QueryResult(kind="inbox", items=items, snapshot=snapshot)
+        log = self.world.feed_logs.get(feed, [])
+        items = [
+            {
+                "type": "message",
+                "feed": feed,
+                "sender": self.world.messages[mid].sender,
+                "body": self.world.messages[mid].body,
+                "seq": self.world.messages[mid].seq,
+                "message_id": mid,
+            }
+            for mid in log
+        ]
+        page, has_more, next_cursor, next_offset = self._paginate_items(items, limit, 0)
+        session.last_inbox_query = {"feed": feed, "limit": limit, "offset": next_offset}
+        snapshot = f"snapshot:{feed}:{len(log)}"
+        self.last_result = QueryResult(
+            kind="inbox",
+            items=page,
+            has_more=has_more,
+            next_cursor=next_cursor,
+            snapshot=snapshot,
+        )
+
+    def _query_inbox_continue(self, line: str) -> None:
+        session = self._require_authenticated()
+        ctx = session.last_inbox_query
+        if not ctx:
+            raise ExpectationFailed("error badRequest")
+
+        m = re.match(r"query inbox (\S+) continue$", line)
+        if m:
+            requested_feed = self._private_feed(session.user, m.group(1))
+            if requested_feed != ctx["feed"]:
+                raise ExpectationFailed("error badRequest")
+
+        feed = ctx["feed"]
+        limit = ctx["limit"]
+        offset = ctx["offset"]
+        log = self.world.feed_logs.get(feed, [])
+        items = [
+            {
+                "type": "message",
+                "feed": feed,
+                "sender": self.world.messages[mid].sender,
+                "body": self.world.messages[mid].body,
+                "seq": self.world.messages[mid].seq,
+                "message_id": mid,
+            }
+            for mid in log
+        ]
+        page, has_more, next_cursor, next_offset = self._paginate_items(items, limit, offset)
+        session.last_inbox_query = {"feed": feed, "limit": limit, "offset": next_offset}
+        snapshot = f"snapshot:{feed}:{len(log)}"
+        self.last_result = QueryResult(
+            kind="inbox",
+            items=page,
+            has_more=has_more,
+            next_cursor=next_cursor,
+            snapshot=snapshot,
+        )
 
     def _query_home(self, line: str) -> None:
         session = self._require_authenticated()
+
+        if line == "query home continue":
+            ctx = session.last_home_query
+            if not ctx:
+                raise ExpectationFailed("error badRequest")
+            feeds = ctx["feeds"]
+            limit = ctx["limit"]
+            offset = ctx["offset"]
+            page, has_more, next_cursor, next_offset = self._paginate_items(feeds, limit, offset)
+            session.last_home_query = {
+                "feeds": feeds,
+                "limit": limit,
+                "offset": next_offset,
+                "seen": ctx["seen"] | set(page),
+                "snapshot": ctx["snapshot"],
+            }
+            session.last_home_snapshot = set(feeds)
+            self.last_result = QueryResult(
+                kind="home",
+                items=page,
+                has_more=has_more,
+                next_cursor=next_cursor,
+                snapshot=ctx["snapshot"],
+            )
+            return
+
+        limit = None
+        m = re.match(r"bootstrap home(?: limit (\d+))?(?: preview (\d+))?$", line)
+        if m:
+            limit_text, _preview = m.groups()
+            limit = int(limit_text) if limit_text else None
+        elif line != "query home":
+            raise DSLRunnerError(f"Bad query home syntax: {line}")
+
         feeds: list[str] = []
         for actor, target in self.world.subscriptions:
             if actor == session.user:
@@ -649,9 +795,23 @@ class DSLRunner:
             if not group.deleted and session.user in group.members:
                 feeds.append(f"group:{name}")
         feeds = sorted(set(feeds))
-        session.last_home_snapshot = set(feeds)
         snapshot = f"home:{session.user}:{uuid.uuid4()}"
-        self.last_result = QueryResult(kind="home", items=feeds, snapshot=snapshot)
+        page, has_more, next_cursor, next_offset = self._paginate_items(feeds, limit, 0)
+        session.last_home_query = {
+            "feeds": feeds,
+            "limit": limit,
+            "offset": next_offset,
+            "seen": set(page),
+            "snapshot": snapshot,
+        }
+        session.last_home_snapshot = set(feeds)
+        self.last_result = QueryResult(
+            kind="home",
+            items=page,
+            has_more=has_more,
+            next_cursor=next_cursor,
+            snapshot=snapshot,
+        )
 
     def _query_events(self, line: str) -> None:
         session = self._require_authenticated()
@@ -659,7 +819,6 @@ class DSLRunner:
         if not m:
             raise DSLRunnerError(f"Bad query events syntax: {line}")
         target, after_token, limit_token = m.groups()
-        limit = int(limit_token) if limit_token else None
 
         if target.startswith("group:") or target.startswith("private:"):
             feed = self._resolve_feed(session, target)
@@ -673,39 +832,43 @@ class DSLRunner:
                 raise ExpectationFailed("error forbidden")
 
         if after_token == "cursor":
-            after = session.last_observed_seq.get(feed, 0)
+            after = session.last_observed_seq.get(feed, len(self.world.feed_logs.get(feed, [])))
+            limit = int(limit_token) if limit_token else None
         elif after_token == "next":
-            if not session.last_events_query:
+            if not session.last_events_query or session.last_events_query["feed"] != feed:
                 raise ExpectationFailed("error badRequest")
             after = session.last_events_query["next_seq"]
+            limit = int(limit_token) if limit_token else session.last_events_query.get("limit")
         elif after_token == "snapshot":
             if self.last_result and self.last_result.kind == "home" and feed not in session.last_home_snapshot:
                 raise ExpectationFailed("error badRequest")
             if feed.startswith("group:"):
                 self._group_or_raise(feed.split(":", 1)[1])
             after = 0
+            limit = int(limit_token) if limit_token else None
         else:
             after = int(after_token)
+            limit = int(limit_token) if limit_token else None
 
         if after == 0:
             raise ExpectationFailed("error gap")
 
         log = self.world.feed_logs.get(feed, [])
         records = [self.world.messages[mid] for mid in log if self.world.messages[mid].seq > after]
-        if limit is not None:
-            page = records[:limit]
-            has_more = len(records) > limit
-        else:
-            page = records
-            has_more = False
+        page, has_more, next_cursor, next_offset = self._paginate_items(records, limit, 0)
 
         next_seq = page[-1].seq if page else after
-        session.last_events_query = {"feed": feed, "next_seq": next_seq}
+        session.last_events_query = {
+            "feed": feed,
+            "next_seq": next_seq,
+            "limit": limit,
+            "offset": next_offset,
+        }
         self.last_result = QueryResult(
             kind="events",
             items=page,
             has_more=has_more,
-            next_cursor=("next" if page else None),
+            next_cursor=next_cursor,
         )
 
     def _send_read_for_last(self) -> None:
@@ -785,6 +948,17 @@ class DSLRunner:
 
         if line == "expect feeds":
             if not self.last_result or self.last_result.kind != "home":
+                raise ExpectationFailed(line)
+            return
+
+        if line == "expect not duplicate feeds":
+            if not self.last_result or self.last_result.kind != "home":
+                raise ExpectationFailed(line)
+            feeds = list(self.last_result.items)
+            if len(feeds) != len(set(feeds)):
+                raise ExpectationFailed(line)
+            ctx = session.last_home_query
+            if ctx and len(ctx.get("seen", set())) != len(set(ctx.get("seen", set()))):
                 raise ExpectationFailed(line)
             return
 
@@ -1029,6 +1203,20 @@ class DSLRunner:
                 raise ExpectationFailed(line)
             names = {g.name for g in self.last_result.items}
             if name not in names:
+                raise ExpectationFailed(line)
+            return
+
+        m = re.match(r"expect feeds count <= (\d+)$", line)
+        if m:
+            n = int(m.group(1))
+            if not self.last_result or self.last_result.kind != "home" or len(self.last_result.items) > n:
+                raise ExpectationFailed(line)
+            return
+
+        m = re.match(r"expect feeds count = (\d+)$", line)
+        if m:
+            n = int(m.group(1))
+            if not self.last_result or self.last_result.kind != "home" or len(self.last_result.items) != n:
                 raise ExpectationFailed(line)
             return
 
