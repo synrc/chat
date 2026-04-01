@@ -189,7 +189,9 @@ session bob
 connect
 auth
 
--- assume private:alice and group:room1 exist and are returned by home query
+session alice
+create group room1
+add bob to group room1
 
 bootstrap home limit 20 preview 1
 
@@ -419,8 +421,9 @@ session bob
 connect
 auth
 
--- TODO: protocol currently has no explicit group creation flow
--- assume group:room1 already exists and bob is a member
+session alice
+create group room1
+add bob to group room1
 
 query events private:alice after 0
 expect error gap
@@ -448,6 +451,5 @@ expect no gaps
 - recovery boundary є feed-scoped
 - snapshot для одного feed не повинен використовуватись як boundary для іншого
 - inbox/replay consistency повинна зберігатись незалежно в кожному feed
-- TODO: груповий feed тут використовується як already-existing feed, бо explicit group lifecycle ще не визначений
 ---
 

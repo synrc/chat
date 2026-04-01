@@ -217,6 +217,15 @@ shared home snapshot інтерпретується як replay boundary
 - `expect subscriptions` означає, що result містить список subscription relation
 - `expect <user> in subscriptions` означає, що user присутній у поточному subscription list result
 - `expect subscription to <user>` означає, що directed relation до цього user існує для поточного actor
+- `expect result items` означає, що result містить список елементів (items)
+- `expect messages` означає, що result містить повідомлення (message items)
+- `expect events` означає, що result містить event items
+- `expect next` означає, що result містить continuation cursor (`next`)
+- `expect not next` означає, що continuation cursor (`next`) відсутній у result
+- `expect result items <= N` означає, що кількість items не перевищує N
+- `expect result items = 0` означає, що result не містить items
+- `expect feeds count <= N` означає, що кількість feed у result не перевищує N
+- `expect events count <= N` означає, що кількість events не перевищує N
 
 Argument rules застосовуються до обох рівнів DSL (canonical і exact).
 

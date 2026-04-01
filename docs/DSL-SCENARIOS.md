@@ -12,7 +12,7 @@
 - [DSL-READ.md](./DSL-READ.md) — read/cursor/multi-session/multi-feed
 - [DSL-REPLAY.md](./DSL-REPLAY.md) — replay/gap/snapshot recovery / home bootstrap
 - [DSL-PAGINATION.md](./DSL-PAGINATION.md) — inbox pagination and event streaming / home bootstrap
-- [DSL-ADVANCED.md](./DSL-ADVANCED.md) — version, federation
+- [DSL-ADVANCED.md](./DSL-ADVANCED.md) — conflict semantics, version, federation
 - [DSL-GROUP.md](./DSL-GROUP.md) — group
 - [DSL-MODERATION.md](./DSL-MODERATION.md) — moderation / block policy
 

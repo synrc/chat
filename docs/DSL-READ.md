@@ -275,8 +275,9 @@ session carol
 connect
 auth
 
--- TODO: protocol currently has no explicit group creation flow
--- assume group:room1 already exists and bob is a member
+session alice
+create group room1
+add bob to group room1
 
 session alice
 send message to bob "p1"
@@ -299,5 +300,4 @@ expect read cursor unchanged in private:alice
 - read cursor є feed-scoped
 - update в одному feed не повинен впливати на інший feed
 - private і group feed повинні бути ізольовані на рівні cursor state
-- TODO: явна модель створення/членства group має бути додана в протокол
 

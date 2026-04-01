@@ -20,7 +20,6 @@ expect bob in roster
 ```
 - roster є view ресурcом для контактів / relation
 - add to roster повинен робити bob видимим у roster alice
-- TODO: exact relation model (Subscription vs Contact) ще має бути зафіксована в протоколі
 ---
 ## ROSTER-2. Remove from roster
 
@@ -44,7 +43,6 @@ expect bob not in roster
 
 - remove from roster прибирає контакт із roster view
 - remove не обов'язково означає заборону direct messaging
-- TODO: relation teardown semantics ще має бути уточнена в протоколі
 ---
 ## ROSTER-3. Direct message without roster
 
@@ -105,7 +103,6 @@ expect alice in roster
 
 - mutual relation означає, що обидва користувачі додали один одного
 - обидва бачать один одного у своїх roster
-- TODO: визначити, чи mutual relation має особливу семантику (наприклад, presence, trust, encryption)
 ---
 
 ## ROSTER-5. One-way relation
@@ -135,7 +132,7 @@ expect alice not in roster
 
 - relation може бути однонаправленим
 - bob не повинен бачити alice у своєму roster без власної дії
-- TODO: визначити, чи one-way relation впливає на messaging / presence / privacy
+
 ---
 
 ## ROSTER-6. Messaging after remove from roster
@@ -171,4 +168,3 @@ expect message from alice body "hi after remove"
 - remove from roster не повинен автоматично блокувати direct p2p messaging
 - roster relation і message delivery не повинні змішуватись без окремої policy
 - цей сценарій підсилює модель, де roster є view, а не gate
-- TODO: якщо серверна policy захоче робити roster/relation gating, це має бути явно зафіксовано окремо
