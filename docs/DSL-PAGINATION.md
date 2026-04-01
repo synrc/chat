@@ -67,6 +67,87 @@ expect not more
 - пустий результат з hasMore=false означає кінець даних
 ---
 
+## Scenario 8d. Home bootstrap pagination
+
+```
+scenario home bootstrap pagination
+
+session bob
+connect
+auth
+
+bootstrap home limit 10 preview 1
+
+expect roster
+expect feeds count <= 10
+expect previews
+expect shared snapshot
+expect more
+
+query home continue
+
+expect feeds
+```
+
+- home query підтримує pagination для великого списку feed
+- continuation прив'язаний до поточного home query context
+- preview є view-даними для home screen, а не full inbox recovery
+---
+## Scenario 8e. Home continue without initial query
+```
+scenario home continue without initial query
+
+session bob
+connect
+auth
+
+query home continue
+
+expect error badRequest
+```
+
+- `query home continue` без попереднього `query home` не має continuation context
+- сервер не повинен вгадувати bootstrap state
+---
+## Scenario 8f. Home pagination no duplicate feeds
+```
+scenario home pagination no duplicate feeds
+
+session bob
+connect
+auth
+
+bootstrap home limit 10 preview 1
+
+expect feeds
+expect shared snapshot
+expect more
+
+query home continue
+
+expect feeds
+expect not duplicate feeds
+```
+
+- paged home result не повинен повторно повертати той самий feed у межах одного bootstrap query
+- snapshot anchor має лишатися спільним для всіх сторінок одного home query
+---
+## Scenario 8g. Empty home page no more
+```
+scenario empty home page no more
+
+session bob
+connect
+auth
+
+bootstrap home limit 10 preview 1
+
+expect feeds count = 0
+expect not more
+```
+- пустий home result з `hasMore=false` означає, що bootstrap data відсутні
+- snapshot anchor при цьому все одно може бути присутнім
+---
 ## Scenario 9. Event streaming
 
 ```

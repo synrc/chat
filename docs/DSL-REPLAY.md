@@ -63,7 +63,119 @@ send read for last
 - preview mode сам по собі не повинен імпліцитно вести до `read`
 - навіть якщо клієнт викликає read після preview,
   це не означає, що весь feed прочитано
+---
+## Scenario 5aa. Home bootstrap after reconnect
 
+```
+scenario home bootstrap after reconnect
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+
+session bob
+disconnect
+wait 500ms
+reconnect
+
+bootstrap home limit 20 preview 1
+
+expect roster
+expect feeds
+expect previews
+expect shared snapshot
+```
+
+- після reconnect клієнт може отримати стартовий стан через один home/bootstrap query
+- home query є snapshot/view ресурсом
+- home query не означає `read`
+---
+## Scenario 5ab. Home bootstrap then replay
+```
+scenario home bootstrap then replay
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+
+session bob
+disconnect
+wait 500ms
+reconnect
+
+bootstrap home limit 20 preview 1
+
+expect feeds
+expect previews
+expect shared snapshot
+
+query events bob after snapshot
+
+expect no duplicates
+expect no gaps
+```
+
+- home query повертає snapshot anchor для подальшого replay
+- replay після `snapshot` не повинен дублювати preview, уже покритий home result
+- replay після `snapshot` не повинен створювати розрив між bootstrap result і event stream
+---
+## Scenario 5ac. Home bootstrap with concurrent message
+```
+scenario home bootstrap with concurrent message
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+
+session bob
+disconnect
+wait 500ms
+reconnect
+
+bootstrap home limit 20 preview 1
+
+expect feeds
+expect previews
+expect shared snapshot
+
+session alice
+send message to bob "m3"
+
+query events bob after snapshot
+
+expect no duplicates
+expect no gaps
+expect events
+```
+
+- повідомлення може з'явитися після home snapshot
+- такі події повинні добиратися через replay після `snapshot`
+- home bootstrap і replay разом повинні давати безшовний recovery boundary
+---
 ## Scenario 5b. Replay with concurrent read and new message
 
 ```

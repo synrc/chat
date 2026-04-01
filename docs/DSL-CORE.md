@@ -91,6 +91,38 @@ DSL використовує два стилі: short і exact.
 - у inbox/events/read context `bob` означає feed alias
 - `query inbox continue` продовжує останній `query inbox ...` у межах того самого feed
 
+#### Home bootstrap
+
+DSL підтримує bootstrap/home query для початкового або reconnect sync.
+
+Canonical:
+
+- `bootstrap home`
+- `bootstrap home limit 20`
+- `bootstrap home limit 20 preview 1`
+
+Exact:
+
+- `query home`
+- `query home limit 20 preview 1`
+- `query home continue`
+
+`bootstrap home` / `query home` означає snapshot/view запит для bootstrap стану клієнта.
+
+Home result може містити:
+- roster
+- список feed
+- preview елементи для feed
+- continuation для pagination
+- snapshot anchor для подальшого replay
+
+Home query:
+- не означає `read`
+- не змінює roster relation
+- не змінює message state
+- не змішує relation і messaging authorization
+- є view ресурсом для стартового стану клієнта
+- 
 DSL допускає natural alias у short form, але exact інтерпретація завжди повинна зводитись до явного визначення feed або target.
 
 DSL підтримує symbolic cursor значення:
@@ -132,6 +164,11 @@ DSL підтримує symbolic cursor значення:
 - `expect not message body "<text>"` означає, що цей body більше не спостерігається у final state message
 - `expect bob in roster` означає, що bob присутній у поточному roster view
 - `expect bob not in roster` означає, що bob відсутній у поточному roster view
+- `expect roster` означає, що result містить roster view
+- `expect feeds` означає, що result містить список feed
+- `expect previews` означає, що result містить preview дані для feed
+- `expect not duplicate feeds` означає, що paged home result не містить feed, уже повернутих попередньою сторінкою того самого home query
+- `expect shared snapshot` означає, що result містить один snapshot anchor для всього home result
 
 Argument rules застосовуються до обох рівнів DSL (canonical і exact).
 
@@ -145,6 +182,13 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | add bob to roster              | TODO exact roster/relation form                            |
 | remove bob from roster         | TODO exact roster/relation form                            |
 | query roster                   | TODO exact roster query form                               |
+| bootstrap home                 | query home                                                  |
+| bootstrap home limit 20        | query home limit 20                                         |
+| bootstrap home limit 20 preview 1 | query home limit 20 preview 1                           |
+| query home continue            | query home continue                                         |
+| expect feeds                   | expect result contains feeds                                |
+| expect previews                | expect result contains previews                             |
+| expect shared snapshot         | expect result contains shared snapshot anchor               |
 | expect bob in roster           | expect roster contains bob                                 |
 | expect bob not in roster       | expect roster does not contain bob                         |
 | expect message from alice "hi" | expect inbound message from alice body "hi"                |
