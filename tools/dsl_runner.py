@@ -32,6 +32,7 @@ class SessionState:
     last_events_query: dict[str, Any] | None = None
     last_home_query: dict[str, Any] | None = None
     last_home_snapshot: set[str] = field(default_factory=set)
+    snapshot_bounds: dict[str, int] = field(default_factory=dict)
     last_read_update: dict[str, Any] | None = None
 
 
@@ -698,6 +699,8 @@ class DSLRunner:
             if session.user not in group.members:
                 raise ExpectationFailed("error forbidden")
             feed = target
+        elif target.startswith("private:"):
+            feed = self._resolve_feed(session, target)
         else:
             feed = self._private_feed(session.user, target)
 
@@ -715,6 +718,7 @@ class DSLRunner:
         ]
         page, has_more, next_cursor, next_offset = self._paginate_items(items, limit, 0)
         session.last_inbox_query = {"feed": feed, "limit": limit, "offset": next_offset}
+        session.snapshot_bounds[feed] = len(log)
         snapshot = f"snapshot:{feed}:{len(log)}"
         self.last_result = QueryResult(
             kind="inbox",
@@ -732,7 +736,11 @@ class DSLRunner:
 
         m = re.match(r"query inbox (\S+) continue$", line)
         if m:
-            requested_feed = self._private_feed(session.user, m.group(1))
+            requested_token = m.group(1)
+            if requested_token.startswith("private:"):
+                requested_feed = self._resolve_feed(session, requested_token)
+            else:
+                requested_feed = self._private_feed(session.user, requested_token)
             if requested_feed != ctx["feed"]:
                 raise ExpectationFailed("error badRequest")
 
@@ -753,6 +761,7 @@ class DSLRunner:
         ]
         page, has_more, next_cursor, next_offset = self._paginate_items(items, limit, offset)
         session.last_inbox_query = {"feed": feed, "limit": limit, "offset": next_offset}
+        session.snapshot_bounds[feed] = len(log)
         snapshot = f"snapshot:{feed}:{len(log)}"
         self.last_result = QueryResult(
             kind="inbox",
@@ -781,6 +790,7 @@ class DSLRunner:
                 "snapshot": ctx["snapshot"],
             }
             session.last_home_snapshot = set(feeds)
+            session.snapshot_bounds.update({feed: len(self.world.feed_logs.get(feed, [])) for feed in feeds})
             self.last_result = QueryResult(
                 kind="home",
                 items=page,
@@ -816,6 +826,7 @@ class DSLRunner:
             "snapshot": snapshot,
         }
         session.last_home_snapshot = set(feeds)
+        session.snapshot_bounds.update({feed: len(self.world.feed_logs.get(feed, [])) for feed in feeds})
         self.last_result = QueryResult(
             kind="home",
             items=page,
@@ -842,8 +853,9 @@ class DSLRunner:
             if session.user not in group.members:
                 raise ExpectationFailed("error forbidden")
 
+        explicit_zero = False
         if after_token == "cursor":
-            after = session.last_observed_seq.get(feed, len(self.world.feed_logs.get(feed, [])))
+            after = self.world.read_cursors.get((session.user, feed), 0)
             limit = int(limit_token) if limit_token else None
         elif after_token == "next":
             if not session.last_events_query or session.last_events_query["feed"] != feed:
@@ -851,17 +863,18 @@ class DSLRunner:
             after = session.last_events_query["next_seq"]
             limit = int(limit_token) if limit_token else session.last_events_query.get("limit")
         elif after_token == "snapshot":
-            if self.last_result and self.last_result.kind == "home" and feed not in session.last_home_snapshot:
+            if feed not in session.snapshot_bounds:
                 raise ExpectationFailed("error badRequest")
             if feed.startswith("group:"):
                 self._group_or_raise(feed.split(":", 1)[1])
-            after = 0
+            after = session.snapshot_bounds[feed]
             limit = int(limit_token) if limit_token else None
         else:
             after = int(after_token)
+            explicit_zero = after == 0
             limit = int(limit_token) if limit_token else None
 
-        if after == 0:
+        if explicit_zero:
             raise ExpectationFailed("error gap")
 
         log = self.world.feed_logs.get(feed, [])
@@ -869,6 +882,8 @@ class DSLRunner:
         page, has_more, next_cursor, next_offset = self._paginate_items(records, limit, 0)
 
         next_seq = page[-1].seq if page else after
+        if page:
+            session.last_observed_seq[feed] = next_seq
         session.last_events_query = {
             "feed": feed,
             "next_seq": next_seq,

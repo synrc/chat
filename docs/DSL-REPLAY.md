@@ -76,6 +76,7 @@ auth
 session bob
 connect
 auth
+add alice to roster
 
 session alice
 send message to bob "m1"
@@ -109,6 +110,7 @@ auth
 session bob
 connect
 auth
+add alice to roster
 
 session alice
 send message to bob "m1"
@@ -147,6 +149,7 @@ auth
 session bob
 connect
 auth
+add alice to roster
 
 session alice
 send message to bob "m1"
@@ -188,11 +191,17 @@ scenario home bootstrap multi-feed replay
 session bob
 connect
 auth
+add alice to roster
 
 session alice
+connect
+auth
 create group room1
 add bob to group room1
+send message to bob "p1"
+send message to group:room1 "g1"
 
+session bob
 bootstrap home limit 20 preview 1
 
 expect feeds
@@ -323,6 +332,12 @@ auth
 query events alice after 0
 expect error gap
 
+session alice
+connect
+auth
+send message to bob "m1"
+
+session bob
 query inbox alice
 expect messages
 ```
@@ -339,6 +354,12 @@ auth
 query events alice after 0
 expect error gap
 
+session alice
+connect
+auth
+send message to bob "m1"
+
+session bob
 query inbox alice
 expect messages
 expect snapshot
@@ -395,6 +416,22 @@ auth
 query events alice after 0
 expect error gap
 
+session alice
+connect
+auth
+send message to bob "m1"
+send message to bob "m2"
+send message to bob "m3"
+send message to bob "m4"
+send message to bob "m5"
+send message to bob "m6"
+send message to bob "m7"
+send message to bob "m8"
+send message to bob "m9"
+send message to bob "m10"
+send message to bob "m11"
+
+session bob
 query inbox alice limit 10
 expect messages
 expect snapshot
