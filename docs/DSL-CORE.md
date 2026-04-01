@@ -208,6 +208,9 @@ shared home snapshot інтерпретується як replay boundary
 - `expect <user> is owner` означає, що user має owner role у поточній group
 - `expect <user> is member` означає, що user є member поточної group
 - `expect <user> is member of group <name>` означає, що user є member вказаної group
+- `expect groups` означає, що result містить список group/conference ресурсів
+- `expect members` означає, що result містить список member для поточної group
+- `expect <name> in groups` означає, що group <name> присутня у поточному group list result
 
 Argument rules застосовуються до обох рівнів DSL (canonical і exact).
 
@@ -253,6 +256,12 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | expect alice is owner          | expect member alice role owner                             |
 | expect alice is member         | expect member alice role member-or-owner                   |
 | expect bob is member of group room1 | expect member bob in group:room1                      |
+| query group room1              | query conference get name room1                            |
+| query groups                   | query conference list type group                           |
+| query members of group room1   | query member list feed group:room1                         |
+| expect groups                  | expect result contains groups                              |
+| expect members                 | expect result contains members                             |
+| expect room1 in groups         | expect groups contain room1                                |
 
 Canonical = sugar  
 Exact = protocol-observable semantics
@@ -359,4 +368,7 @@ Canonical roster DSL розділяє mutation і view:
 
 - якщо group видалена:
   - доступ до group feed → error notFound
+- `query group <name>` означає inspection конкретної conference/group
+- `query groups` означає list group/conference ресурсів
+- `query members of group <name>` означає inspection membership для цієї group
 
