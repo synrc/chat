@@ -22,6 +22,10 @@ class SessionState:
     user: str
     connected: bool = False
     authenticated: bool = False
+    access_token: str | None = None
+    refresh_token: str | None = None
+    token_revoked: bool = False
+    selected_vsn: str | None = None
     inbox: list[dict[str, Any]] = field(default_factory=list)
     last_observed_seq: dict[str, int] = field(default_factory=dict)
     last_inbox_query: dict[str, Any] | None = None
@@ -68,6 +72,7 @@ class ScenarioReport:
 @dataclass
 class World:
     sessions: dict[str, SessionState] = field(default_factory=dict)
+    supported_versions: tuple[str, ...] = ("v1", "v2")
     subscriptions: set[tuple[str, str]] = field(default_factory=set)
     moderation: set[tuple[str, str]] = field(default_factory=set)
     groups: dict[str, GroupState] = field(default_factory=dict)
@@ -214,7 +219,7 @@ class DSLRunner:
             self._switch_session(alias)
             return
 
-        if line == "connect":
+        if line == "connect" or line.startswith("connect "):
             self._require_session().connected = True
             return
 
@@ -229,7 +234,57 @@ class DSLRunner:
         if line == "auth":
             session = self._require_session()
             session.authenticated = True
+            self._issue_tokens(session)
             self.last_result = QueryResult(kind="auth", items=["authenticated"])
+            return
+
+        if line.startswith("auth password "):
+            session = self._require_session()
+            session.authenticated = True
+            self._issue_tokens(session)
+            self.last_result = QueryResult(kind="auth", items=["authenticated"])
+            return
+
+        if line == "auth resume":
+            session = self._require_session()
+            if session.token_revoked:
+                raise ExpectationFailed("error unauthorized")
+            session.authenticated = True
+            if session.access_token is None:
+                self._issue_tokens(session)
+            self.last_result = QueryResult(kind="auth", items=["authenticated", "same-session"])
+            return
+
+        if line.startswith("auth supportedVsn "):
+            session = self._require_session()
+            requested = re.findall(r"v\d+", line)
+            selected = None
+            for version in reversed(self.world.supported_versions):
+                if version in requested:
+                    selected = version
+                    break
+            if selected is None:
+                raise ExpectationFailed("error unsupported")
+            session.authenticated = True
+            session.selected_vsn = selected
+            self._issue_tokens(session)
+            self.last_result = QueryResult(kind="auth", items=[selected])
+            return
+
+        if line == "renew":
+            session = self._require_session()
+            if session.refresh_token is None or session.token_revoked:
+                raise ExpectationFailed("error unauthorized")
+            session.authenticated = True
+            self._issue_tokens(session)
+            self.last_result = QueryResult(kind="renew", items=["access-token-refreshed"])
+            return
+
+        if line == "revoke access token":
+            session = self._require_session()
+            session.token_revoked = True
+            session.authenticated = False
+            self.last_result = QueryResult(kind="revoke", items=["access-token-revoked"])
             return
 
         if line.startswith("send message to "):
@@ -292,6 +347,10 @@ class DSLRunner:
             self._query_members_of_group(line)
             return
 
+        if line.startswith("query cursor read feed "):
+            self._query_cursor_read(line)
+            return
+
         if line.startswith("query inbox "):
             self._query_inbox(line)
             return
@@ -340,6 +399,25 @@ class DSLRunner:
     def _private_feed(self, a: str, b: str) -> str:
         x, y = sorted([a, b])
         return f"private:{x}:{y}"
+
+    def _resolve_feed(self, session: SessionState, feed: str) -> str:
+        if feed.startswith("private:"):
+            peer = feed.split(":", 1)[1]
+            if ":" in peer:
+                return feed
+            return self._private_feed(session.user, peer)
+        return feed
+
+    def _issue_tokens(self, session: SessionState) -> None:
+        session.access_token = f"access-{uuid.uuid4()}"
+        session.refresh_token = f"refresh-{uuid.uuid4()}"
+        session.token_revoked = False
+
+    def _require_authenticated(self) -> SessionState:
+        session = self._require_session()
+        if not session.authenticated or session.token_revoked:
+            raise ExpectationFailed("error unauthorized")
+        return session
 
     def _parse_body(self, line: str) -> str:
         m = re.search(r'"(.*)"$', line)
@@ -390,9 +468,7 @@ class DSLRunner:
     # Commands / Queries
     # ----------------------------
     def _send_message(self, line: str) -> None:
-        session = self._require_session()
-        if not session.authenticated:
-            raise ExpectationFailed("error unauthorized")
+        session = self._require_authenticated()
 
         m = re.match(r'send message to ([^\s]+) "(.*)"$', line)
         if not m:
@@ -426,34 +502,34 @@ class DSLRunner:
         self.last_result = QueryResult(kind="subscription")
 
     def _query_roster(self) -> None:
-        session = self._require_session()
+        session = self._require_authenticated()
         items = sorted(target for actor, target in self.world.subscriptions if actor == session.user)
         self.last_result = QueryResult(kind="roster", items=items)
 
     def _query_subscriptions(self) -> None:
-        session = self._require_session()
+        session = self._require_authenticated()
         items = sorted(target for actor, target in self.world.subscriptions if actor == session.user)
         self.last_result = QueryResult(kind="subscriptions", items=items)
 
     def _ban(self, line: str) -> None:
-        session = self._require_session()
+        session = self._require_authenticated()
         target = line.split(maxsplit=1)[1].strip()
         self.world.moderation.add((session.user, target))
         self.last_result = QueryResult(kind="moderation", items=[target])
 
     def _unban(self, line: str) -> None:
-        session = self._require_session()
+        session = self._require_authenticated()
         target = line.split(maxsplit=1)[1].strip()
         self.world.moderation.discard((session.user, target))
         self.last_result = QueryResult(kind="moderation")
 
     def _query_moderation(self) -> None:
-        session = self._require_session()
+        session = self._require_authenticated()
         items = sorted(target for actor, target in self.world.moderation if actor == session.user)
         self.last_result = QueryResult(kind="moderation", items=items)
 
     def _create_group(self, line: str) -> None:
-        session = self._require_session()
+        session = self._require_authenticated()
         name = line.split(maxsplit=2)[2].strip()
         if name in self.world.groups and not self.world.groups[name].deleted:
             raise ExpectationFailed("error conflict")
@@ -461,7 +537,8 @@ class DSLRunner:
         self.last_result = QueryResult(kind="group", items=[name])
 
     def _delete_group(self, line: str) -> None:
-        session = self._require_session()
+        session = self._require_authenticated()
+        session = self._require_authenticated()
         name = line.split(maxsplit=2)[2].strip()
         group = self._group_or_raise(name)
         if session.user != group.owner:
@@ -470,7 +547,7 @@ class DSLRunner:
         self.last_result = QueryResult(kind="group")
 
     def _add_to_group(self, line: str) -> None:
-        session = self._require_session()
+        session = self._require_authenticated()
         m = re.match(r"add (\S+) to group (\S+)$", line)
         if not m:
             raise DSLRunnerError(f"Bad add-to-group syntax: {line}")
@@ -482,7 +559,7 @@ class DSLRunner:
         self.last_result = QueryResult(kind="member", items=[user])
 
     def _remove_from_group(self, line: str) -> None:
-        session = self._require_session()
+        session = self._require_authenticated()
         m = re.match(r"remove (\S+) from group (\S+)$", line)
         if not m:
             raise DSLRunnerError(f"Bad remove-from-group syntax: {line}")
@@ -496,6 +573,7 @@ class DSLRunner:
         self.last_result = QueryResult(kind="member", items=[user])
 
     def _query_group(self, line: str) -> None:
+        session = self._require_authenticated()
         name = line.split(maxsplit=2)[2].strip()
         group = self._group_or_raise(name)
         self.last_result = QueryResult(kind="group", items=[group])
@@ -505,12 +583,47 @@ class DSLRunner:
         self.last_result = QueryResult(kind="groups", items=items)
 
     def _query_members_of_group(self, line: str) -> None:
+        session = self._require_authenticated()
         group_name = line.split("query members of group ", 1)[1].strip()
         group = self._group_or_raise(group_name)
         self.last_result = QueryResult(kind="members", items=sorted(group.members))
 
+    def _query_cursor_read(self, line: str) -> None:
+        session = self._require_authenticated()
+        m = re.match(r"query cursor read feed (\S+) seq (\d+)$", line)
+        if not m:
+            raise DSLRunnerError(f"Bad query cursor read syntax: {line}")
+        feed_token, seq_text = m.groups()
+        feed = self._resolve_feed(session, feed_token)
+        seq = int(seq_text)
+
+        if feed.startswith("group:"):
+            group_name = feed.split(":", 1)[1]
+            group = self._group_or_raise(group_name)
+            if session.user not in group.members:
+                raise ExpectationFailed("error forbidden")
+
+        if feed.startswith("private:"):
+            _, a, b = feed.split(":")
+            if session.user not in {a, b}:
+                raise ExpectationFailed("error badRequest")
+
+        head = len(self.world.feed_logs.get(feed, []))
+        if seq > head:
+            raise ExpectationFailed("error badRequest")
+
+        key = (session.user, feed)
+        prev = self.world.read_cursors.get(key, 0)
+        self.world.read_cursors[key] = max(prev, seq)
+        updated = self.world.read_cursors[key] != prev
+        self.last_result = QueryResult(
+            kind="read",
+            items=[self.world.read_cursors[key]],
+            error="updated" if updated else "unchanged",
+        )
+
     def _query_inbox(self, line: str) -> None:
-        session = self._require_session()
+        session = self._require_authenticated()
         target = line.split(maxsplit=2)[2].strip()
         if target.startswith("group:"):
             group_name = target.split(":", 1)[1]
@@ -527,7 +640,7 @@ class DSLRunner:
         self.last_result = QueryResult(kind="inbox", items=items, snapshot=snapshot)
 
     def _query_home(self, line: str) -> None:
-        session = self._require_session()
+        session = self._require_authenticated()
         feeds: list[str] = []
         for actor, target in self.world.subscriptions:
             if actor == session.user:
@@ -541,7 +654,7 @@ class DSLRunner:
         self.last_result = QueryResult(kind="home", items=feeds, snapshot=snapshot)
 
     def _query_events(self, line: str) -> None:
-        session = self._require_session()
+        session = self._require_authenticated()
         m = re.match(r"query events (\S+) after (\S+)(?: limit (\d+))?$", line)
         if not m:
             raise DSLRunnerError(f"Bad query events syntax: {line}")
@@ -549,7 +662,7 @@ class DSLRunner:
         limit = int(limit_token) if limit_token else None
 
         if target.startswith("group:") or target.startswith("private:"):
-            feed = target
+            feed = self._resolve_feed(session, target)
         else:
             feed = self._private_feed(session.user, target)
 
@@ -560,7 +673,7 @@ class DSLRunner:
                 raise ExpectationFailed("error forbidden")
 
         if after_token == "cursor":
-            after = session.last_events_query["next_seq"] if session.last_events_query else 0
+            after = session.last_observed_seq.get(feed, 0)
         elif after_token == "next":
             if not session.last_events_query:
                 raise ExpectationFailed("error badRequest")
@@ -573,6 +686,9 @@ class DSLRunner:
             after = 0
         else:
             after = int(after_token)
+
+        if after == 0:
+            raise ExpectationFailed("error gap")
 
         log = self.world.feed_logs.get(feed, [])
         records = [self.world.messages[mid] for mid in log if self.world.messages[mid].seq > after]
@@ -593,7 +709,7 @@ class DSLRunner:
         )
 
     def _send_read_for_last(self) -> None:
-        session = self._require_session()
+        session = self._require_authenticated()
         if not session.last_observed_seq:
             raise ExpectationFailed("error badRequest")
         if session.last_events_query:
@@ -611,11 +727,11 @@ class DSLRunner:
         self._update_read_cursor(session.user, feed, seq)
 
     def _send_read_for_last_explicit_feed(self, line: str) -> None:
-        session = self._require_session()
+        session = self._require_authenticated()
         m = re.match(r"send read (\S+) for last$", line)
         if not m:
             raise DSLRunnerError(f"Bad send read syntax: {line}")
-        feed = m.group(1)
+        feed = self._resolve_feed(session, m.group(1))
         seq = session.last_observed_seq.get(feed)
         if seq is None:
             raise ExpectationFailed("error badRequest")
@@ -625,7 +741,12 @@ class DSLRunner:
         key = (user, feed)
         current = self.world.read_cursors.get(key, 0)
         self.world.read_cursors[key] = max(current, seq)
-        self.last_result = QueryResult(kind="read", items=[self.world.read_cursors[key]])
+        updated = self.world.read_cursors[key] != current
+        self.last_result = QueryResult(
+            kind="read",
+            items=[self.world.read_cursors[key]],
+            error="updated" if updated else "unchanged",
+        )
 
     # ----------------------------
     # Expect
@@ -640,6 +761,21 @@ class DSLRunner:
 
         if line == "expect session created":
             if not session.authenticated:
+                raise ExpectationFailed(line)
+            return
+
+        if line == "expect same session":
+            if not self.last_result or self.last_result.kind != "auth" or "same-session" not in self.last_result.items:
+                raise ExpectationFailed(line)
+            return
+
+        if line == "expect access token":
+            if session.access_token is None:
+                raise ExpectationFailed(line)
+            return
+
+        if line == "expect access token refreshed":
+            if not self.last_result or self.last_result.kind != "renew":
                 raise ExpectationFailed(line)
             return
 
@@ -693,6 +829,11 @@ class DSLRunner:
                 raise ExpectationFailed(line)
             return
 
+        if line == "expect events non-empty":
+            if not self.last_result or self.last_result.kind != "events" or not self.last_result.items:
+                raise ExpectationFailed(line)
+            return
+
         if line == "expect more":
             if not self.last_result or not self.last_result.has_more:
                 raise ExpectationFailed(line)
@@ -715,6 +856,21 @@ class DSLRunner:
 
         if line == "expect snapshot":
             if not self.last_result or not self.last_result.snapshot:
+                raise ExpectationFailed(line)
+            return
+
+        if line == "expect message marked as read":
+            if not self.last_result or self.last_result.kind != "read":
+                raise ExpectationFailed(line)
+            return
+
+        if line == "expect read cursor updated":
+            if not self.last_result or self.last_result.kind != "read" or self.last_result.error != "updated":
+                raise ExpectationFailed(line)
+            return
+
+        if line == "expect read cursor unchanged":
+            if not self.last_result or self.last_result.kind != "read" or self.last_result.error != "unchanged":
                 raise ExpectationFailed(line)
             return
 
@@ -755,6 +911,35 @@ class DSLRunner:
             if self.pending_error != "error gap":
                 raise ExpectationFailed(line)
             return
+        m = re.match(r"expect read cursor updated in (\S+)$", line)
+        if m:
+            feed = self._resolve_feed(session, m.group(1))
+            if not self.last_result or self.last_result.kind != "read" or self.last_result.error != "updated":
+                raise ExpectationFailed(line)
+            read_feed = self.last_inbox_query["feed"] if self.last_inbox_query else None
+            read_feed = read_feed or (self.last_events_query["feed"] if self.last_events_query else None)
+            if read_feed is not None and read_feed != feed:
+                raise ExpectationFailed(line)
+            return
+
+        m = re.match(r"expect read cursor unchanged in (\S+)$", line)
+        if m:
+            feed = self._resolve_feed(session, m.group(1))
+            if not self.last_result or self.last_result.kind != "read" or self.last_result.error != "unchanged":
+                raise ExpectationFailed(line)
+            read_feed = self.last_inbox_query["feed"] if self.last_inbox_query else None
+            read_feed = read_feed or (self.last_events_query["feed"] if self.last_events_query else None)
+            if read_feed is not None and read_feed != feed:
+                raise ExpectationFailed(line)
+            return
+
+        m = re.match(r"expect selectedVsn (v\d+)$", line)
+        if m:
+            selected = m.group(1)
+            if session.selected_vsn != selected:
+                raise ExpectationFailed(line)
+            return
+
         m = re.match(r'expect message from (\S+) body "(.*)"$', line)
         if m:
             sender, body = m.groups()
@@ -844,6 +1029,13 @@ class DSLRunner:
                 raise ExpectationFailed(line)
             names = {g.name for g in self.last_result.items}
             if name not in names:
+                raise ExpectationFailed(line)
+            return
+
+        m = re.match(r"expect events count <= (\d+)$", line)
+        if m:
+            n = int(m.group(1))
+            if not self.last_result or self.last_result.kind != "events" or len(self.last_result.items) > n:
                 raise ExpectationFailed(line)
             return
 
