@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import argparse
 import re
-import shlex
+import sys
 import uuid
 from dataclasses import dataclass, field
 from typing import Any
@@ -58,6 +59,13 @@ class QueryResult:
 
 
 @dataclass
+class ScenarioReport:
+    name: str
+    status: str
+    error: str | None = None
+
+
+@dataclass
 class World:
     sessions: dict[str, SessionState] = field(default_factory=dict)
     subscriptions: set[tuple[str, str]] = field(default_factory=set)
@@ -69,12 +77,20 @@ class World:
 
 
 class DSLRunner:
-    def __init__(self) -> None:
+    def __init__(self, trace: bool = False) -> None:
         self.world = World()
         self.current_alias: str | None = None
         self.last_result: QueryResult | None = None
         self.pending_error: str | None = None
         self.skip_scenario = False
+        self.trace = trace
+        self.reports: list[ScenarioReport] = []
+        self.unsupported_scenarios = {
+            "delete overrides reordered edit",
+            "late delete after edit",
+            "version negotiation",
+            "federation routing",
+        }
 
     def _reset_for_scenario(self) -> None:
         self.world = World()
@@ -82,6 +98,10 @@ class DSLRunner:
         self.last_result = None
         self.pending_error = None
         self.skip_scenario = False
+
+    def _trace(self, message: str) -> None:
+        if self.trace:
+            print(message)
 
     # ----------------------------
     # Public API
@@ -111,57 +131,79 @@ class DSLRunner:
         return line.startswith(prefixes)
 
     def run(self, script: str) -> None:
+        self.reports = []
+        current_scenario: str | None = None
+        current_status: str | None = None
+        current_error: str | None = None
+
+        def finalize_current() -> None:
+            nonlocal current_scenario, current_status, current_error
+            if current_scenario is None:
+                return
+            status = current_status or ("skip" if self.skip_scenario else "pass")
+            self.reports.append(ScenarioReport(current_scenario, status, current_error))
+            if status == "pass":
+                self._trace(f"PASS  {current_scenario}")
+            elif status == "skip":
+                self._trace(f"SKIP  {current_scenario}")
+            else:
+                self._trace(f"FAIL  {current_scenario}: {current_error}")
+
         for raw in script.splitlines():
             line = raw.strip()
 
             if not line:
                 continue
 
-            # markdown / prose
             if (
-                    line.startswith("#")
-                    or line.startswith(">")
-                    or line.startswith("```")
-                    or line.startswith("---")
-                    or line.startswith("- ")
+                line.startswith("#")
+                or line.startswith(">")
+                or line.startswith("```")
+                or line.startswith("---")
+                or line.startswith("- ")
             ):
                 continue
 
-            # each scenario runs in isolated state
-            # each scenario runs in isolated state
             if line.startswith("scenario "):
+                finalize_current()
+                current_scenario = line[len("scenario "):].strip()
+                current_status = None
+                current_error = None
                 self._reset_for_scenario()
 
-                unsupported = {
-                    "delete overrides reordered edit",
-                    "late delete after edit",
-                    "version negotiation",
-                    "federation routing",
-                }
-
-                scenario_name = line[len("scenario "):].strip()
-                if scenario_name in unsupported:
+                if current_scenario in self.unsupported_scenarios:
                     self.skip_scenario = True
-
+                    current_status = "skip"
+                    current_error = "unsupported by current runner"
+                else:
+                    self._trace(f"SCENARIO  {current_scenario}")
                 continue
 
             if self.skip_scenario:
                 continue
 
-            # ignore plain prose lines that are not DSL commands/expectations
             if not self._looks_like_dsl(line):
                 continue
 
+            self._trace(f"> {line}")
             is_expect = line.startswith("expect ")
 
-            if is_expect:
-                self.execute(line)
-            else:
-                try:
+            try:
+                if is_expect:
                     self.execute(line)
-                except ExpectationFailed as e:
-                    self.pending_error = str(e)
-                    self.last_result = QueryResult(kind="error", error=str(e))
+                else:
+                    try:
+                        self.execute(line)
+                    except ExpectationFailed as e:
+                        self.pending_error = str(e)
+                        self.last_result = QueryResult(kind="error", error=str(e))
+                        self._trace(f"  error={e}")
+            except DSLRunnerError as e:
+                current_status = "fail"
+                current_error = f"{line}: {e}"
+                self.skip_scenario = True
+
+        finalize_current()
 
     def execute(self, line: str) -> None:
         if not line.startswith("expect "):
@@ -822,14 +864,32 @@ class DSLRunner:
             raise ExpectationFailed(f"Expected result kind in {allowed}, got {self.last_result.kind if self.last_result else None}")
 
 
-import sys
-
 if __name__ == "__main__":
-    runner = DSLRunner()
+    parser = argparse.ArgumentParser(description="Run DSL scenarios against the semantic model")
+    parser.add_argument("dsl_file", help="Path to the DSL markdown file")
+    parser.add_argument("--trace", action="store_true", help="Print scenario execution trace")
+    args = parser.parse_args()
 
-    if len(sys.argv) == 2:
-        with open(sys.argv[1]) as f:
-            runner.run(f.read())
-        print(f"OK: {sys.argv[1]}")
-    else:
-        print("Usage: python dsl_runner.py <dsl_file>")
+    runner = DSLRunner(trace=args.trace)
+
+    with open(args.dsl_file, encoding="utf-8") as f:
+        runner.run(f.read())
+
+    failed = [r for r in runner.reports if r.status == "fail"]
+    skipped = [r for r in runner.reports if r.status == "skip"]
+    passed = [r for r in runner.reports if r.status == "pass"]
+
+    for report in runner.reports:
+        if report.status == "pass":
+            print(f"PASS: {report.name}")
+        elif report.status == "skip":
+            print(f"SKIP: {report.name} ({report.error})")
+        else:
+            print(f"FAIL: {report.name} :: {report.error}")
+
+    print(
+        f"SUMMARY: passed={len(passed)} skipped={len(skipped)} failed={len(failed)} file={args.dsl_file}"
+    )
+
+    if failed:
+        sys.exit(1)
