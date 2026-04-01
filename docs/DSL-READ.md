@@ -278,6 +278,7 @@ auth
 session alice
 create group room1
 add bob to group room1
+add carol to group room1
 
 session alice
 send message to bob "p1"
