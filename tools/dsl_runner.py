@@ -1107,8 +1107,8 @@ class DSLRunner:
             feed = self._resolve_feed(session, m.group(1))
             if not self.last_result or self.last_result.kind != "read" or self.last_result.error != "updated":
                 raise ExpectationFailed(line)
-            read_feed = self.last_inbox_query["feed"] if self.last_inbox_query else None
-            read_feed = read_feed or (self.last_events_query["feed"] if self.last_events_query else None)
+            read_feed = session.last_inbox_query["feed"] if session.last_inbox_query else None
+            read_feed = read_feed or (session.last_events_query["feed"] if session.last_events_query else None)
             if read_feed is not None and read_feed != feed:
                 raise ExpectationFailed(line)
             return
@@ -1118,8 +1118,8 @@ class DSLRunner:
             feed = self._resolve_feed(session, m.group(1))
             if not self.last_result or self.last_result.kind != "read" or self.last_result.error != "unchanged":
                 raise ExpectationFailed(line)
-            read_feed = self.last_inbox_query["feed"] if self.last_inbox_query else None
-            read_feed = read_feed or (self.last_events_query["feed"] if self.last_events_query else None)
+            read_feed = session.last_inbox_query["feed"] if session.last_inbox_query else None
+            read_feed = read_feed or (session.last_events_query["feed"] if session.last_events_query else None)
             if read_feed is not None and read_feed != feed:
                 raise ExpectationFailed(line)
             return
