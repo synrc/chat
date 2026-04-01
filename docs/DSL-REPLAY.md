@@ -21,7 +21,7 @@ wait 500ms
 reconnect
 
 session bob
-query events bob after cursor
+query events alice after cursor
 
 expect events non-empty
 ```
@@ -50,7 +50,7 @@ wait 500ms
 reconnect
 
 session bob
-query events bob after cursor limit 1
+query events alice after cursor limit 1
 
 expect events count <= 1
 expect more
@@ -237,7 +237,7 @@ wait 500ms
 reconnect
 
 session bob
-query events bob after cursor limit 2
+query events alice after cursor limit 2
 expect events
 
 session alice
