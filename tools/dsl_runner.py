@@ -109,6 +109,16 @@ class DSLRunner:
         if self.trace:
             print(message)
 
+    def _preserves_pending_error(self, line: str) -> bool:
+        return (
+            line.startswith("session ")
+            or line.startswith("wait ")
+            or line == "connect"
+            or line.startswith("connect ")
+            or line == "disconnect"
+            or line == "reconnect"
+        )
+
     # ----------------------------
     # Public API
     # ----------------------------
@@ -214,7 +224,7 @@ class DSLRunner:
         finalize_current()
 
     def execute(self, line: str) -> None:
-        if not line.startswith("expect "):
+        if not line.startswith("expect ") and not self._preserves_pending_error(line):
             self.pending_error = None
 
         if line.startswith("session "):
@@ -1056,6 +1066,13 @@ class DSLRunner:
         if line == "expect no duplicates" or line == "expect no gaps" or line == "expect no duplicate side effects":
             return
 
+        m = re.match(r"expect not error (\S+)$", line)
+        if m:
+            expected_error = f"error {m.group(1)}"
+            if self.pending_error == expected_error:
+                raise ExpectationFailed(line)
+            return
+
         if line == "expect error forbidden":
             if self.pending_error != "error forbidden":
                 raise ExpectationFailed(line)
@@ -1234,10 +1251,12 @@ class DSLRunner:
                 raise ExpectationFailed(line)
             return
 
-        m = re.match(r"expect result items = 0$", line)
-        if not self.last_result or self.last_result.items:
-            raise ExpectationFailed(line)
-        return
+        if line == "expect result items = 0":
+            if not self.last_result or self.last_result.items:
+                raise ExpectationFailed(line)
+            return
+
+        raise DSLRunnerError(f"Unsupported expect line: {line}")
 
     def _expect_last_kind(self, *allowed: str) -> None:
         if not self.last_result or self.last_result.kind not in allowed:
