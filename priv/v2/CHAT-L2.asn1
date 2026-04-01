@@ -1192,7 +1192,27 @@ BEGIN
     --       - Roster (relation view)
     --
     --   * Home є агрегованим bootstrap/view ресурсом.
-
+    --
+    -- Home vs Inbox
+    --
+    --   * Home використовується для:
+    --       - reconnect bootstrap
+    --       - home screen / dialog list
+    --       - multi-feed preview
+    --
+    --   * Inbox використовується для:
+    --       - точного per-feed snapshot
+    --       - gap recovery
+    --       - message retrieval у межах одного feed
+    --
+    --   * Home не замінює Inbox:
+    --       - Home є агрегованим multi-feed view
+    --       - Inbox є точним feed-scoped snapshot
+    --
+    --   * Для повного recovery окремого feed клієнт повинен
+    --     використовувати InboxQuery або Event replay,
+    --     залежно від recovery context.
+    --
     HomeOp ::= ENUMERATED {
        get  (1),
        list (2),
@@ -1255,6 +1275,29 @@ BEGIN
     --       - можливі race conditions з новими подіями
     --
     --   * Home snapshot узгоджений лише у межах однієї відповіді.
+    --
+    -- Home replay semantics
+    --
+    --   * Home snapshot MAY використовуватись як bootstrap boundary
+    --     для подальшого Event replay у feed, already covered цим HomeAnswer.
+    --
+    --   * При використанні:
+    --
+    --       query events <feed> after snapshot
+    --
+    --     сервер повинен інтерпретувати snapshot
+    --     як replay boundary для цього конкретного feed
+    --     у межах відповідного home snapshot context.
+    --
+    --   * Replay після home snapshot не повинен:
+    --       - дублювати події, already covered home snapshot
+    --       - залишати gap між home snapshot і event replay
+    --
+    --   * Replay після home snapshot повинен повертати
+    --     тільки події, що не покриті цим snapshot boundary.
+    --
+    --   * Якщо feed не був покритий даним HomeAnswer,
+    --     snapshot не повинен використовуватись для replay цього feed.
     --
     HomeAnswer ::= SEQUENCE {
        items     [0] SEQUENCE OF item HomeItem OPTIONAL,
