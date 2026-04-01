@@ -125,7 +125,7 @@ expect feeds
 expect previews
 expect shared snapshot
 
-query events bob after snapshot
+query events alice after snapshot
 
 expect no duplicates
 expect no gaps
@@ -166,6 +166,7 @@ expect shared snapshot
 session alice
 send message to bob "m3"
 
+session bob
 query events bob after snapshot
 
 expect no duplicates
@@ -247,7 +248,7 @@ session bob
 send read for last
 
 session bob
-query events bob after next
+query events alice after next
 
 expect events
 expect no duplicates
@@ -301,7 +302,7 @@ session bob
 connect
 auth
 
-query events bob after 0
+query events alice after 0
 
 expect error gap
 ```
@@ -317,10 +318,10 @@ session bob
 connect
 auth
 
-query events bob after 0
+query events alice after 0
 expect error gap
 
-query inbox bob
+query inbox alice
 expect messages
 ```
 
@@ -333,14 +334,14 @@ session bob
 connect
 auth
 
-query events bob after 0
+query events alice after 0
 expect error gap
 
-query inbox bob
+query inbox alice
 expect messages
 expect snapshot
 
-query events bob after snapshot
+query events alice after snapshot
 ```
 
 - після gap recovery через inbox клієнт отримує snapshot anchor
@@ -356,7 +357,7 @@ session bob
 connect
 auth
 
-query events bob after 0
+query events alice after 0
 expect error gap
 
 session alice
@@ -367,12 +368,12 @@ session alice
 send message to bob "m3"
 
 session bob
-query inbox bob
+query inbox alice
 expect messages
 expect snapshot
 
 session bob
-query events bob after snapshot
+query events alice after snapshot
 expect no duplicates
 expect no gaps
 ```
@@ -389,10 +390,10 @@ session bob
 connect
 auth
 
-query events bob after 0
+query events alice after 0
 expect error gap
 
-query inbox bob limit 10
+query inbox alice limit 10
 expect messages
 expect snapshot
 expect more
@@ -400,7 +401,7 @@ expect more
 query inbox continue
 expect messages
 
-query events bob after snapshot
+query events alice after snapshot
 expect no duplicates
 expect no gaps
 ```
