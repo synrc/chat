@@ -64,6 +64,9 @@ DSL використовує два стилі: short і exact.
 - `query events bob after 100 limit 10` — `bob` інтерпретується як feed alias
 - `send read for last` — read у дефолтному/поточному feed контексті
 - `send read <feed> for last` — read у явно вказаному feed
+- `add bob to roster` — додати bob у roster (створити односторонній зв’язок)
+- `remove bob from roster` — видалити bob з roster (прибрати односторонній зв’язок)
+- `query roster` — отримати поточний список контактів користувача
 
 
 #### Exact style
@@ -127,6 +130,8 @@ DSL підтримує symbolic cursor значення:
 - `expect no duplicate side effects` означає, що повторна доставка вже отриманого event/message не змінює state повторно
 - `expect message deleted` означає, що final state message є deleted
 - `expect not message body "<text>"` означає, що цей body більше не спостерігається у final state message
+- `expect bob in roster` означає, що bob присутній у поточному roster view
+- `expect bob not in roster` означає, що bob відсутній у поточному roster view
 
 Argument rules застосовуються до обох рівнів DSL (canonical і exact).
 
@@ -137,6 +142,11 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | auth                           | authority authenticate request                             |
 | auth resume                    | authority authenticate request with session/accessToken    |
 | renew                          | authority renew request with refreshToken                  |
+| add bob to roster              | TODO exact roster/relation form                            |
+| remove bob from roster         | TODO exact roster/relation form                            |
+| query roster                   | TODO exact roster query form                               |
+| expect bob in roster           | expect roster contains bob                                 |
+| expect bob not in roster       | expect roster does not contain bob                         |
 | expect message from alice "hi" | expect inbound message from alice body "hi"                |
 | send read for last             | query cursor read feed private:alice seq 123               |
 | expect more                    | expect hasMore true                                        |
@@ -195,4 +205,20 @@ query cursor read feed private:alice seq 123
 - `auth resume` означає спробу відновити існуючу session
 - `renew` означає перевидачу access token через refresh token
 - exact форма використовується там, де потрібно явно вказати token/session fields
+
+#### Roster semantics
+
+`add <user> to roster` означає додавання directed roster-visible relation
+для поточного користувача.
+
+`remove <user> from roster` означає видалення directed roster-visible relation
+для поточного користувача.
+
+`query roster` означає запит поточного roster view користувача.
+
+- roster у DSL трактується як view, а не як джерело істини для messaging authorization
+- add/remove у roster не означає автоматичний дозвіл або заборону direct messaging
+- relation може бути one-way або mutual
+- direct messaging у базовій моделі не залежить від наявності roster entry
+- relation-gated messaging може бути додана окремою policy, але не є частиною базової DSL semantics
 
