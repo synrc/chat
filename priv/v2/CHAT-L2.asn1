@@ -877,7 +877,23 @@ BEGIN
     -- Payload уже розбитий на доменні family envelope.
     -- Внутрішні request/result payload типи тимчасово залишаються opaque
     -- до поступової типізації кожної family окремо.
-
+    --
+    -- Query / Command Evaluation Semantics
+    --
+    --   * Кожна command/query оцінюється за поточним server state
+    --     на момент її обробки.
+    --
+    --   * Authorization, moderation policy, membership і existence resource
+    --     не фіксуються наперед transport-пакетом або snapshot boundary,
+    --     а перевіряються під час фактичного виконання.
+    --
+    --   * already accepted command не повинна відкочуватись ретроактивно
+    --     через пізнішу зміну policy/resource state
+    --     (наприклад ban, remove member, delete conference).
+    --
+    --   * Нова command після зміни policy/resource state
+    --     повинна оцінюватись уже за новим state.
+    --
     -- Reconnect Semantics
     --
     -- Транспортне зєднання може перериватись і відновлюватись.
@@ -1313,6 +1329,12 @@ BEGIN
     --
     --   * Home snapshot узгоджений лише у межах однієї відповіді.
     --
+    --   * Home snapshot не заморожує:
+    --       - authorization
+    --       - moderation policy
+    --       - membership
+    --       - existence resource
+    --
     -- Home replay semantics
     --
     --   * Home snapshot MAY використовуватись як bootstrap boundary
@@ -1335,6 +1357,14 @@ BEGIN
     --
     --   * Якщо feed не був покритий даним HomeAnswer,
     --     snapshot не повинен використовуватись для replay цього feed.
+    --
+    --   * Навіть якщо feed був покритий HomeAnswer,
+    --     подальші operations після snapshot
+    --     повинні перевірятись за поточним server state.
+    --
+    --   * Зокрема snapshot не гарантує,
+    --     що group/resource все ще існує
+    --     або що access policy не змінилась після snapshot.
     --
     HomeAnswer ::= SEQUENCE {
        items     [0] SEQUENCE OF item HomeItem OPTIONAL,
@@ -1908,6 +1938,14 @@ BEGIN
     --   * Така policy не означає автоматичного видалення relation state
     --     або roster entry.
     --
+    -- Conflict / Timing:
+    --
+    --   * Moderation restriction застосовується до нових operations,
+    --     що обробляються після того, як ban набув чинності на сервері.
+    --
+    --   * already accepted message або command
+    --     не повинна ретроактивно відхилятись через пізніший ban.
+    --
     ModerationOp ::= ENUMERATED {
        ban    (1),
        unban  (2),
@@ -2014,6 +2052,15 @@ BEGIN
     --
     --   * owner Conference також вважається валідним member
     --     для доступу до group feed.
+    --
+    -- Conflict / Timing:
+    --
+    --   * Зміна membership застосовується до нових operations,
+    --     що обробляються після того, як add/remove набув чинності.
+    --
+    --   * already accepted group message або command
+    --     не повинна відкочуватись ретроактивно
+    --     через пізніше remove membership.
     --
     MemberQuery ::= SEQUENCE {
        op    MemberOp,
@@ -2148,6 +2195,12 @@ BEGIN
     --
     --   * Видалення Conference робить відповідний group feed недоступним.
     --
+    --   * Це правило застосовується до нових operations після remove.
+    --
+    --   * already accepted group message / query result
+    --     не повинні відкочуватись ретроактивно
+    --     тільки через пізніше видалення Conference.
+    --
     ConferenceQuery ::= SEQUENCE {
        op    ConferenceOp,
        id    [0] Binary OPTIONAL,
@@ -2246,6 +2299,19 @@ BEGIN
     --   * Authoritative broker відповідає за порядок і seq у feed.
     --
     --   * Проміжні broker не змінюють payload.
+    --
+    -- Conflict / Race Semantics
+    --
+    --   * Protocol не гарантує serializable snapshot між commands і view queries.
+    --
+    --   * Policy/resource changes (ban, membership remove, conference delete)
+    --     можуть відбуватись між snapshot і наступною command.
+    --
+    --   * already accepted command зберігає свій ефект,
+    --     якщо інше явно не визначено окремою policy.
+    --
+    --   * new command після зміни state оцінюється
+    --     за актуальним server state.
     --
     -- Snapshot vs Stream:
     --
