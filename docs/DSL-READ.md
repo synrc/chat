@@ -145,13 +145,13 @@ expect message from alice body "m1"
 expect message from alice body "m2"
 
 session bob
-query cursor read feed private:bob seq 2
+query cursor read feed private:alice seq 2
 
 session bob
 expect read cursor updated
 
 session bob
-query cursor read feed private:bob seq 1
+query cursor read feed private:alice seq 1
 
 session bob
 expect read cursor unchanged
@@ -244,7 +244,7 @@ send message to bob "m1"
 send message to bob "m2"
 
 session bob
-query cursor read feed private:bob seq 2
+query cursor read feed private:alice seq 2
 
 session bob
 expect message from alice body "m1"

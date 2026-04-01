@@ -60,8 +60,8 @@ DSL використовує два стилі: short і exact.
 Приклади:
 
 - `send message to bob "hi"` — `bob` інтерпретується як target alias
-- `query inbox bob` — `bob` інтерпретується як feed alias
-- `query events bob after 100 limit 10` — `bob` інтерпретується як feed alias
+- `query inbox bob` — `bob` інтерпретується як private feed alias за peer alias
+- `query events bob after 100 limit 10` — `bob` інтерпретується як private feed alias за peer alias
 - `send read for last` — read у дефолтному/поточному feed контексті
 - `send read <feed> for last` — read у явно вказаному feed
 - `add bob to roster` — додати bob у roster (створити односторонній зв’язок)
@@ -86,11 +86,14 @@ DSL використовує два стилі: short і exact.
 контекст команди визначає, як інтерпретується identifier
 
 - у message context `bob` означає user/target alias
+- у private inbox/events/read context `bob` означає peer alias, а не current user alias
 - `query inbox bob` = `query inbox feed private:bob`
 - `query events bob after 100 limit 10` = `query events feed private:bob after 100 limit 10`
 - `query events bob after snapshot` після `query home` означає replay у feed `private:bob`,
   якщо цей feed був покритий попереднім home result
-- у inbox/events/read context `bob` означає feed alias
+- тобто у `session alice` alias `bob` означає приватний feed alice ↔ bob,
+  а у `session bob` alias `alice` означає той самий feed bob ↔ alice
+- у inbox/events/read context alias задає саме peer feed context
 - `query inbox continue` продовжує останній `query inbox ...` у межах того самого feed
 
 #### Home bootstrap
@@ -217,6 +220,7 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | expect more                    | expect hasMore true                                        |
 | query inbox continue           | query inbox feed private:alice continue                    |
 | query events bob after cursor  | query events feed private:bob after cursor                 |
+| query inbox bob                | query inbox feed private:bob                               |
 | expect events non-empty        | expect events count > 0                                    |
 | expect empty replay            | expect events = 0                                          |
 | expect no duplicates           | expect result has no duplicate items/events                |
@@ -280,6 +284,10 @@ query cursor read feed private:alice seq 123
 для поточного користувача.
 
 `query roster` означає запит поточного roster view користувача.
+
+У private feed query canonical alias завжди означає peer.
+Тобто назва private feed у DSL є user-facing назвою діалогу з іншим учасником,
+а не self-ідентифікатором поточної session.
 
 - roster у DSL трактується як view, а не як джерело істини для messaging authorization
 - add/remove у roster не означає автоматичний дозвіл або заборону direct messaging
