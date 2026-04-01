@@ -1193,6 +1193,18 @@ BEGIN
     --
     --   * Home є агрегованим bootstrap/view ресурсом.
     --
+    -- Home Query Model
+    --
+    --   * Home є єдиним bootstrap/view query.
+    --
+    --   * Окремий op для Home не використовується:
+    --       - сам факт QueryPayload.home означає home bootstrap request
+    --
+    --   * previewLimit обмежує кількість preview data на feed.
+    --
+    --   * includeRoster дозволяє клієнту явно запросити
+    --     optional roster view у складі HomeAnswer.
+    --
     -- Home vs Inbox
     --
     --   * Home використовується для:
@@ -1213,14 +1225,18 @@ BEGIN
     --     використовувати InboxQuery або Event replay,
     --     залежно від recovery context.
     --
-    HomeOp ::= ENUMERATED {
-       get  (1),
-       list (2),
-       ...
-    }
-
+    -- includeRoster semantics
+    --
+    --   * Якщо includeRoster = true,
+    --     сервер MAY включити roster view у HomeAnswer.
+    --
+    --   * Якщо includeRoster відсутній або false,
+    --     сервер MAY опустити roster для зменшення обсягу bootstrap result.
+    --
+    --   * includeRoster не змінює relation state
+    --     і не впливає на messaging semantics.
+    --
     HomeQuery ::= SEQUENCE {
-       op            HomeOp,
        previewLimit  [0] INTEGER OPTIONAL,
        includeRoster [1] BOOLEAN OPTIONAL,
        ...
