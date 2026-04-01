@@ -1,4 +1,22 @@
 > See DSL-CORE.md for language definition
+## Conflict semantics
+
+- authorization / policy / membership перевіряються за поточним server state
+  на момент обробки конкретної command
+
+- already accepted command не повинна відкочуватись ретроактивно
+  через пізніший `ban`, `remove member` або `delete group`
+
+- new command після зміни policy/resource state
+  повинна оцінюватись уже за новим state
+
+- snapshot / replay boundary не заморожує:
+    - authorization
+    - membership
+    - existence resource
+
+- snapshot дає recovery boundary,
+  але не гарантує, що resource або access policy не зміниться після нього
 
 ## ADV-1. Delete overrides reordered edit
 
@@ -70,7 +88,120 @@ expect not message body "m1 edited"
 - final state повідомлення не повинен залежати від проміжного UI state
 - TODO: у майбутньому можна уточнити exact форму через явні Event.id / timestamp
 ---
-## ADV-3. Version
+
+## ADV-3. Ban after accepted direct message
+```
+scenario ban after accepted direct message
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session bob
+send message to alice "m1"
+
+session alice
+ban bob
+
+expect message from bob body "m1"
+```
+---
+## ADV-4. Ban blocks next direct message
+```
+scenario ban blocks next direct message
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+ban bob
+
+session bob
+send message to alice "m2"
+
+expect error forbidden
+```
+---
+## ADV-5. Remove member after accepted group message
+```
+scenario remove member after accepted group message
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+create group room1
+add bob to group room1
+
+session bob
+send message to group:room1 "m1"
+
+session alice
+remove bob from group room1
+
+session alice
+expect message from bob body "m1"
+```
+---
+## ADV-6. Remove member blocks next group message
+```
+scenario remove member blocks next group message
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+create group room1
+add bob to group room1
+remove bob from group room1
+
+session bob
+send message to group:room1 "m2"
+
+expect error forbidden
+```
+---
+## ADV-7. Home snapshot then group deleted
+```
+scenario home snapshot then group deleted
+
+session alice
+connect
+auth
+
+create group room1
+
+bootstrap home
+
+expect shared snapshot
+
+delete group room1
+
+query inbox group:room1
+
+expect error notFound
+```
+---
+## ADV-8. Version
 
 ```
 scenario version negotiation
@@ -85,7 +216,7 @@ expect selectedVsn v2
 
 ---
 
-## ADV-4. Federation
+## ADV-9. Federation
 
 ```
 scenario federation routing
