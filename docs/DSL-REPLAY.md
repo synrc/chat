@@ -1,5 +1,5 @@
 > See DSL-CORE.md for language definition
-## Scenario 5. Replay
+## REPLAY-1. Replay
 
 ```
 scenario replay
@@ -26,7 +26,7 @@ query events bob after cursor
 expect events non-empty
 ```
 
-## Scenario 5a. Preview after reconnect
+## REPLAY-2. Preview after reconnect
 
 ```
 scenario preview after reconnect
@@ -64,7 +64,7 @@ send read for last
 - навіть якщо клієнт викликає read після preview,
   це не означає, що весь feed прочитано
 ---
-## Scenario 5aa. Home bootstrap after reconnect
+## REPLAY-3. Home bootstrap after reconnect
 
 ```
 scenario home bootstrap after reconnect
@@ -98,7 +98,7 @@ expect shared snapshot
 - home query є snapshot/view ресурсом
 - home query не означає `read`
 ---
-## Scenario 5ab. Home bootstrap then replay
+## REPLAY-4. Home bootstrap then replay
 ```
 scenario home bootstrap then replay
 
@@ -135,7 +135,7 @@ expect no gaps
 - replay після `snapshot` не повинен дублювати preview, уже покритий home result
 - replay після `snapshot` не повинен створювати розрив між bootstrap result і event stream
 ---
-## Scenario 5ac. Home bootstrap with concurrent message
+## REPLAY-5. Home bootstrap with concurrent message
 ```
 scenario home bootstrap with concurrent message
 
@@ -177,7 +177,7 @@ expect events
 - home bootstrap і replay разом повинні давати безшовний recovery boundary
 ---
 
-## Scenario 5ad. Home bootstrap multi-feed replay
+## REPLAY-6. Home bootstrap multi-feed replay
 
 ```
 scenario home bootstrap multi-feed replay
@@ -211,7 +211,7 @@ expect no gaps
 - кожен feed повинен мати узгоджений перехід від preview до replay
 - snapshot не означає, що всі feed мають однаковий seq boundary
 ---
-## Scenario 5b. Replay with concurrent read and new message
+## REPLAY-7. Replay with concurrent read and new message
 
 ```
 scenario replay read race
@@ -259,7 +259,7 @@ expect no duplicates
     - ламати cursor semantics
 - нові події з seq > next можуть з'являтись у наступній replay page
 
-## Scenario 5c. Duplicate event delivery
+## REPLAY-8. Duplicate event delivery
 
 ```
 scenario duplicate event delivery
@@ -290,7 +290,7 @@ expect no duplicate side effects
 - TODO: у майбутньому можна уточнити це через exact форму з явним Event.id
 ---
 
-## Scenario 6. Gap
+## REPLAY-9. Gap
 
 ```
 scenario gap
@@ -306,7 +306,7 @@ expect error gap
 
 ---
 
-## Scenario 7. Gap recovery
+## REPLAY-10. Gap recovery
 
 ```
 scenario gap recovery
@@ -322,7 +322,7 @@ query inbox bob
 expect messages
 ```
 
-## Scenario 7a. Gap recovery with replay anchor
+## REPLAY-11. Gap recovery with replay anchor
 
 ```
 scenario gap recovery with replay anchor
@@ -345,7 +345,7 @@ query events bob after snapshot
 - `snapshot` використовується для безшовного переходу назад у event replay
 - replay після snapshot повинен починатися з `seq > snapshot`
 
-## Scenario 7b. Gap recovery with concurrent message
+## REPLAY-12. Gap recovery with concurrent message
 
 ```
 scenario gap recovery with concurrent message
@@ -379,7 +379,7 @@ expect no gaps
 - replay після `snapshot` не повинен дублювати вже покриті дані
 - і не повинен залишати розрив між snapshot та replay
 
-## Scenario 7c. Paged snapshot recovery
+## REPLAY-13. Paged snapshot recovery
 ```
 scenario paged snapshot recovery
 
@@ -407,7 +407,7 @@ expect no gaps
 - replay після `snapshot` не повинен дублювати вже покриті дані
 - і не повинен створювати розрив між snapshot та replay
 
-## Scenario 7d. Multi-feed snapshot isolation
+## REPLAY-14. Multi-feed snapshot isolation
 
 ```
 scenario multi-feed snapshot isolation

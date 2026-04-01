@@ -1,6 +1,6 @@
 > See DSL-CORE.md for language definition
 
-## Scenario 9c. Delete overrides reordered edit
+## ADV-1. Delete overrides reordered edit
 
 ```
 scenario delete overrides reordered edit
@@ -35,7 +35,7 @@ expect not message body "m1 edited"
 - reorder подій не повинен ламати final state
 - TODO: у майбутньому можна уточнити exact форму через явні Event.id / timestamp
 ---
-## Scenario 9d. Late delete after edit
+## ADV-2. Late delete after edit
 
 ```
 scenario late delete after edit
@@ -70,7 +70,7 @@ expect not message body "m1 edited"
 - final state повідомлення не повинен залежати від проміжного UI state
 - TODO: у майбутньому можна уточнити exact форму через явні Event.id / timestamp
 ---
-## Scenario 10. Version
+## ADV-3. Version
 
 ```
 scenario version negotiation
@@ -85,7 +85,7 @@ expect selectedVsn v2
 
 ---
 
-## Scenario 11. Federation
+## ADV-4. Federation
 
 ```
 scenario federation routing

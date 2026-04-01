@@ -1,5 +1,5 @@
 > See DSL-CORE.md for language definition
-## Scenario 0. Basic authenticate
+## AUTH-1. Basic authenticate
 
 ```
 scenario basic authenticate
@@ -16,7 +16,7 @@ expect access token
 - після auth клієнт повинен отримати session context
 - після auth клієнт повинен отримати access token
 
-## Scenario 0a. Resume existing session
+## AUTH-2. Resume existing session
 
 ```
 scenario resume existing session
@@ -38,7 +38,7 @@ expect same session
 - `auth resume` означає спробу відновити існуючу session
 - при валідному auth context session повинна бути відновлена
 
-## Scenario 0b. Renew access token
+## AUTH-3. Renew access token
 
 ```
 scenario renew access token
@@ -54,7 +54,7 @@ expect access token refreshed
 - renew не створює нову session
 - renew перевидає access token через refresh token
 
-## Scenario 0c. Revoked access token denied
+## AUTH-4. Revoked access token denied
 
 ```
 scenario revoked access token denied
@@ -76,7 +76,7 @@ expect error unauthorized
 - revoke access token інвалідує поточну session
 - після revoke відновлення через старий access token не повинно проходити
 
-## Scenario 0d. Unsupported auth request
+## AUTH-5. Unsupported auth request
 
 ```
 scenario unsupported auth
@@ -92,7 +92,7 @@ expect error unsupported
   auth не повинен проходити
 - сервер повинен явно сигналізувати про unsupported конфігурацію
 
-## Scenario 0e. Replay without auth
+## AUTH-6. Replay without auth
 
 ```
 scenario replay without auth
@@ -106,7 +106,7 @@ expect error unauthorized
 ```
 - replay не повинен бути доступний без успішної аутентифікації
 - connect без auth не дає права на event replay
-## Scenario 0f. Renew then replay
+## AUTH-7. Renew then replay
 
 ```
 scenario renew then replay

@@ -1,6 +1,6 @@
 > See DSL-CORE.md for language definition
 
-## Scenario 1. Basic delivery
+## READ-1. Basic delivery
 
 ```
 scenario basic delivery
@@ -22,7 +22,7 @@ expect message from alice body "hi"
 
 ---
 
-## Scenario 2. Delivery + read
+## READ-2. Delivery + read
 
 ```
 scenario delivery + read
@@ -56,7 +56,7 @@ expect message marked as read
 - `expect message marked as read` означає оновлення read cursor, а не message-level flag
 ---
 
-## Scenario 3. Read cursor
+## READ-3. Read cursor
 
 ```
 scenario read cursor
@@ -92,7 +92,7 @@ expect read cursor updated
 
 ---
 
-## Scenario 4. Multi-session
+## READ-4. Multi-session
 
 ```
 scenario cross-session read sync
@@ -123,7 +123,7 @@ expect read cursor updated
 - read cursor синхронізується між усіма session користувача
 - unread є user-scoped і не повинен відрізнятись між session
 
-## Scenario 4a. Read backward ignored
+## READ-5. Read backward ignored
 
 ```
 scenario read backward ignored
@@ -161,7 +161,7 @@ expect read cursor unchanged
 - read cursor є монотонним
 
 
-## Scenario 4b. Read after reconnect
+## READ-6. Read after reconnect
 
 ```
 scenario read after reconnect
@@ -198,7 +198,7 @@ expect read cursor updated
 - read після reconnect лишається валідним
 
 
-## Scenario 4c. Read wrong feed
+## READ-7. Read wrong feed
 
 ```
 scenario read wrong feed
@@ -227,7 +227,7 @@ expect error badRequest
 - read update повинен бути узгоджений з feed
 - update в невалідному feed не повинен змінювати state
 
-## Scenario 4d. Read before delivery
+## READ-8. Read before delivery
 ```
 scenario read before delivery
 
@@ -258,7 +258,7 @@ expect message marked as read
 - read визначає позицію у feed, а не факт отримання повідомлення
 ---
 
-## Scenario 4e. Multi-feed read isolation
+## READ-9. Multi-feed read isolation
 
 ```
 scenario multi-feed read isolation

@@ -1,5 +1,5 @@
 > See DSL-CORE.md for language definition
-## Scenario 8. Pagination
+## PAGE-1. Pagination
 
 ```
 scenario inbox pagination
@@ -18,7 +18,7 @@ query inbox continue
 expect result items
 ```
 
-## Scenario 8a. Continue without initial query
+## PAGE-2. Continue without initial query
 ```
 scenario continue without initial query
 
@@ -33,7 +33,7 @@ expect error badRequest
 - continue без попереднього query не має контексту
 - сервер не повинен вгадувати feed або cursor
 
-## Scenario 8b. Continue after feed change
+## PAGE-3. Continue after feed change
 ```
 scenario continue after feed change
 
@@ -51,7 +51,7 @@ expect error badRequest
 - continue прив'язаний до конкретного feed
 - зміна feed інвалідовує continuation context
 
-## Scenario 8c. Empty page no more
+## PAGE-4. Empty page no more
 ```
 scenario empty page no more
 
@@ -67,7 +67,7 @@ expect not more
 - пустий результат з hasMore=false означає кінець даних
 ---
 
-## Scenario 8d. Home bootstrap pagination
+## PAGE-5. Home bootstrap pagination
 
 ```
 scenario home bootstrap pagination
@@ -93,7 +93,7 @@ expect feeds
 - continuation прив'язаний до поточного home query context
 - preview є view-даними для home screen, а не full inbox recovery
 ---
-## Scenario 8e. Home continue without initial query
+## PAGE-6. Home continue without initial query
 ```
 scenario home continue without initial query
 
@@ -109,7 +109,7 @@ expect error badRequest
 - `query home continue` без попереднього `query home` не має continuation context
 - сервер не повинен вгадувати bootstrap state
 ---
-## Scenario 8f. Home pagination no duplicate feeds
+## PAGE-7. Home pagination no duplicate feeds
 ```
 scenario home pagination no duplicate feeds
 
@@ -132,7 +132,7 @@ expect not duplicate feeds
 - paged home result не повинен повторно повертати той самий feed у межах одного bootstrap query
 - snapshot anchor має лишатися спільним для всіх сторінок одного home query
 ---
-## Scenario 8g. Empty home page no more
+## PAGE-8. Empty home page no more
 ```
 scenario empty home page no more
 
@@ -148,7 +148,7 @@ expect not more
 - пустий home result з `hasMore=false` означає, що bootstrap data відсутні
 - snapshot anchor при цьому все одно може бути присутнім
 ---
-## Scenario 9. Event streaming
+## PAGE-9. Event streaming
 
 ```
 scenario event streaming
@@ -163,7 +163,7 @@ expect events count <= 10
 expect next
 expect more
 ```
-## Scenario 9a. Event replay pagination
+## PAGE-10. Event replay pagination
 ```
 scenario event replay pagination
 
@@ -180,7 +180,7 @@ query events bob after next
 
 expect events
 ```
-## Scenario 9b. Replay no more
+## PAGE-11. Replay no more
 ```
 scenario replay no more
 
