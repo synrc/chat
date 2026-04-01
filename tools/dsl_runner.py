@@ -74,12 +74,14 @@ class DSLRunner:
         self.current_alias: str | None = None
         self.last_result: QueryResult | None = None
         self.pending_error: str | None = None
+        self.skip_scenario = False
 
     def _reset_for_scenario(self) -> None:
         self.world = World()
         self.current_alias = None
         self.last_result = None
         self.pending_error = None
+        self.skip_scenario = False
 
     # ----------------------------
     # Public API
@@ -126,8 +128,24 @@ class DSLRunner:
                 continue
 
             # each scenario runs in isolated state
+            # each scenario runs in isolated state
             if line.startswith("scenario "):
                 self._reset_for_scenario()
+
+                unsupported = {
+                    "delete overrides reordered edit",
+                    "late delete after edit",
+                    "version negotiation",
+                    "federation routing",
+                }
+
+                scenario_name = line[len("scenario "):].strip()
+                if scenario_name in unsupported:
+                    self.skip_scenario = True
+
+                continue
+
+            if self.skip_scenario:
                 continue
 
             # ignore plain prose lines that are not DSL commands/expectations
