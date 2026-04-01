@@ -135,6 +135,7 @@ auth
 session alice
 create group room1
 add bob to group room1
+send message to group:room1 "m1"
 
 session bob
 query inbox group:room1
