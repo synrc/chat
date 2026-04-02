@@ -549,10 +549,8 @@ class DSLRunner:
         return feed
 
     def _seed_scenario(self, scenario_name: str) -> None:
-        if scenario_name in {"inbox pagination", "continue without initial query", "continue after feed change"}:
+        if scenario_name in {"continue without initial query", "continue after feed change"}:
             self._seed_feed("alice", "bob", 15, "p")
-        elif scenario_name == "empty page no more":
-            self._seed_feed("carol", "dave", 3, "x")
         elif scenario_name in {"home bootstrap pagination", "home continue without initial query", "home pagination no duplicate feeds"}:
             for idx in range(1, 13):
                 self.world.subscriptions.add(("bob", f"user{idx}"))
