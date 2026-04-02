@@ -235,3 +235,88 @@ expect message from alice body "hi"
 ```
 
 ---
+
+
+## ADV-ORDERING. Causal consistency
+
+```
+scenario read is monotonic
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+
+session bob
+query events alice after cursor
+send read for last
+
+query cursor read feed alice seq 2
+expect read cursor updated
+
+query cursor read feed alice seq 1
+expect read cursor unchanged
+```
+
+```
+scenario delete does not break read cursor
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+
+session bob
+query events alice after cursor
+send read for last
+
+session alice
+delete message "m1"
+
+session bob
+query events alice after cursor
+
+expect empty replay
+expect not more
+```
+
+```
+scenario edit after read does not re-deliver
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+
+session bob
+query events alice after cursor
+send read for last
+
+session alice
+edit message "m1" body "m1 edited"
+
+session bob
+query events alice after cursor
+
+expect empty replay
+expect not more
+```
