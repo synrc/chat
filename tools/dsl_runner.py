@@ -43,6 +43,7 @@ class MessageRecord:
     sender: str
     body: str
     seq: int
+    original_body: str
     deleted: bool = False
 
 
@@ -94,8 +95,6 @@ class DSLRunner:
         self.reports: list[ScenarioReport] = []
         self.current_scenario_name: str | None = None
         self.unsupported_scenarios = {
-            "delete overrides reordered edit",
-            "late delete after edit",
             "version negotiation",
             "federation routing",
         }
@@ -141,6 +140,8 @@ class DSLRunner:
             "unban ",
             "create group ",
             "delete group ",
+            "delete message ",
+            "edit message ",
             "query ",
             "bootstrap home",
             "expect ",
@@ -392,6 +393,14 @@ class DSLRunner:
             self._delete_group(line)
             return
 
+        if line.startswith("delete message "):
+            self._delete_message(line)
+            return
+
+        if line.startswith("edit message "):
+            self._edit_message(line)
+            return
+
         if line.startswith("add ") and " to group " in line:
             self._add_to_group(line)
             return
@@ -497,7 +506,14 @@ class DSLRunner:
     def _append_message(self, feed: str, sender: str, body: str) -> MessageRecord:
         log = self.world.feed_logs.setdefault(feed, [])
         seq = len(log) + 1
-        msg = MessageRecord(id=str(uuid.uuid4()), feed=feed, sender=sender, body=body, seq=seq)
+        msg = MessageRecord(
+            id=str(uuid.uuid4()),
+            feed=feed,
+            sender=sender,
+            body=body,
+            seq=seq,
+            original_body=body,
+        )
         self.world.messages[msg.id] = msg
         log.append(msg.id)
 
@@ -537,12 +553,14 @@ class DSLRunner:
         feed = self._private_feed(user_a, user_b)
         log = self.world.feed_logs.setdefault(feed, [])
         for idx in range(1, count + 1):
+            body = f"{body_prefix}{idx}"
             msg = MessageRecord(
                 id=str(uuid.uuid4()),
                 feed=feed,
                 sender=user_a if idx % 2 else user_b,
-                body=f"{body_prefix}{idx}",
+                body=body,
                 seq=idx,
+                original_body=body,
             )
             self.world.messages[msg.id] = msg
             log.append(msg.id)
@@ -644,7 +662,14 @@ class DSLRunner:
             raise DSLRunnerError(
                 f"given messages must be contiguous for {feed}: expected seq {expected_seq}, got {actual_seq}"
             )
-        msg = MessageRecord(id=str(uuid.uuid4()), feed=feed, sender=sender, body=body, seq=actual_seq)
+        msg = MessageRecord(
+            id=str(uuid.uuid4()),
+            feed=feed,
+            sender=sender,
+            body=body,
+            seq=actual_seq,
+            original_body=body,
+        )
         self.world.messages[msg.id] = msg
         log.append(msg.id)
 
@@ -743,6 +768,46 @@ class DSLRunner:
         feed = self._private_feed(session.user, target)
         self._append_message(feed, session.user, body)
         self.last_result = QueryResult(kind="send")
+
+    def _find_message_for_lifecycle(self, actor: str, reference_body: str) -> MessageRecord:
+        for message_ids in self.world.feed_logs.values():
+            for message_id in reversed(message_ids):
+                msg = self.world.messages[message_id]
+                if msg.sender != actor:
+                    continue
+                if msg.original_body == reference_body or msg.body == reference_body:
+                    return msg
+        raise ExpectationFailed("error notFound")
+
+    def _sync_message_to_inboxes(self, message_id: str) -> None:
+        msg = self.world.messages[message_id]
+        for session in self.world.sessions.values():
+            for item in session.inbox:
+                if item.get("message_id") == message_id:
+                    item["body"] = msg.body
+                    item["deleted"] = msg.deleted
+
+    def _delete_message(self, line: str) -> None:
+        session = self._require_authenticated()
+        m = re.match(r'delete message "(.*)"$', line)
+        if not m:
+            raise DSLRunnerError(f"Bad delete message syntax: {line}")
+        msg = self._find_message_for_lifecycle(session.user, m.group(1))
+        msg.deleted = True
+        self._sync_message_to_inboxes(msg.id)
+        self.last_result = QueryResult(kind="message-lifecycle", items=[msg.id])
+
+    def _edit_message(self, line: str) -> None:
+        session = self._require_authenticated()
+        m = re.match(r'edit message "(.*)" body "(.*)"$', line)
+        if not m:
+            raise DSLRunnerError(f"Bad edit message syntax: {line}")
+        reference_body, new_body = m.groups()
+        msg = self._find_message_for_lifecycle(session.user, reference_body)
+        if not msg.deleted:
+            msg.body = new_body
+            self._sync_message_to_inboxes(msg.id)
+        self.last_result = QueryResult(kind="message-lifecycle", items=[msg.id])
 
     def _add_to_roster(self, line: str) -> None:
         session = self._require_session()
@@ -1353,11 +1418,34 @@ class DSLRunner:
                 raise ExpectationFailed(line)
             return
 
+        if line == "expect message deleted":
+            lifecycle_ids = self.last_result.items if self.last_result and self.last_result.kind == "message-lifecycle" else []
+            if not lifecycle_ids:
+                raise ExpectationFailed(line)
+            message_id = lifecycle_ids[-1]
+            msg = self.world.messages.get(message_id)
+            if not msg or not msg.deleted:
+                raise ExpectationFailed(line)
+            return
+
+        m = re.match(r'expect not message body "(.*)"$', line)
+        if m:
+            body = m.group(1)
+            for item in reversed(session.inbox):
+                if item["type"] == "message" and item["body"] == body and not item.get("deleted", False):
+                    raise ExpectationFailed(line)
+            return
+
         m = re.match(r'expect message from (\S+) body "(.*)"$', line)
         if m:
             sender, body = m.groups()
             for item in reversed(session.inbox):
-                if item["type"] == "message" and item["sender"] == sender and item["body"] == body:
+                if (
+                    item["type"] == "message"
+                    and item["sender"] == sender
+                    and item["body"] == body
+                    and not item.get("deleted", False)
+                ):
                     return
             raise ExpectationFailed(line)
 
