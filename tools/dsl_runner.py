@@ -95,7 +95,6 @@ class DSLRunner:
         self.reports: list[ScenarioReport] = []
         self.current_scenario_name: str | None = None
         self.unsupported_scenarios = {
-            "version negotiation",
             "federation routing",
         }
 
