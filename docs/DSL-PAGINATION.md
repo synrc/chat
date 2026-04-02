@@ -173,13 +173,36 @@ expect not more
 ```
 scenario event streaming
 
+given
+  private feed alice<->bob has messages
+    1 from alice "e1"
+    2 from bob "e2"
+    3 from alice "e3"
+    4 from bob "e4"
+    5 from alice "e5"
+    6 from bob "e6"
+    7 from alice "e7"
+    8 from bob "e8"
+    9 from alice "e9"
+    10 from bob "e10"
+    11 from alice "e11"
+    12 from bob "e12"
+    13 from alice "e13"
+    14 from bob "e14"
+    15 from alice "e15"
+    16 from bob "e16"
+    17 from alice "e17"
+    18 from bob "e18"
+    19 from alice "e19"
+    20 from bob "e20"
+
 session bob
 connect
 auth
 
-query events alice after 100 limit 10
+query events alice after 10 limit 5
 
-expect events count <= 10
+expect events count <= 5
 expect next
 expect more
 ```

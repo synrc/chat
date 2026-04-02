@@ -554,8 +554,6 @@ class DSLRunner:
         elif scenario_name in {"home bootstrap pagination", "home continue without initial query", "home pagination no duplicate feeds"}:
             for idx in range(1, 13):
                 self.world.subscriptions.add(("bob", f"user{idx}"))
-        elif scenario_name == "event streaming":
-            self._seed_feed("alice", "bob", 120, "e")
         elif scenario_name == "event replay pagination":
             self._seed_feed("alice", "bob", 105, "r")
         elif scenario_name == "replay no more":
