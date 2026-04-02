@@ -92,6 +92,20 @@ expect not more
 ```
 scenario home bootstrap pagination
 
+given
+  bob has user1 in roster
+  bob has user2 in roster
+  bob has user3 in roster
+  bob has user4 in roster
+  bob has user5 in roster
+  bob has user6 in roster
+  bob has user7 in roster
+  bob has user8 in roster
+  bob has user9 in roster
+  bob has user10 in roster
+  bob has user11 in roster
+  bob has user12 in roster
+
 session bob
 connect
 auth
@@ -132,6 +146,20 @@ expect error badRequest
 ## PAGE-7. Home pagination no duplicate feeds
 ```
 scenario home pagination no duplicate feeds
+
+given
+  bob has user1 in roster
+  bob has user2 in roster
+  bob has user3 in roster
+  bob has user4 in roster
+  bob has user5 in roster
+  bob has user6 in roster
+  bob has user7 in roster
+  bob has user8 in roster
+  bob has user9 in roster
+  bob has user10 in roster
+  bob has user11 in roster
+  bob has user12 in roster
 
 session bob
 connect

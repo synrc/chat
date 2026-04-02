@@ -569,9 +569,6 @@ class DSLRunner:
     def _seed_scenario(self, scenario_name: str) -> None:
         if scenario_name in {"continue without initial query", "continue after feed change"}:
             self._seed_feed("alice", "bob", 15, "p")
-        elif scenario_name in {"home bootstrap pagination", "home continue without initial query", "home pagination no duplicate feeds"}:
-            for idx in range(1, 13):
-                self.world.subscriptions.add(("bob", f"user{idx}"))
 
     def _paginate_items(self, items: list[Any], limit: int | None, offset: int) -> tuple[list[Any], bool, str | None, int]:
         if limit is None:
