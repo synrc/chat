@@ -431,3 +431,237 @@ Canonical roster DSL розділяє mutation і view:
 
 - у базовій DSL semantics ban інтерпретується як policy,
   яка блокує direct messaging від banned user
+
+## Given section
+
+DSL може містити опціональну секцію `given`, яка описує початковий стан сценарію.
+
+`given` розташовується одразу після `scenario`
+і перед будь-якими runtime командами (`session`, `send`, `query`, `expect`).
+
+### Semantics
+
+`given` описує тільки state, а не дії.
+
+- `given` не означає історію подій
+- `given` не виконує protocol commands
+- `given` не генерує events/message delivery
+- `given` не проходить через auth/permission checks
+- `given` напряму задає world state
+
+`given` є implementation-independent:
+- він не прив’язаний до БД
+- він не залежить від конкретної серверної логіки
+- canonical форма повинна зводитись до exact state assertions
+
+---
+
+### Supported state
+
+`given` може описувати:
+
+- існування ресурсів
+- membership / roles
+- relation (subscription / roster)
+- moderation state
+- feed contents
+- read cursor
+
+---
+
+### Canonical examples
+
+```
+scenario example
+
+given
+  group room1 exists
+  alice is owner of group room1
+  bob is member of group room1
+
+  alice has bob in roster
+  bob is banned by alice
+
+  private feed alice<->bob has messages
+    1 from alice "m1"
+    2 from bob "m2"
+
+  bob read private:alice up to 2
+```
+
+---
+
+### Feed contents
+
+Canonical:
+
+```
+given
+  private feed alice<->bob has messages
+    "m1"
+    "m2"
+```
+
+Exact form:
+
+```
+given
+  private feed alice<->bob has messages
+    1 from alice "m1"
+    2 from bob "m2"
+```
+
+Правила:
+
+- порядок визначає `seq`, якщо він не заданий явно
+- рекомендується використовувати explicit форму (`seq + sender`)
+  для уникнення неявних припущень
+
+---
+
+### Group / membership
+
+```
+given
+  group room1 exists
+  alice is owner of group room1
+  bob is member of group room1
+```
+
+---
+
+### Roster / relation
+
+```
+given
+  alice has bob in roster
+```
+
+`given` описує relation state, а не операцію.
+
+---
+
+### Moderation
+
+```
+given
+  bob is banned by alice
+```
+
+Це state, а не команда `ban`.
+
+---
+
+### Read state
+
+```
+given
+  bob read private:alice up to 3
+  bob read group:room1 up to 5
+```
+
+- read є feed-scoped
+- read задається через cursor (`seq`)
+- read не означає повний replay або delivery history
+
+---
+
+### Normalization
+
+Canonical `given` повинен зводитись до точного набору state assertions.
+
+Приклад:
+
+```
+private feed alice<->bob has messages
+  1 from alice "m1"
+```
+
+нормалізується у:
+
+```
+feed private:alice:bob message seq 1 from alice body "m1"
+```
+
+---
+
+### Private feed identity
+
+```
+private feed alice<->bob
+```
+
+інтерпретується як:
+
+```
+feed private:alice:bob
+```
+
+- порядок alias не має значення
+- `alice<->bob` == `bob<->alice`
+
+---
+
+### Important constraints
+
+#### No implicit delivery
+
+```
+given private feed alice<->bob has messages
+```
+
+- не означає, що ці повідомлення вже отримані session
+- не означає inbox state
+- задає тільки feed log
+
+#### No implicit events
+
+```
+given bob read ...
+```
+
+- не генерує read events
+- лише задає cursor state
+
+#### No authorization checks
+
+```
+given bob is member of group room1
+```
+
+- не виконує `add member`
+- не перевіряє permissions
+- просто задає state
+
+---
+
+### Execution model
+
+`given` застосовується перед початком сценарію:
+
+1. парсинг сценарію
+2. застосування `given` → world state
+3. виконання runtime DSL
+
+`given` не використовує runtime handlers (`send`, `query`, `ban`, etc.)
+
+---
+
+### Relation to runtime
+
+- `given` задає initial state
+- runtime DSL працює поверх цього state
+- якщо `given` суперечить runtime діям —
+  runtime інтерпретується як зміна цього state
+
+---
+
+### Migration note
+
+`given` замінює неявний `_seed_scenario`.
+
+- якщо `given` присутній → `_seed_scenario` не використовується
+- якщо `given` відсутній → можливий fallback (legacy)
+
+Мета — повністю прибрати hidden state setup
+і зробити всі сценарії явними
