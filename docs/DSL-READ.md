@@ -302,3 +302,94 @@ expect read cursor unchanged in private:alice
 - update в одному feed не повинен впливати на інший feed
 - private і group feed повинні бути ізольовані на рівні cursor state
 
+
+
+## READ-ADV. Consistency
+
+```
+scenario read persists after reconnect
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+
+session bob
+query events alice after 0
+
+expect events non-empty
+
+send read for last
+
+disconnect
+reconnect
+auth resume
+
+query events alice after cursor
+
+expect empty replay
+expect not more
+```
+
+```
+scenario replay respects read cursor
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+
+session bob
+query events alice after 0
+
+expect events
+
+send read for last
+
+query events alice after cursor
+
+expect empty replay
+expect not more
+```
+
+```
+scenario read is shared across sessions
+
+session alice
+connect
+auth
+
+session bob1
+connect
+auth
+
+session bob2
+connect
+auth
+
+session alice
+send message to bob "m1"
+
+session bob1
+query events alice after 0
+send read for last
+
+session bob2
+query events alice after cursor
+
+expect empty replay
+expect not more
+```
