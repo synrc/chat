@@ -22,7 +22,7 @@ session bob
 connect
 auth
 
-query inbox alice limit 10
+query inbox peer alice limit 10
 
 expect result items <= 10
 expect more
@@ -55,10 +55,10 @@ session bob
 connect
 auth
 
-query inbox alice limit 10
+query inbox peer alice limit 10
 expect result items
 
-query inbox carol continue
+query inbox peer carol continue
 
 expect error badRequest
 ```
@@ -79,7 +79,7 @@ session bob
 connect
 auth
 
-query inbox alice limit 10
+query inbox peer alice limit 10
 
 expect result items = 0
 expect not more
@@ -228,7 +228,7 @@ session bob
 connect
 auth
 
-query events alice after 10 limit 5
+query events peer alice after 10 limit 5
 
 expect events count <= 5
 expect next
@@ -265,12 +265,12 @@ session bob
 connect
 auth
 
-query events alice after 10 limit 2
+query events peer alice after 10 limit 2
 
 expect events count <= 2
 expect next
 
-query events alice after next
+query events peer alice after next
 
 expect events
 ```
@@ -289,7 +289,7 @@ session bob
 connect
 auth
 
-query events alice after cursor
+query events peer alice after cursor
 
 expect empty replay
 expect not more

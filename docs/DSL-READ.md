@@ -291,7 +291,7 @@ expect message from alice body "p1"
 expect message from carol body "g1"
 
 session bob
-send read group:room1 for last
+send read group room1 for last
 
 session bob
 expect read cursor updated in group:room1
@@ -321,7 +321,7 @@ session alice
 send message to bob "m1"
 
 session bob
-query events alice after cursor
+query events peer alice after cursor
 
 expect events non-empty
 
@@ -331,7 +331,7 @@ disconnect
 reconnect
 auth resume
 
-query events alice after cursor
+query events peer alice after cursor
 
 expect empty replay
 expect not more
@@ -353,13 +353,13 @@ send message to bob "m1"
 send message to bob "m2"
 
 session bob
-query events alice after cursor
+query events peer alice after cursor
 
 expect events
 
 send read for last
 
-query events alice after cursor
+query events peer alice after cursor
 
 expect empty replay
 expect not more
@@ -384,11 +384,11 @@ session alice
 send message to bob "m1"
 
 session bob1
-query events alice after cursor
+query events peer alice after cursor
 send read for last
 
 session bob2
-query events alice after cursor
+query events peer alice after cursor
 
 expect empty replay
 expect not more

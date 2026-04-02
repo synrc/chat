@@ -93,7 +93,7 @@ add bob to group room1
 send message to group:room1 "m1"
 
 session bob
-query inbox group:room1
+query inbox group room1
 
 expect result items
 ```
@@ -115,7 +115,7 @@ create group room1
 send message to group:room1 "m1"
 
 session bob
-query inbox group:room1
+query inbox group room1
 
 expect error forbidden
 ```
@@ -138,14 +138,14 @@ add bob to group room1
 send message to group:room1 "m1"
 
 session bob
-query inbox group:room1
+query inbox group room1
 expect result items
 
 session alice
 remove bob from group room1
 
 session bob
-query inbox group:room1
+query inbox group room1
 
 expect error forbidden
 ```
@@ -221,7 +221,7 @@ create group room1
 
 delete group room1
 
-query inbox group:room1
+query inbox group room1
 
 expect error notFound
 ```

@@ -16,7 +16,7 @@ wait 500ms
 reconnect
 
 session bob
-query events alice after cursor
+query events peer alice after cursor
 
 expect events non-empty
 ```
@@ -40,7 +40,7 @@ wait 500ms
 reconnect
 
 session bob
-query events alice after cursor limit 1
+query events peer alice after cursor limit 1
 
 expect events count <= 1
 expect more
@@ -117,7 +117,7 @@ expect feeds
 expect previews
 expect shared snapshot
 
-query events alice after snapshot
+query events peer alice after snapshot
 
 expect no duplicates
 expect no gaps
@@ -160,7 +160,7 @@ session alice
 send message to bob "m3"
 
 session bob
-query events alice after snapshot
+query events peer alice after snapshot
 
 expect no duplicates
 expect no gaps
@@ -198,12 +198,12 @@ expect feeds
 expect previews
 expect shared snapshot
 
-query events private:alice after snapshot
+query events feed private:alice after snapshot
 
 expect no duplicates
 expect no gaps
 
-query events group:room1 after snapshot
+query events group room1 after snapshot
 
 expect no duplicates
 expect no gaps
@@ -238,7 +238,7 @@ wait 500ms
 reconnect
 
 session bob
-query events alice after cursor limit 2
+query events peer alice after cursor limit 2
 expect events
 
 session alice
@@ -327,7 +327,7 @@ auth
 send message to bob "m1"
 
 session bob
-query inbox alice
+query inbox peer alice
 expect messages
 ```
 
@@ -349,11 +349,11 @@ auth
 send message to bob "m1"
 
 session bob
-query inbox alice
+query inbox peer alice
 expect messages
 expect snapshot
 
-query events alice after snapshot
+query events peer alice after snapshot
 ```
 
 - після gap recovery через inbox клієнт отримує snapshot anchor
@@ -380,12 +380,12 @@ session alice
 send message to bob "m3"
 
 session bob
-query inbox alice
+query inbox peer alice
 expect messages
 expect snapshot
 
 session bob
-query events alice after snapshot
+query events peer alice after snapshot
 expect no duplicates
 expect no gaps
 ```
@@ -421,7 +421,7 @@ send message to bob "m10"
 send message to bob "m11"
 
 session bob
-query inbox alice limit 10
+query inbox peer alice limit 10
 expect messages
 expect snapshot
 expect more
@@ -429,7 +429,7 @@ expect more
 query inbox continue
 expect messages
 
-query events alice after snapshot
+query events peer alice after snapshot
 expect no duplicates
 expect no gaps
 ```
@@ -459,22 +459,22 @@ session bob
 query events private:alice after 0
 expect error gap
 
-query events group:room1 after 0
+query events group room1 after 0
 expect error gap
 
-query inbox private:alice
+query inbox feed private:alice
 expect messages
 expect snapshot
 
-query inbox group:room1
+query inbox group room1
 expect messages
 expect snapshot
 
-query events private:alice after snapshot
+query events feed private:alice after snapshot
 expect no duplicates
 expect no gaps
 
-query events group:room1 after snapshot
+query events group room1 after snapshot
 expect no duplicates
 expect no gaps
 ```

@@ -196,7 +196,7 @@ expect shared snapshot
 
 delete group room1
 
-query inbox group:room1
+query inbox group room1
 
 expect error notFound
 ```
@@ -255,7 +255,7 @@ send message to bob "m1"
 send message to bob "m2"
 
 session bob
-query events alice after cursor
+query events peer alice after cursor
 expect events
 send read for last
 
@@ -281,14 +281,14 @@ session alice
 send message to bob "m1"
 
 session bob
-query events alice after cursor
+query events peer alice after cursor
 send read for last
 
 session alice
 delete message "m1"
 
 session bob
-query events alice after cursor
+query events peer alice after cursor
 
 expect empty replay
 expect not more
@@ -309,14 +309,14 @@ session alice
 send message to bob "m1"
 
 session bob
-query events alice after cursor
+query events peer alice after cursor
 send read for last
 
 session alice
 edit message "m1" body "m1 edited"
 
 session bob
-query events alice after cursor
+query events peer alice after cursor
 
 expect empty replay
 expect not more

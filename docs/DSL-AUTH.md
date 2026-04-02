@@ -99,7 +99,7 @@ scenario replay without auth
 session bob
 connect
 
-query events alice after cursor
+query events peer alice after cursor
 
 expect error unauthorized
 ```
@@ -122,7 +122,7 @@ renew
 
 expect access token refreshed
 
-query events alice after cursor
+query events peer alice after cursor
 
 expect not error unauthorized
 ```
