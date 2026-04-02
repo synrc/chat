@@ -297,6 +297,23 @@ class DSLRunner:
         if line == "auth":
             session = self._require_session()
             session.authenticated = True
+            # rebuild inbox (federation / late connect support)
+            session.inbox.clear()
+
+            for feed, message_ids in self.world.feed_logs.items():
+                if self._session_can_see_feed(session.user, feed):
+                    for mid in message_ids:
+                        msg = self.world.messages[mid]
+                        session.inbox.append({
+                            "type": "message",
+                            "feed": feed,
+                            "sender": msg.sender,
+                            "body": msg.body,
+                            "seq": msg.seq,
+                            "message_id": mid,
+                            "deleted": msg.deleted,
+                        })
+                        session.last_observed_seq[feed] = msg.seq
             self._issue_tokens(session)
             self.last_result = QueryResult(kind="auth", items=["authenticated"])
             return
