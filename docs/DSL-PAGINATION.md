@@ -210,11 +210,34 @@ expect more
 ```
 scenario event replay pagination
 
+given
+  private feed alice<->bob has messages
+    1 from alice "e1"
+    2 from bob "e2"
+    3 from alice "e3"
+    4 from bob "e4"
+    5 from alice "e5"
+    6 from bob "e6"
+    7 from alice "e7"
+    8 from bob "e8"
+    9 from alice "e9"
+    10 from bob "e10"
+    11 from alice "e11"
+    12 from bob "e12"
+    13 from alice "e13"
+    14 from bob "e14"
+    15 from alice "e15"
+    16 from bob "e16"
+    17 from alice "e17"
+    18 from bob "e18"
+    19 from alice "e19"
+    20 from bob "e20"
+
 session bob
 connect
 auth
 
-query events alice after 100 limit 2
+query events alice after 10 limit 2
 
 expect events count <= 2
 expect next
@@ -226,6 +249,13 @@ expect events
 ## PAGE-11. Replay no more
 ```
 scenario replay no more
+
+given
+  private feed alice<->bob has messages
+    1 from alice "z1"
+    2 from bob "z2"
+    3 from alice "z3"
+  bob read private:alice up to 3
 
 session bob
 connect

@@ -554,14 +554,6 @@ class DSLRunner:
         elif scenario_name in {"home bootstrap pagination", "home continue without initial query", "home pagination no duplicate feeds"}:
             for idx in range(1, 13):
                 self.world.subscriptions.add(("bob", f"user{idx}"))
-        elif scenario_name == "event replay pagination":
-            self._seed_feed("alice", "bob", 105, "r")
-        elif scenario_name == "replay no more":
-            feed = self._seed_feed("alice", "bob", 3, "z")
-            bob = SessionState(alias="bob", user="bob", connected=True, authenticated=True)
-            bob.last_observed_seq[feed] = 3
-            self.world.sessions["bob"] = bob
-            self.world.read_cursors[("bob", feed)] = 3
 
     def _paginate_items(self, items: list[Any], limit: int | None, offset: int) -> tuple[list[Any], bool, str | None, int]:
         if limit is None:
