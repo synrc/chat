@@ -254,15 +254,15 @@ session alice
 send message to bob "m1"
 send message to bob "m2"
 
-# встановлюємо cursor явно
-query cursor read feed alice seq 2
-expect read cursor updated
+session bob
+query events alice after cursor
+expect events
+send read for last
 
-# перевірка монотонності
-query cursor read feed alice seq 2
+query cursor read feed private:alice seq 2
 expect read cursor unchanged
 
-query cursor read feed alice seq 1
+query cursor read feed private:alice seq 1
 expect read cursor unchanged
 ```
 
