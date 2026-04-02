@@ -321,7 +321,7 @@ session alice
 send message to bob "m1"
 
 session bob
-query events alice after 0
+query events alice after cursor
 
 expect events non-empty
 
@@ -353,7 +353,7 @@ send message to bob "m1"
 send message to bob "m2"
 
 session bob
-query events alice after 0
+query events alice after cursor
 
 expect events
 
@@ -384,7 +384,7 @@ session alice
 send message to bob "m1"
 
 session bob1
-query events alice after 0
+query events alice after cursor
 send read for last
 
 session bob2
