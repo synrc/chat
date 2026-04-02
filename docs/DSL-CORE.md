@@ -57,6 +57,29 @@ DSL використовує два стилі: short і exact.
 - alias resolution для private feed (`query inbox/events/read <peer>`) залежить
   від поточного session context
 
+#### Reference kinds
+
+DSL розрізняє три типи посилань:
+
+- `peer <user>` — приватний peer context відносно поточної session
+- `group <name>` — group resource / group feed за назвою group
+- `feed <token>` — явний feed identifier без alias resolution
+
+Приклади:
+
+- `query inbox peer bob`
+- `query events peer bob after cursor`
+- `query cursor read peer alice seq 123`
+- `query inbox group room1`
+- `query events group room1 after snapshot`
+- `query cursor read group room1 seq 5`
+- `query inbox feed private:bob`
+- `query events feed private:bob after cursor`
+- `query cursor read feed private:alice seq 123`
+
+Canonical форма може використовувати `peer` / `group` як typed sugar.
+Exact форма використовує `feed <token>` там, де потрібна protocol-level точність.
+
 #### Short style
 
 - команда може мати один основний позиційний аргумент
@@ -68,10 +91,13 @@ DSL використовує два стилі: short і exact.
 Приклади:
 
 - `send message to bob "hi"` — `bob` інтерпретується як target alias
-- `query inbox bob` — `bob` інтерпретується як private feed alias за peer alias
-- `query events bob after 100 limit 10` — `bob` інтерпретується як private feed alias за peer alias
+- `query inbox peer bob` — `peer bob` інтерпретується як private feed alias за peer alias
+- `query events peer bob after 100 limit 10` — `peer bob` інтерпретується як private feed alias за peer alias
+- `query inbox group room1` — `group room1` інтерпретується як group feed resource
 - `send read for last` — read у дефолтному/поточному feed контексті
-- `send read <feed> for last` — read у явно вказаному feed
+- `send read peer alice for last` — read у private peer feed context
+- `send read group room1 for last` — read у group feed context
+- `send read feed private:alice for last` — read у явно вказаному feed
 - `add bob to roster` — додати bob у roster (створити односторонній зв’язок)
 - `remove bob from roster` — видалити bob з roster (прибрати односторонній зв’язок)
 - `query roster` — отримати поточний список контактів користувача
@@ -91,6 +117,8 @@ DSL використовує два стилі: short і exact.
 
 - `query inbox feed private:bob`
 - `query events feed private:bob after 100 limit 10`
+- `query inbox feed group:room1`
+- `query events feed group:room1 after snapshot`
 - `query cursor read feed private:alice seq 123`
 
 #### Default resolution
@@ -98,14 +126,16 @@ DSL використовує два стилі: short і exact.
 контекст команди визначає, як інтерпретується identifier
 
 - у message context `bob` означає user/target alias
-- у private inbox/events/read context `bob` означає peer alias, а не current user alias
-- `query inbox bob` = `query inbox feed private:bob`
-- `query events bob after 100 limit 10` = `query events feed private:bob after 100 limit 10`
-- `query events bob after snapshot` після `query home` означає replay у feed `private:bob`,
-  якщо цей feed був покритий попереднім home result
-- тобто у `session alice` alias `bob` означає приватний feed alice ↔ bob,
-  а у `session bob` alias `alice` означає той самий feed bob ↔ alice
-- у inbox/events/read context alias задає саме peer feed context
+- `peer <user>` означає private peer feed context відносно поточної session
+- `group <name>` означає group feed/resource context
+- `feed <token>` означає explicit feed token без alias resolution
+- `query inbox peer bob` = `query inbox feed private:bob`
+- `query events peer bob after 100 limit 10` = `query events feed private:bob after 100 limit 10`
+- `query cursor read peer alice seq 123` = `query cursor read feed private:alice seq 123`
+- `query inbox group room1` = `query inbox feed group:room1`
+- `query events group room1 after snapshot` = `query events feed group:room1 after snapshot`
+- у `session alice` reference `peer bob` означає приватний feed alice ↔ bob,
+  а у `session bob` reference `peer alice` означає той самий feed bob ↔ alice
 - `query inbox continue` продовжує останній `query inbox ...` у межах того самого feed
 
 #### Home bootstrap
@@ -251,10 +281,15 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | expect bob not in roster       | expect roster does not contain bob                         |
 | expect message from alice "hi" | expect inbound message from alice body "hi"                |
 | send read for last             | query cursor read feed private:alice seq 123               |
+| send read peer alice for last  | query cursor read feed private:alice seq 123               |
+| send read group room1 for last | query cursor read feed group:room1 seq 123                 |
 | expect more                    | expect hasMore true                                        |
 | query inbox continue           | query inbox feed private:alice continue                    |
-| query events bob after cursor  | query events feed private:bob after cursor                 |
-| query inbox bob                | query inbox feed private:bob                               |
+| query events peer bob after cursor | query events feed private:bob after cursor              |
+| query inbox peer bob           | query inbox feed private:bob                               |
+| query cursor read peer alice seq 123 | query cursor read feed private:alice seq 123         |
+| query inbox group room1        | query inbox feed group:room1                               |
+| query events group room1 after snapshot | query events feed group:room1 after snapshot      |
 | expect events non-empty        | expect events count > 0                                    |
 | expect empty replay            | expect events = 0                                          |
 | expect no duplicates           | expect result has no duplicate items/events                |
@@ -298,12 +333,15 @@ Simple:
 
 ```
 send read for last
+send read peer alice for last
+send read group room1 for last
 ```
 
 Exact:
 
 ```
 query cursor read feed private:alice seq 123
+query cursor read feed group:room1 seq 123
 ```
 
 `send read ...` у canonical є sugar над `query cursor read ...` у exact формі.
