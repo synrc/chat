@@ -248,7 +248,7 @@ session bob
 send read for last
 
 session bob
-query events alice after next
+query events peer alice after next
 
 expect events
 expect no duplicates
@@ -302,7 +302,7 @@ session bob
 connect
 auth
 
-query events alice after 0
+query events peer alice after 0
 
 expect error gap
 ```
@@ -318,7 +318,7 @@ session bob
 connect
 auth
 
-query events alice after 0
+query events peer alice after 0
 expect error gap
 
 session alice
@@ -340,7 +340,7 @@ session bob
 connect
 auth
 
-query events alice after 0
+query events peer alice after 0
 expect error gap
 
 session alice
@@ -369,7 +369,7 @@ session bob
 connect
 auth
 
-query events alice after 0
+query events peer alice after 0
 expect error gap
 
 session alice
@@ -402,7 +402,7 @@ session bob
 connect
 auth
 
-query events alice after 0
+query events peer alice after 0
 expect error gap
 
 session alice
@@ -456,7 +456,7 @@ send message to bob "p1"
 send message to group:room1 "g1"
 
 session bob
-query events private:alice after 0
+query events feed private:alice after 0
 expect error gap
 
 query events group room1 after 0

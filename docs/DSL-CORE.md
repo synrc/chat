@@ -172,9 +172,12 @@ Home query:
 
 Home query повертає shared snapshot anchor для всього home result.
 
-Цей anchor може використовуватись для подальшого
-`query events <feed> after snapshot`
-для будь-якого feed, already covered тим самим home result.
+Цей anchor може використовуватись для подальшого replay,
+наприклад через:
+- `query events peer bob after snapshot`
+- `query events group room1 after snapshot`
+- `query events feed private:bob after snapshot`
+   для будь-якого feed, already covered тим самим home result.
 
 DSL допускає natural alias у short form, але exact інтерпретація завжди повинна зводитись до явного визначення feed або target.
 
@@ -196,9 +199,9 @@ DSL підтримує symbolic cursor значення:
 `snapshot`, отриманий з `query home`, є shared bootstrap anchor
 для всіх feed, покритих тим самим home result.
 
-При використанні в `query events <feed> after snapshot`
+При використанні в `query events ... after snapshot`
 shared home snapshot інтерпретується як replay boundary
-для цього конкретного feed у межах того самого home bootstrap context.
+для конкретного feed у межах того самого home bootstrap context.
 Такий replay є валідним тільки для feed, already covered тим самим home result.
 
 `next` означає continuation cursor для наступної сторінки event replay
@@ -450,6 +453,9 @@ Exact group reference:
   - `send message to group:<name>`
   - `query inbox group <name>`
   - `query events group <name> after ...`
+
+`send message to group:<name>` лишається canonical target form для message command.
+Reference kinds (`group <name>` / `feed group:<name>`) використовуються для inbox/events/read query.
 
 - exact форма для цих самих операцій:
   - `query inbox feed group:<name>`
