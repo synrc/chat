@@ -259,7 +259,7 @@ query events alice after cursor
 send read for last
 
 query cursor read feed alice seq 2
-expect read cursor updated
+expect read cursor unchanged
 
 query cursor read feed alice seq 1
 expect read cursor unchanged
