@@ -4,18 +4,13 @@
 ```
 scenario replay
 
-session alice
-connect
-auth
+given
+  private feed alice<->bob has messages
+    1 from alice "hi"
 
 session bob
 connect
 auth
-
-session alice
-send message to bob "hi"
-
-session bob
 disconnect
 wait 500ms
 reconnect
@@ -31,20 +26,15 @@ expect events non-empty
 ```
 scenario preview after reconnect
 
-session alice
-connect
-auth
+given
+  private feed alice<->bob has messages
+    1 from alice "m1"
+    2 from alice "m2"
+    3 from alice "m3"
 
 session bob
 connect
 auth
-
-session alice
-send message to bob "m1"
-send message to bob "m2"
-send message to bob "m3"
-
-session bob
 disconnect
 wait 500ms
 reconnect
@@ -230,6 +220,12 @@ expect no gaps
 ```
 scenario replay read race
 
+given
+  private feed alice<->bob has messages
+    1 from alice "m1"
+    2 from alice "m2"
+    3 from alice "m3"
+
 session alice
 connect
 auth
@@ -237,13 +233,6 @@ auth
 session bob
 connect
 auth
-
-session alice
-send message to bob "m1"
-send message to bob "m2"
-send message to bob "m3"
-
-session bob
 disconnect
 wait 500ms
 reconnect
