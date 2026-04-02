@@ -439,7 +439,7 @@ class DSLRunner:
             self._query_cursor_read(line)
             return
 
-        if line == "query inbox continue" or re.match(r"query inbox \S+ continue$", line):
+        if line == "query inbox continue" or re.match(r"query inbox .+ continue$", line):
             self._query_inbox_continue(line)
             return
 
