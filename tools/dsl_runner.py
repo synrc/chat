@@ -94,9 +94,7 @@ class DSLRunner:
         self.trace = trace
         self.reports: list[ScenarioReport] = []
         self.current_scenario_name: str | None = None
-        self.unsupported_scenarios = {
-            "federation routing",
-        }
+        self.unsupported_scenarios = set()
 
     def _reset_for_scenario(self) -> None:
         self.world = World()
@@ -750,6 +748,10 @@ class DSLRunner:
         if not m:
             raise DSLRunnerError(f"Bad send message syntax: {line}")
         target, body = m.group(1), m.group(2)
+
+        # federation: strip domain
+        if "@" in target:
+            target = target.split("@",1)[0]
 
         if target.startswith("group:"):
             group_name = target.split(":", 1)[1]
