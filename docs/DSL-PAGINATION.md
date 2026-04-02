@@ -4,6 +4,20 @@
 ```
 scenario inbox pagination
 
+given
+  private feed alice<->bob has messages
+    1 from alice "p1"
+    2 from bob "p2"
+    3 from alice "p3"
+    4 from bob "p4"
+    5 from alice "p5"
+    6 from bob "p6"
+    7 from alice "p7"
+    8 from bob "p8"
+    9 from alice "p9"
+    10 from bob "p10"
+    11 from alice "p11"
+
 session bob
 connect
 auth
@@ -54,6 +68,12 @@ expect error badRequest
 ## PAGE-4. Empty page no more
 ```
 scenario empty page no more
+
+given
+  private feed carol<->dave has messages
+    1 from carol "x1"
+    2 from dave "x2"
+    3 from carol "x3"
 
 session bob
 connect
