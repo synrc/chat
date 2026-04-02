@@ -148,24 +148,21 @@ class DSLRunner:
         )
         return line.startswith(prefixes)
 
-    def run(self, script: str) -> None:
-        self.reports = []
-        current_scenario: str | None = None
-        current_status: str | None = None
-        current_error: str | None = None
+    def _given_starts_with(self, line: str) -> bool:
+        prefixes = (
+            "group ",
+            "private feed ",
+            "group feed ",
+        )
+        return line.startswith(prefixes)
 
-        def finalize_current() -> None:
-            nonlocal current_scenario, current_status, current_error
-            if current_scenario is None:
-                return
-            status = current_status or ("skip" if self.skip_scenario else "pass")
-            self.reports.append(ScenarioReport(current_scenario, status, current_error))
-            if status == "pass":
-                self._trace(f"PASS  {current_scenario}")
-            elif status == "skip":
-                self._trace(f"SKIP  {current_scenario}")
-            else:
-                self._trace(f"FAIL  {current_scenario}: {current_error}")
+    def _looks_like_given_entry(self, line: str) -> bool:
+        return bool(re.match(r'^\d+ from \S+ ".*"$', line) or re.match(r'^".*"$', line))
+
+    def _split_scenarios(self, script: str) -> list[tuple[str, list[str]]]:
+        scenarios: list[tuple[str, list[str]]] = []
+        current_name: str | None = None
+        current_lines: list[str] = []
 
         for raw in script.splitlines():
             line = raw.strip()
@@ -183,47 +180,97 @@ class DSLRunner:
                 continue
 
             if line.startswith("scenario "):
-                finalize_current()
-                current_scenario = line[len("scenario "):].strip()
-                current_status = None
-                current_error = None
-                self._reset_for_scenario()
-                self.current_scenario_name = current_scenario
-                self._seed_scenario(current_scenario)
-
-                if current_scenario in self.unsupported_scenarios:
-                    self.skip_scenario = True
-                    current_status = "skip"
-                    current_error = "unsupported by current runner"
-                else:
-                    self._trace(f"SCENARIO  {current_scenario}")
+                if current_name is not None:
+                    scenarios.append((current_name, current_lines))
+                current_name = line[len("scenario "):].strip()
+                current_lines = []
                 continue
 
-            if self.skip_scenario:
+            if current_name is None:
                 continue
 
-            if not self._looks_like_dsl(line):
-                continue
+            current_lines.append(line)
 
-            self._trace(f"> {line}")
-            is_expect = line.startswith("expect ")
+        if current_name is not None:
+            scenarios.append((current_name, current_lines))
 
+        return scenarios
+
+    def _split_given_block(self, lines: list[str]) -> tuple[list[str], list[str]]:
+        if not lines or lines[0] != "given":
+            return [], lines
+
+        given_lines: list[str] = []
+        idx = 1
+        while idx < len(lines):
+            line = lines[idx]
+            if self._looks_like_dsl(line):
+                break
+            given_lines.append(line)
+            idx += 1
+
+        return given_lines, lines[idx:]
+
+    def run(self, script: str) -> None:
+        self.reports = []
+
+        for scenario_name, scenario_lines in self._split_scenarios(script):
+            self._run_scenario_lines(scenario_name, scenario_lines)
+
+    def _run_scenario_lines(self, scenario_name: str, scenario_lines: list[str]) -> None:
+        current_status: str | None = None
+        current_error: str | None = None
+
+        self._reset_for_scenario()
+        self.current_scenario_name = scenario_name
+
+        if scenario_name in self.unsupported_scenarios:
+            self.skip_scenario = True
+            current_status = "skip"
+            current_error = "unsupported by current runner"
+        else:
+            self._trace(f"SCENARIO  {scenario_name}")
+
+        if not self.skip_scenario:
+            given_lines, runtime_lines = self._split_given_block(scenario_lines)
             try:
-                if is_expect:
-                    self.execute(line)
+                if given_lines:
+                    self._apply_given(given_lines)
                 else:
+                    self._seed_scenario(scenario_name)
+
+                for line in runtime_lines:
+                    self._trace(f"> {line}")
+                    is_expect = line.startswith("expect ")
+
                     try:
-                        self.execute(line)
-                    except ExpectationFailed as e:
-                        self.pending_error = str(e)
-                        self.last_result = QueryResult(kind="error", error=str(e))
-                        self._trace(f"  error={e}")
+                        if is_expect:
+                            self.execute(line)
+                        else:
+                            try:
+                                self.execute(line)
+                            except ExpectationFailed as e:
+                                self.pending_error = str(e)
+                                self.last_result = QueryResult(kind="error", error=str(e))
+                                self._trace(f"  error={e}")
+                    except DSLRunnerError as e:
+                        current_status = "fail"
+                        current_error = f"{line}: {e}"
+                        self.skip_scenario = True
+                        break
             except DSLRunnerError as e:
                 current_status = "fail"
-                current_error = f"{line}: {e}"
+                current_error = str(e)
                 self.skip_scenario = True
 
-        finalize_current()
+        status = current_status or ("skip" if self.skip_scenario else "pass")
+        self.reports.append(ScenarioReport(scenario_name, status, current_error))
+        if status == "pass":
+            self._trace(f"PASS  {scenario_name}")
+        elif status == "skip":
+            self._trace(f"SKIP  {scenario_name}")
+        else:
+            self._trace(f"FAIL  {scenario_name}: {current_error}")
 
     def execute(self, line: str) -> None:
         if not line.startswith("expect ") and not self._preserves_pending_error(line):
@@ -527,6 +574,159 @@ class DSLRunner:
         has_more = next_offset < len(items)
         next_cursor = "next" if has_more else None
         return page, has_more, next_cursor, next_offset
+
+    def _apply_given(self, given_lines: list[str]) -> None:
+        idx = 0
+        while idx < len(given_lines):
+            line = given_lines[idx]
+            if not line:
+                idx += 1
+                continue
+            consumed = self._consume_given_feed_messages(given_lines, idx)
+            if consumed != idx:
+                idx = consumed
+                continue
+            if self._given_group_exists(line):
+                idx += 1
+                continue
+            if self._given_group_owner(line):
+                idx += 1
+                continue
+            if self._given_group_member(line):
+                idx += 1
+                continue
+            if self._given_roster(line):
+                idx += 1
+                continue
+            if self._given_moderation(line):
+                idx += 1
+                continue
+            if self._given_read_cursor(line):
+                idx += 1
+                continue
+            raise DSLRunnerError(f"Unsupported given line: {line}")
+
+    def _consume_given_feed_messages(self, lines: list[str], start: int) -> int:
+        line = lines[start]
+        private_match = re.match(r"private feed (\S+)<->(\S+) has messages$", line)
+        group_match = re.match(r"group feed (\S+) has messages$", line)
+        if private_match:
+            left, right = private_match.groups()
+            feed = self._private_feed(left, right)
+        elif group_match:
+            group_name = group_match.group(1)
+            feed = f"group:{group_name}"
+        else:
+            return start
+
+        idx = start + 1
+        while idx < len(lines):
+            entry = lines[idx]
+            if self._looks_like_dsl(entry) or self._given_starts_with(entry):
+                break
+            explicit_match = re.match(r'^(\d+) from (\S+) "(.*)"$', entry)
+            short_match = re.match(r'^"(.*)"$', entry)
+            if explicit_match:
+                seq_text, sender, body = explicit_match.groups()
+                self._given_append_message(feed, sender, body, int(seq_text))
+                idx += 1
+                continue
+            if short_match:
+                body = short_match.group(1)
+                sender = private_match.group(1) if private_match else self.world.groups.get(group_name, GroupState(group_name, "")).owner
+                if not sender:
+                    raise DSLRunnerError(f"Cannot infer sender for given message: {entry}")
+                self._given_append_message(feed, sender, body)
+                idx += 1
+                continue
+            break
+
+        if idx == start + 1:
+            raise DSLRunnerError(f"given feed block without messages: {line}")
+        return idx
+
+    def _given_append_message(self, feed: str, sender: str, body: str, seq: int | None = None) -> None:
+        log = self.world.feed_logs.setdefault(feed, [])
+        expected_seq = len(log) + 1
+        actual_seq = expected_seq if seq is None else seq
+        if actual_seq != expected_seq:
+            raise DSLRunnerError(
+                f"given messages must be contiguous for {feed}: expected seq {expected_seq}, got {actual_seq}"
+            )
+        msg = MessageRecord(id=str(uuid.uuid4()), feed=feed, sender=sender, body=body, seq=actual_seq)
+        self.world.messages[msg.id] = msg
+        log.append(msg.id)
+
+    def _given_group_exists(self, line: str) -> bool:
+        match = re.match(r"group (\S+) exists$", line)
+        if not match:
+            return False
+        name = match.group(1)
+        group = self.world.groups.get(name)
+        if group is None:
+            self.world.groups[name] = GroupState(name=name, owner="")
+        else:
+            group.deleted = False
+        return True
+
+    def _given_group_owner(self, line: str) -> bool:
+        match = re.match(r"(\S+) is owner of group (\S+)$", line)
+        if not match:
+            return False
+        user, name = match.groups()
+        group = self.world.groups.get(name)
+        if group is None:
+            group = GroupState(name=name, owner=user)
+            self.world.groups[name] = group
+        else:
+            group.owner = user
+            group.deleted = False
+        group.members.add(user)
+        return True
+
+    def _given_group_member(self, line: str) -> bool:
+        match = re.match(r"(\S+) is member of group (\S+)$", line)
+        if not match:
+            return False
+        user, name = match.groups()
+        group = self.world.groups.get(name)
+        if group is None:
+            group = GroupState(name=name, owner="")
+            self.world.groups[name] = group
+        else:
+            group.deleted = False
+        group.members.add(user)
+        return True
+
+    def _given_roster(self, line: str) -> bool:
+        match = re.match(r"(\S+) has (\S+) in roster$", line)
+        if not match:
+            return False
+        actor, target = match.groups()
+        self.world.subscriptions.add((actor, target))
+        return True
+
+    def _given_moderation(self, line: str) -> bool:
+        match = re.match(r"(\S+) is banned by (\S+)$", line)
+        if not match:
+            return False
+        target, actor = match.groups()
+        self.world.moderation.add((actor, target))
+        return True
+
+    def _given_read_cursor(self, line: str) -> bool:
+        match = re.match(r"(\S+) read (\S+) up to (\d+)$", line)
+        if not match:
+            return False
+        user, feed_token, seq_text = match.groups()
+        seq = int(seq_text)
+        if feed_token.startswith("private:"):
+            peer = feed_token.split(":", 1)[1]
+            feed = self._private_feed(user, peer)
+        else:
+            feed = feed_token
+        self.world.read_cursors[(user, feed)] = seq
+        return True
 
     # ----------------------------
     # Commands / Queries
