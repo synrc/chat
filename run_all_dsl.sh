@@ -18,6 +18,12 @@ echo "Running DSL in: $DIR"
 echo
 
 for file in $(find "$DIR" -type f -name "*.md" | sort); do
+  base="$(basename "$file")"
+
+  if [[ "$base" == "DSL-CORE.md" ]]; then
+    continue
+  fi
+
   # перевірка чи є хоч один scenario
   if ! grep -q "^scenario " "$file"; then
     continue

@@ -240,6 +240,9 @@ class DSLRunner:
                     self._seed_scenario(scenario_name)
 
                 for line in runtime_lines:
+                    if not self._looks_like_dsl(line):
+                        continue
+
                     self._trace(f"> {line}")
                     is_expect = line.startswith("expect ")
 
