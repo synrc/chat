@@ -435,7 +435,7 @@ class DSLRunner:
             self._query_members_of_group(line)
             return
 
-        if line.startswith("query cursor read feed "):
+        if line.startswith("query cursor read "):
             self._query_cursor_read(line)
             return
 
@@ -499,6 +499,19 @@ class DSLRunner:
                 return feed
             return self._private_feed(session.user, peer)
         return feed
+
+    def _parse_feed_reference(self, session: SessionState, ref: str) -> str:
+        if ref.startswith("peer "):
+            peer = ref.split(" ", 1)[1].strip()
+            return self._private_feed(session.user, peer)
+        if ref.startswith("group "):
+            name = ref.split(" ", 1)[1].strip()
+            return f"group:{name}"
+        if ref.startswith("feed "):
+            return self._resolve_feed(session, ref.split(" ", 1)[1].strip())
+        if ref.startswith("group:") or ref.startswith("private:"):
+            return self._resolve_feed(session, ref)
+        return self._private_feed(session.user, ref)
 
     def _issue_tokens(self, session: SessionState) -> None:
         session.access_token = f"access-{uuid.uuid4()}"
@@ -925,11 +938,11 @@ class DSLRunner:
 
     def _query_cursor_read(self, line: str) -> None:
         session = self._require_authenticated()
-        m = re.match(r"query cursor read feed (\S+) seq (\d+)$", line)
+        m = re.match(r"query cursor read (.+) seq (\d+)$", line)
         if not m:
             raise DSLRunnerError(f"Bad query cursor read syntax: {line}")
-        feed_token, seq_text = m.groups()
-        feed = self._resolve_feed(session, feed_token)
+        feed_ref, seq_text = m.groups()
+        feed = self._parse_feed_reference(session, feed_ref.strip())
         seq = int(seq_text)
 
         if feed.startswith("group:"):
@@ -959,22 +972,18 @@ class DSLRunner:
 
     def _query_inbox(self, line: str) -> None:
         session = self._require_authenticated()
-        m = re.match(r"query inbox (\S+)(?: limit (\d+))?$", line)
+        m = re.match(r"query inbox (.+?)(?: limit (\d+))?$", line)
         if not m:
             raise DSLRunnerError(f"Bad query inbox syntax: {line}")
-        target, limit_text = m.groups()
+        feed_ref, limit_text = m.groups()
         limit = int(limit_text) if limit_text else None
+        feed = self._parse_feed_reference(session, feed_ref.strip())
 
-        if target.startswith("group:"):
-            group_name = target.split(":", 1)[1]
+        if feed.startswith("group:"):
+            group_name = feed.split(":", 1)[1]
             group = self._group_or_raise(group_name)
             if session.user not in group.members:
                 raise ExpectationFailed("error forbidden")
-            feed = target
-        elif target.startswith("private:"):
-            feed = self._resolve_feed(session, target)
-        else:
-            feed = self._private_feed(session.user, target)
 
         log = self.world.feed_logs.get(feed, [])
         items = [
@@ -1006,13 +1015,10 @@ class DSLRunner:
         if not ctx:
             raise ExpectationFailed("error badRequest")
 
-        m = re.match(r"query inbox (\S+) continue$", line)
+        m = re.match(r"query inbox (.+) continue$", line)
         if m:
-            requested_token = m.group(1)
-            if requested_token.startswith("private:"):
-                requested_feed = self._resolve_feed(session, requested_token)
-            else:
-                requested_feed = self._private_feed(session.user, requested_token)
+            requested_ref = m.group(1).strip()
+            requested_feed = self._parse_feed_reference(session, requested_ref)
             if requested_feed != ctx["feed"]:
                 raise ExpectationFailed("error badRequest")
 
@@ -1109,15 +1115,12 @@ class DSLRunner:
 
     def _query_events(self, line: str) -> None:
         session = self._require_authenticated()
-        m = re.match(r"query events (\S+) after (\S+)(?: limit (\d+))?$", line)
+        m = re.match(r"query events (.+?) after (\S+)(?: limit (\d+))?$", line)
         if not m:
             raise DSLRunnerError(f"Bad query events syntax: {line}")
-        target, after_token, limit_token = m.groups()
+        feed_ref, after_token, limit_token = m.groups()
 
-        if target.startswith("group:") or target.startswith("private:"):
-            feed = self._resolve_feed(session, target)
-        else:
-            feed = self._private_feed(session.user, target)
+        feed = self._parse_feed_reference(session, feed_ref.strip())
 
         if feed.startswith("group:"):
             group_name = feed.split(":", 1)[1]
@@ -1189,10 +1192,10 @@ class DSLRunner:
 
     def _send_read_for_last_explicit_feed(self, line: str) -> None:
         session = self._require_authenticated()
-        m = re.match(r"send read (\S+) for last$", line)
+        m = re.match(r"send read (.+) for last$", line)
         if not m:
             raise DSLRunnerError(f"Bad send read syntax: {line}")
-        feed = self._resolve_feed(session, m.group(1))
+        feed = self._parse_feed_reference(session, m.group(1).strip())
         seq = session.last_observed_seq.get(feed)
         if seq is None:
             raise ExpectationFailed("error badRequest")
