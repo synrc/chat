@@ -36,7 +36,7 @@ expect message from alice body "hi"
 ### Exact (precise)
 
 ```
-query events bob after 100 limit 10
+query events feed private:bob after 100 limit 10
 expect inbound message from alice body "hi"
 ```
 
@@ -294,7 +294,6 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | expect empty replay            | expect events = 0                                          |
 | expect no duplicates           | expect result has no duplicate items/events                |
 | expect no gaps                 | expect result covers boundary without missing items/events |
-| send read group:room1 for last | query cursor read feed group:room1 seq 123                 |
 | edit message "m1" body "m1 edited" | TODO exact mutation form                                   |
 | delete message "m1"                | TODO exact mutation form                                   |
 | expect message deleted             | expect final message state = deleted                       |
@@ -438,11 +437,23 @@ Canonical roster DSL розділяє mutation і view:
 - `add <user> to group <name>` додає member relation
 - `remove <user> from group <name>` видаляє member relation
 
-- `group:<name>` є message feed, який посилається на існуючу conference
+Canonical group reference:
+- `group <name>`
+
+Exact group reference:
+- `feed group:<name>`
+
+`group <name>` у canonical DSL є typed reference на group feed/resource.
+`feed group:<name>` у exact DSL є explicit protocol-level form того самого ресурсу.
 
 - тільки member може:
-  - send message to group:<name>
-  - query inbox/events group:<name>
+  - `send message to group:<name>`
+  - `query inbox group <name>`
+  - `query events group <name> after ...`
+
+- exact форма для цих самих операцій:
+  - `query inbox feed group:<name>`
+  - `query events feed group:<name> after ...`
 
 - non-member отримує:
   - error forbidden
