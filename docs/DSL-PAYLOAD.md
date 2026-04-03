@@ -442,3 +442,116 @@ priority: high
 
 - після delete replay не повинен показувати stale structured payload як current state
 - delete повинен перекривати видимість payload у current replay/inbox semantics
+
+---
+
+## PAYLOAD-HOME-1. Structured payload survives home bootstrap
+```
+scenario structured payload survives home bootstrap
+
+given
+  alice has bob in roster
+  private feed alice<->bob has messages
+    1 from alice {
+      body: "doc"
+      subject: "Draft"
+      priority: high
+    }
+
+session bob
+connect
+auth
+
+bootstrap home
+
+expect shared snapshot
+query inbox peer alice
+
+expect message from alice {
+  body: "doc"
+  subject: "Draft"
+  priority: high
+}
+```
+
+- home/bootstrap не повинен втрачати structured payload
+- feed, відкритий через home bootstrap, повинен давати той самий final payload
+
+---
+
+## PAYLOAD-HOME-2. Field edit survives home bootstrap
+```
+scenario field edit survives home bootstrap
+
+given
+  alice has bob in roster
+  private feed alice<->bob has messages
+    1 from alice {
+      body: "doc"
+      subject: "Draft"
+      priority: high
+    }
+
+session alice
+connect
+auth
+edit message ref "doc" field subject "Draft v2"
+
+session bob
+connect
+auth
+
+bootstrap home
+
+expect shared snapshot
+query inbox peer alice
+
+expect message from alice {
+  body: "doc"
+  subject: "Draft v2"
+  priority: high
+}
+```
+
+- home/bootstrap повинен сходитися до final payload після field-level edit
+- bootstrap не повинен повертати stale версію payload
+
+---
+
+## PAYLOAD-HOME-3. Delete hides structured payload after home bootstrap
+```
+scenario delete hides structured payload after home bootstrap
+
+given
+  alice has bob in roster
+  private feed alice<->bob has messages
+    1 from alice {
+      body: "doc"
+      subject: "Draft"
+      priority: high
+    }
+
+session alice
+connect
+auth
+delete message ref "doc"
+
+session bob
+connect
+auth
+
+bootstrap home
+
+expect shared snapshot
+query inbox peer alice
+
+expect message deleted
+expect not message from alice {
+  body: "doc"
+  subject: "Draft"
+  priority: high
+}
+```
+
+- після delete home/bootstrap не повинен відновлювати stale structured payload
+- inbox після bootstrap повинен відображати current final state
