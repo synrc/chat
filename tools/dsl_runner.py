@@ -1625,14 +1625,24 @@ class DSLRunner:
             return
 
         if line == "expect message deleted":
-            lifecycle_ids = self.last_result.items if self.last_result and self.last_result.kind == "message-lifecycle" else []
-            if not lifecycle_ids:
-                raise ExpectationFailed(line)
-            message_id = lifecycle_ids[-1]
-            msg = self.world.messages.get(message_id)
-            if not msg or not msg.deleted:
-                raise ExpectationFailed(line)
-            return
+            if self.last_result and self.last_result.kind == "message-lifecycle":
+                lifecycle_ids = self.last_result.items
+                if lifecycle_ids:
+                    message_id = lifecycle_ids[-1]
+                    msg = self.world.messages.get(message_id)
+                    if msg and msg.deleted:
+                        return
+
+            if self.last_result and self.last_result.kind == "events":
+                for item in self.last_result.items:
+                    if getattr(item, "deleted", False):
+                        return
+
+            for item in reversed(session.inbox):
+                if item["type"] == "message" and item.get("deleted", False):
+                    return
+
+            raise ExpectationFailed(line)
 
         m = re.match(r'expect not message body "(.*)"$', line)
         if m:
