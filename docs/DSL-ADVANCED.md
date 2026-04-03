@@ -123,7 +123,7 @@ edit message id m1id body "m1 edited"
 ### ADV-MUT-4. Given seeded id alias supports mutation
 
 
-```text
+```
 scenario given seeded id mutation semantics
 
 given
@@ -151,7 +151,7 @@ expect message from alice body "m1 edited"
 
 ### ADV-MUT-5. Given seeded id alias supports delete
 
-```text
+```
 scenario given seeded id delete semantics
 
 given
@@ -171,6 +171,80 @@ auth
 expect message deleted
 expect not message body "m1"
 ```
+---
+
+### ADV-MUT-6. Duplicate explicit id in given is invalid
+
+```
+scenario duplicate explicit id in given
+
+given
+  private feed alice<->bob has messages
+    1 id "msg-123" from alice "m1"
+    2 id "msg-123" from bob "m2"
+
+session bob
+connect
+auth
+
+expect error badRequest
+```
+- explicit message identity у given повинна бути унікальною в межах seeded world state
+- повтор одного й того самого protocol-level id робить given невалідним
+---
+
+### ADV-MUT-7. Duplicate seeded id alias in given is invalid
+
+```
+scenario duplicate seeded id alias in given
+
+given
+  private feed alice<->bob has messages
+    1 id "msg-123" as m1id from alice "m1"
+    2 id "msg-124" as m1id from bob "m2"
+
+session bob
+connect
+auth
+
+expect error badRequest
+```
+- seeded alias у given повинен бути унікальним
+- два різні protocol ids не повинні ділити один і той самий DSL alias
+---
+
+### ADV-MUT-8. Structured given payload supports seeded id alias
+
+```
+scenario structured given payload with seeded id alias
+
+given
+  private feed alice<->bob has messages
+    1 id "msg-123" as m1id from alice {
+      body: "doc"
+      subject: "Draft"
+      priority: high
+    }
+
+session alice
+connect
+auth
+
+edit message id m1id field subject "Draft v2"
+
+session bob
+connect
+auth
+
+expect message from alice {
+  body: "doc"
+  subject: "Draft v2"
+  priority: high
+}
+```
+- explicit seeded id у given повинен працювати і для structured payload
+- alias до seeded protocol identity повинен підтримувати field-level mutation
+- structured given + seeded id має узгоджуватись із runtime mutation semantics
 ---
 ## ADV-STATE. Event vs state alignment
 
