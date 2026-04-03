@@ -328,6 +328,27 @@ Protocol source of truth для identity лишається окремим ві�
 
 `ref` і `id` фіксують різницю між DSL reference та protocol identity.
 
+#### Mutation semantics
+
+Операції `edit message` та `delete message` у DSL не означають створення окремого виду Message.
+
+Вони описують mutation існуючого повідомлення і зміну його state.
+
+На цьому рівні DSL виступає як semantic harness:
+- `edit` і `delete` виражають зміну стану повідомлення,
+  а не створення нового message.
+
+У protocol-observable моделі це відповідає event-level семантиці:
+- зміни повідомлення відображаються як події (events),
+  а не як окремі message об’єкти.
+
+Тобто:
+- Message = intent / payload
+- Event = runtime truth для mutation (edit/delete)
+
+Exact mutation form (protocol representation цих подій)
+буде визначена окремо.
+
 #### Default resolution
 
 контекст команди визначає, як інтерпретується identifier
