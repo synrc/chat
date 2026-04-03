@@ -150,6 +150,73 @@ Conflict resolution:
 - коректно переносити reorder
 - виконувати reconciliation локального стану. 
 
+## Message State Semantics
+
+Цей розділ визначає семантику стану повідомлення в CHAT.
+
+### Core principle
+
+Event є єдиною runtime-істиною.
+
+Стан повідомлення не зберігається як окреме джерело істини, а виводиться з потоку подій.
+
+message_state = fold(message_events)
+
+---
+
+### Payload
+
+- повідомлення має структурований payload
+- payload є частиною message state
+- body є лише одним із полів payload
+- коротка форма повідомлення є скороченням structured payload
+
+Приклад:
+
+"hi" == { body: "hi" }
+
+---
+
+### Edit semantics
+
+- edit змінює стан існуючого повідомлення
+- edit не створює новий message
+- edit може змінювати окремі поля payload
+- поля, не згадані в edit, залишаються без змін
+
+---
+
+### Delete semantics
+
+- delete змінює current visible state повідомлення на deleted
+- delete не створює новий message
+- delete перекриває активний content state, включно з попередніми edit
+
+---
+
+### Replay semantics
+
+- replay не є окремим джерелом істини
+- replay має бути узгоджений з edit/delete semantics
+- після застосування релевантних подій replay має приводити до того самого фінального стану повідомлення
+
+---
+
+### Invariants
+
+- повідомлення має один поточний стан
+- цей стан визначається потоком подій
+- різні recovery-шляхи не повинні давати різний current payload
+
+---
+
+### Notes
+
+- payload є state, а не просто даними повідомлення
+- edit/delete визначають state, а не створюють нові повідомлення
+- replay повинен конвергувати до того самого стану, що і звичайна обробка подій
+
+
 ## Feed Model
 
 Feed — це логічний контекст доставки й упорядкування.  
