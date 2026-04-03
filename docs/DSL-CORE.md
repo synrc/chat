@@ -295,11 +295,13 @@ expect message from alice {
 Приклади:
 
 ```text
+send message to bob "hi" capture id as m1id
+
 edit message ref "m1" body "m1 edited"
 delete message ref "m1"
 
-edit message id "msg-123" body "m1 edited"
-delete message id "msg-123"
+edit message id m1id body "m1 edited"
+delete message id m1id
 ```
 
 `ref` використовується як semantic harness для зручного посилання
@@ -308,7 +310,25 @@ delete message id "msg-123"
 Такий reference може збігатися з body або іншим упізнаваним локальним marker,
 але не повинен тлумачитись як normative protocol identity.
 
-`id` означає exact форму, яка відображає окрему protocol-level identity повідомлення.
+Для protocol-level mutation identity DSL підтримує явне захоплення
+message identity у локальний alias:
+
+```text
+send message to bob "hi" capture id as m1id
+```
+
+Тут `m1id` не є literal protocol id,
+а є DSL alias, який зв'язується з згенерованим protocol-level message identity.
+
+Після цього:
+
+```text
+edit message id m1id body "hi v2"
+delete message id m1id
+```
+
+означає mutation за captured protocol identity,
+а не за локальним `ref` marker.
 
 Legacy форма:
 
@@ -326,7 +346,10 @@ delete message ref "m1"
 
 Protocol source of truth для identity лишається окремим від цього DSL sugar.
 
-`ref` і `id` фіксують різницю між DSL reference та protocol identity.
+`ref`, `id` і `capture id as` фіксують різницю між:
+- DSL reference
+- captured protocol identity
+- protocol-level mutation addressing
 
 #### Mutation semantics
 
@@ -525,10 +548,11 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | expect empty replay            | expect events = 0                                          |
 | expect no duplicates           | expect result has no duplicate items/events                |
 | expect no gaps                 | expect result covers boundary without missing items/events |
+| send message to bob "hi" capture id as m1id | TODO exact send form з capture protocol identity      |
 | edit message ref "m1" body "m1 edited" | TODO exact mutation form через local reference             |
-| edit message id "msg-123" body "m1 edited" | TODO exact mutation form через protocol identity         |
+| edit message id m1id body "m1 edited" | TODO exact mutation form через captured protocol identity   |
 | delete message ref "m1"                | TODO exact mutation form через local reference             |
-| delete message id "msg-123"            | TODO exact mutation form через protocol identity           |
+| delete message id m1id                | TODO exact mutation form через captured protocol identity   |
 | expect message deleted             | expect final message state = deleted                       |
 | create group room1             | query conference create name room1 type group              |
 | delete group room1             | query conference remove name room1                         |

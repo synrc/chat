@@ -94,9 +94,9 @@ subject: "Draft v2"
 
 ---
 
-### ADV-MUT-3. Id is separate from ref
+### ADV-MUT-3. Captured id is separate from ref
 ```
-scenario id mutation semantics
+scenario captured id mutation semantics
 
 session alice
 connect
@@ -107,17 +107,17 @@ connect
 auth
 
 session alice
-send message to bob "m1"
+send message to bob "m1" capture id as m1id
 
 session alice
-edit message id "msg-123" body "m1 edited"
+edit message id m1id body "m1 edited"
 ```
 
 - `id` є protocol-level identity
 - `id` не дорівнює `ref`
 - exact mutation form буде визначена окремо
 - цей сценарій фіксує semantic distinction, навіть без runner support
-
+---
 ## ADV-STATE. Event vs state alignment
 
 ```
