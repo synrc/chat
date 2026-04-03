@@ -729,13 +729,36 @@ class DSLRunner:
             entry = lines[idx]
             if self._looks_like_dsl(entry) or self._given_starts_with(entry):
                 break
+
+            structured_match = re.match(r'^(\d+) from (\S+) \{$', entry)
             explicit_match = re.match(r'^(\d+) from (\S+) "(.*)"$', entry)
             short_match = re.match(r'^"(.*)"$', entry)
+
+            if structured_match:
+                seq_text, sender = structured_match.groups()
+                block_lines: list[str] = []
+                idx += 1
+                while idx < len(lines):
+                    inner = lines[idx]
+                    if inner == "}":
+                        break
+                    if self._looks_like_dsl(inner) or self._given_starts_with(inner):
+                        raise DSLRunnerError(f"Unclosed structured given payload: {entry}")
+                    block_lines.append(inner)
+                    idx += 1
+                if idx >= len(lines) or lines[idx] != "}":
+                    raise DSLRunnerError(f"Unclosed structured given payload: {entry}")
+                payload, body = self._parse_structured_message_payload("\n".join(block_lines))
+                self._given_append_message(feed, sender, body, int(seq_text), payload=payload)
+                idx += 1
+                continue
+
             if explicit_match:
                 seq_text, sender, body = explicit_match.groups()
                 self._given_append_message(feed, sender, body, int(seq_text))
                 idx += 1
                 continue
+
             if short_match:
                 body = short_match.group(1)
                 sender = private_match.group(1) if private_match else self.world.groups.get(group_name, GroupState(group_name, "")).owner
@@ -744,13 +767,21 @@ class DSLRunner:
                 self._given_append_message(feed, sender, body)
                 idx += 1
                 continue
+
             break
 
         if idx == start + 1:
             raise DSLRunnerError(f"given feed block without messages: {line}")
         return idx
 
-    def _given_append_message(self, feed: str, sender: str, body: str, seq: int | None = None) -> None:
+    def _given_append_message(
+        self,
+        feed: str,
+        sender: str,
+        body: str,
+        seq: int | None = None,
+        payload: dict[str, Any] | None = None,
+    ) -> None:
         log = self.world.feed_logs.setdefault(feed, [])
         expected_seq = len(log) + 1
         actual_seq = expected_seq if seq is None else seq
@@ -765,7 +796,7 @@ class DSLRunner:
             body=body,
             seq=actual_seq,
             original_body=body,
-            payload={"body": body},
+            payload=dict(payload or {"body": body}),
         )
         self.world.messages[msg.id] = msg
         log.append(msg.id)

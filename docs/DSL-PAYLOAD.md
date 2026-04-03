@@ -281,3 +281,25 @@ scenario payload validation array unsupported
 
   expect error badRequest
 ```
+
+```
+scenario given structured payload
+  given
+    private feed alice<->bob has messages
+      1 from alice {
+        body: "doc"
+        subject: "Draft"
+        priority: high
+      }
+
+  session bob1
+  connect
+  auth
+
+  session bob1
+  expect message from alice {
+    body: "doc"
+    subject: "Draft"
+    priority: high
+  }
+```

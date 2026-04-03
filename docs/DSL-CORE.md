@@ -738,11 +738,34 @@ given
     2 from bob "m2"
 ```
 
+Structured form:
+
+```
+given
+  private feed alice<->bob has messages
+    1 from alice {
+      body: "m1"
+      subject: "Draft"
+      priority: high
+    }
+```
+
 Правила:
 
 - порядок визначає `seq`, якщо він не заданий явно
 - рекомендується використовувати explicit форму (`seq + sender`)
   для уникнення неявних припущень
+- structured given payload використовує ту саму flat field model, що і `send message`
+- `body` є обов'язковим полем
+- `body` повинен бути string
+- duplicate fields -> `error badRequest`
+- nested objects і arrays у given payload не підтримуються
+
+Structured given payload:
+- задає payload повідомлення у feed log
+- не генерує delivery або events
+- не означає inbox state
+- є лише описом initial state
 
 ---
 
