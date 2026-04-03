@@ -97,10 +97,9 @@ class DSLRunner:
         self.reports: list[ScenarioReport] = []
         self.current_scenario_name: str | None = None
         self.unsupported_scenarios: set[str] = set()
-        # TODO(payload-replay):
-        # - add scenarios for structured payload replay after reconnect
-        # - verify snapshot/inbox consistency for structured payload
-        # - verify final-state behavior for payload after edit/delete across replay
+        # TODO(given-identity):
+        # - cover edge cases for explicit message identity in given state
+        # - extend tests for structured given payload with explicit id and alias
 
     def _reset_for_scenario(self) -> None:
         self.world = World()
@@ -161,7 +160,11 @@ class DSLRunner:
         return line.startswith(prefixes)
 
     def _looks_like_given_entry(self, line: str) -> bool:
-        return bool(re.match(r'^\d+ from \S+ ".*"$', line) or re.match(r'^".*"$', line))
+        return bool(
+            re.match(r'^\d+ from \S+ ".*"$', line)
+            or re.match(r'^\d+ id ".*"(?: as [A-Za-z_][A-Za-z0-9_-]*)? from \S+ ".*"$', line)
+            or re.match(r'^".*"$', line)
+        )
 
     def _split_scenarios(self, script: str) -> list[tuple[str, list[str]]]:
         scenarios: list[tuple[str, list[str]]] = []
@@ -735,9 +738,57 @@ class DSLRunner:
             if self._looks_like_dsl(entry) or self._given_starts_with(entry):
                 break
 
+            seeded_structured_match = re.match(
+                r'^(\d+) id "([^"]*)"(?: as ([A-Za-z_][A-Za-z0-9_-]*))? from (\S+) \{$',
+                entry,
+            )
+            seeded_explicit_match = re.match(
+                r'^(\d+) id "([^"]*)"(?: as ([A-Za-z_][A-Za-z0-9_-]*))? from (\S+) "(.*)"$',
+                entry,
+            )
             structured_match = re.match(r'^(\d+) from (\S+) \{$', entry)
             explicit_match = re.match(r'^(\d+) from (\S+) "(.*)"$', entry)
             short_match = re.match(r'^"(.*)"$', entry)
+
+            if seeded_structured_match:
+                seq_text, message_id, id_alias, sender = seeded_structured_match.groups()
+                block_lines: list[str] = []
+                idx += 1
+                while idx < len(lines):
+                    inner = lines[idx]
+                    if inner == "}":
+                        break
+                    if self._looks_like_dsl(inner) or self._given_starts_with(inner):
+                        raise DSLRunnerError(f"Unclosed structured given payload: {entry}")
+                    block_lines.append(inner)
+                    idx += 1
+                if idx >= len(lines) or lines[idx] != "}":
+                    raise DSLRunnerError(f"Unclosed structured given payload: {entry}")
+                payload, body = self._parse_structured_message_payload("\n".join(block_lines))
+                self._given_append_message(
+                    feed,
+                    sender,
+                    body,
+                    int(seq_text),
+                    payload=payload,
+                    message_id=message_id,
+                    id_alias=id_alias,
+                )
+                idx += 1
+                continue
+
+            if seeded_explicit_match:
+                seq_text, message_id, id_alias, sender, body = seeded_explicit_match.groups()
+                self._given_append_message(
+                    feed,
+                    sender,
+                    body,
+                    int(seq_text),
+                    message_id=message_id,
+                    id_alias=id_alias,
+                )
+                idx += 1
+                continue
 
             if structured_match:
                 seq_text, sender = structured_match.groups()
@@ -786,6 +837,8 @@ class DSLRunner:
         body: str,
         seq: int | None = None,
         payload: dict[str, Any] | None = None,
+        message_id: str | None = None,
+        id_alias: str | None = None,
     ) -> None:
         log = self.world.feed_logs.setdefault(feed, [])
         expected_seq = len(log) + 1
@@ -794,8 +847,13 @@ class DSLRunner:
             raise DSLRunnerError(
                 f"given messages must be contiguous for {feed}: expected seq {expected_seq}, got {actual_seq}"
             )
+        resolved_id = message_id or str(uuid.uuid4())
+        if resolved_id in self.world.messages:
+            raise DSLRunnerError(f"Duplicate given message id: {resolved_id}")
+        if id_alias is not None and id_alias in self.world.captured_message_ids:
+            raise DSLRunnerError(f"Duplicate given message id alias: {id_alias}")
         msg = MessageRecord(
-            id=str(uuid.uuid4()),
+            id=resolved_id,
             feed=feed,
             sender=sender,
             body=body,
@@ -805,6 +863,8 @@ class DSLRunner:
         )
         self.world.messages[msg.id] = msg
         log.append(msg.id)
+        if id_alias is not None:
+            self.world.captured_message_ids[id_alias] = msg.id
 
     def _given_group_exists(self, line: str) -> bool:
         match = re.match(r"group (\S+) exists$", line)
