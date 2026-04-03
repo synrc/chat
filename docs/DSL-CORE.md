@@ -369,8 +369,13 @@ Protocol source of truth для identity лишається окремим ві�
 - Message = intent / payload
 - Event = runtime truth для mutation (edit/delete)
 
-Exact mutation form (protocol representation цих подій)
+Остаточна wire / ASN.1 форма mutation command і mutation event
 буде визначена окремо.
+
+При цьому DSL вже фіксує protocol-observable semantics:
+- mutation адресує існуюче message state;
+- `ref` і `id` є різними addressing modes;
+- `id` може бути отриманий через `capture id as`.
 
 #### Default resolution
 
@@ -548,11 +553,11 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | expect empty replay            | expect events = 0                                          |
 | expect no duplicates           | expect result has no duplicate items/events                |
 | expect no gaps                 | expect result covers boundary without missing items/events |
-| send message to bob "hi" capture id as m1id | TODO exact send form з capture protocol identity      |
-| edit message ref "m1" body "m1 edited" | TODO exact mutation form через local reference             |
-| edit message id m1id body "m1 edited" | TODO exact mutation form через captured protocol identity   |
-| delete message ref "m1"                | TODO exact mutation form через local reference             |
-| delete message id m1id                | TODO exact mutation form через captured protocol identity   |
+| send message to bob "hi" capture id as m1id | send message to bob; bind returned message identity as m1id |
+| edit message ref "m1" body "m1 edited" | apply message mutation by scenario-local reference          |
+| edit message id m1id body "m1 edited" | apply message mutation by captured protocol identity        |
+| delete message ref "m1"                | apply message delete by scenario-local reference            |
+| delete message id m1id                 | apply message delete by captured protocol identity          |
 | expect message deleted             | expect final message state = deleted                       |
 | create group room1             | query conference create name room1 type group              |
 | delete group room1             | query conference remove name room1                         |
@@ -582,6 +587,14 @@ Argument rules застосовуються до обох рівнів DSL (cano
 
 Canonical = sugar  
 Exact = protocol-observable semantics
+
+Для message mutation exact side у цій таблиці означає
+protocol-observable addressing semantics, а не остаточно зафіксований wire syntax.
+
+Тобто duality тут фіксує:
+- який identity/addressing mode використовується;
+- що саме спостерігається на protocol level;
+- але не нав'язує остаточну ASN.1 форму mutation command/event.
 
 Structured message form є розширенням canonical DSL,
 а не заміною short form.
