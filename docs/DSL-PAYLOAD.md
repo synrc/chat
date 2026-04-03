@@ -307,12 +307,9 @@ scenario given structured payload
 
 ## TODO
 
-- payload + replay after reconnect
-- payload + snapshot / inbox bootstrap consistency
-- payload + edit then replay final-state verification
-- payload + delete final-state verification
-- payload visibility across replay / inbox / home boundaries
-
+- payload + id-based mutation semantics (exact protocol identity)
+- payload + event vs state alignment across replay / inbox / home
+- payload + edge cases for mutation ordering and convergence
 
 ```text
 ## PAYLOAD-REPLAY-1. Structured payload survives replay after reconnect
