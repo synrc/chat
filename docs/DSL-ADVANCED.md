@@ -116,7 +116,8 @@ edit message id m1id body "m1 edited"
 - `id` є protocol-level identity
 - `id` не дорівнює `ref`
 - exact mutation form буде визначена окремо
-- цей сценарій фіксує semantic distinction, навіть без runner support
+- цей сценарій фіксує semantic distinction між `ref` і captured protocol identity
+- runner підтримує цей canonical flow через `capture id as`
 ---
 ## ADV-STATE. Event vs state alignment
 

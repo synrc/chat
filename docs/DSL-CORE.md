@@ -160,8 +160,8 @@ Structured payload у DSL інтерпретується на application/domain
 Це дозволяє виражати document-like сценарії,
 не фіксуючи конкретний wire encoding або crypto/container format.
 
-На цьому етапі structured form фіксується як syntax-level design,
-навіть якщо runner ще не підтримує її виконання.
+На цьому етапі structured form фіксується як частина DSL semantics
+і підтримується runner для message/payload scenarios.
 
 #### Structured field values
 
@@ -282,8 +282,8 @@ expect message from alice {
 }
 ```
 
-На цьому етапі structured expect form фіксується як напрямок розвитку DSL,
-але не вимагається для runner.
+На цьому етапі structured expect form є частиною DSL semantics
+і підтримується runner для partial payload matching та field-based scenarios.
 
 #### Message reference semantics
 
@@ -866,10 +866,9 @@ Structured given payload:
 - є лише описом initial state
 
 TODO:
-- перевірити replay consistency для structured payload після reconnect
-- перевірити snapshot / inbox bootstrap consistency для structured payload
-- перевірити final-state semantics для payload після edit + replay
-- перевірити delete semantics для structured payload у replay та inbox view
+- explicit message identity у `given` для exact state seeding
+- exact mapping між canonical capture-id flow і protocol-level exact form
+- exact mapping між canonical payload/mutation form і protocol-level exact form
 
 ---
 

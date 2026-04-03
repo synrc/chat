@@ -307,9 +307,9 @@ scenario given structured payload
 
 ## TODO
 
-- payload + id-based mutation semantics (exact protocol identity)
-- payload + event vs state alignment across replay / inbox / home
-- payload + edge cases for mutation ordering and convergence
+- structured payload + `capture id as` / mutation by captured identity
+- structured payload + explicit message identity in `given`
+- structured payload + edge cases for mutation ordering and convergence
 
 ```text
 ## PAYLOAD-REPLAY-1. Structured payload survives replay after reconnect
