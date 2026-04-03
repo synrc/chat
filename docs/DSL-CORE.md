@@ -287,24 +287,47 @@ expect message from alice {
 
 #### Message reference semantics
 
-У mutation-сценаріях на кшталт:
+У canonical mutation form DSL розрізняє два способи посилання на повідомлення:
+
+- `ref <value>` — DSL-level local reference
+- `id <value>` — protocol-level message identity
+
+Приклади:
+
+```text
+edit message ref "m1" body "m1 edited"
+delete message ref "m1"
+
+edit message id "msg-123" body "m1 edited"
+delete message id "msg-123"
+```
+
+`ref` використовується як semantic harness для зручного посилання
+на раніше відоме повідомлення в межах сценарію.
+
+Такий reference може збігатися з body або іншим упізнаваним локальним marker,
+але не повинен тлумачитись як normative protocol identity.
+
+`id` означає exact форму, яка відображає окрему protocol-level identity повідомлення.
+
+Legacy форма:
 
 ```text
 edit message "m1" body "m1 edited"
 delete message "m1"
-edit message "doc" field subject "Draft v2"
 ```
-рядок після message на цьому етапі трактується як DSL-level reference,
-а не як normative protocol identity.
 
-Тобто це semantic harness для зручного посилання на раніше відоме повідомлення
-в межах сценарію.
+інтерпретується як sugar над:
 
-Він може збігатися з body або іншим упізнаваним локальним marker,
-але не повинен тлумачитись як остаточна protocol-level модель message identity.
+```text
+edit message ref "m1" body "m1 edited"
+delete message ref "m1"
+```
 
 Protocol source of truth для identity лишається окремим від цього DSL sugar.
-Exact mutation form для message identity буде уточнена окремо.
+
+`ref` і `id` фіксують різницю між DSL reference та protocol identity.
+
 #### Default resolution
 
 контекст команди визначає, як інтерпретується identifier
@@ -481,8 +504,10 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | expect empty replay            | expect events = 0                                          |
 | expect no duplicates           | expect result has no duplicate items/events                |
 | expect no gaps                 | expect result covers boundary without missing items/events |
-| edit message "m1" body "m1 edited" | TODO exact mutation form                                   |
-| delete message "m1"                | TODO exact mutation form                                   |
+| edit message ref "m1" body "m1 edited" | TODO exact mutation form через local reference             |
+| edit message id "msg-123" body "m1 edited" | TODO exact mutation form через protocol identity         |
+| delete message ref "m1"                | TODO exact mutation form через local reference             |
+| delete message id "msg-123"            | TODO exact mutation form через protocol identity           |
 | expect message deleted             | expect final message state = deleted                       |
 | create group room1             | query conference create name room1 type group              |
 | delete group room1             | query conference remove name room1                         |
