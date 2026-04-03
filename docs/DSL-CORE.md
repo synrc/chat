@@ -152,6 +152,14 @@ send message to bob {
 - потрібна для document/message field scenarios
 - є природним розширенням Message payload model
 
+Structured payload у DSL інтерпретується на application/domain level.
+
+Тобто DSL працює не з transport-level opaque binary payload як таким,
+а з його прикладною структурованою інтерпретацією у вигляді fields / values.
+
+Це дозволяє виражати document-like сценарії,
+не фіксуючи конкретний wire encoding або crypto/container format.
+
 На цьому етапі structured form фіксується як syntax-level design,
 навіть якщо runner ще не підтримує її виконання.
 
@@ -277,6 +285,26 @@ expect message from alice {
 На цьому етапі structured expect form фіксується як напрямок розвитку DSL,
 але не вимагається для runner.
 
+#### Message reference semantics
+
+У mutation-сценаріях на кшталт:
+
+```text
+edit message "m1" body "m1 edited"
+delete message "m1"
+edit message "doc" field subject "Draft v2"
+```
+рядок після message на цьому етапі трактується як DSL-level reference,
+а не як normative protocol identity.
+
+Тобто це semantic harness для зручного посилання на раніше відоме повідомлення
+в межах сценарію.
+
+Він може збігатися з body або іншим упізнаваним локальним marker,
+але не повинен тлумачитись як остаточна protocol-level модель message identity.
+
+Protocol source of truth для identity лишається окремим від цього DSL sugar.
+Exact mutation form для message identity буде уточнена окремо.
 #### Default resolution
 
 контекст команди визначає, як інтерпретується identifier
