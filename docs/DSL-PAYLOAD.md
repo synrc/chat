@@ -135,3 +135,56 @@ scenario payload mismatch
     subject: "B"
   }
 ```
+
+```
+scenario payload edit field
+  session alice1
+  connect
+  auth
+
+  session bob1
+  connect
+  auth
+
+  session alice1
+  send message to bob {
+    body: "doc"
+    subject: "Draft"
+    priority: high
+  }
+
+  session alice1
+  edit message "doc" field subject "Draft v2"
+
+  session bob1
+  expect message from alice {
+    subject: "Draft v2"
+  }
+```
+
+```
+scenario payload edit does not affect other fields
+  session alice1
+  connect
+  auth
+
+  session bob1
+  connect
+  auth
+
+  session alice1
+  send message to bob {
+    body: "doc"
+    subject: "A"
+    priority: high
+  }
+
+  session alice1
+  edit message "doc" field subject "B"
+
+  session bob1
+  expect message from alice {
+    subject: "B"
+    priority: high
+  }
+```

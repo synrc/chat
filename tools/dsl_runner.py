@@ -433,7 +433,10 @@ class DSLRunner:
             return
 
         if line.startswith("edit message "):
-            self._edit_message(line)
+            if " field " in line:
+                self._edit_message_field(line)
+            else:
+                self._edit_message(line)
             return
 
         if line.startswith("add ") and " to group " in line:
@@ -899,7 +902,41 @@ class DSLRunner:
         msg = self._find_message_for_lifecycle(session.user, reference_body)
         if not msg.deleted:
             msg.body = new_body
+            msg.payload["body"] = new_body
             self._sync_message_to_inboxes(msg.id)
+        self.last_result = QueryResult(kind="message-lifecycle", items=[msg.id])
+
+    def _edit_message_field(self, line: str) -> None:
+        session = self._require_authenticated()
+        m = re.match(r'edit message "(.*)" field ([A-Za-z_][A-Za-z0-9_-]*) (.+)$', line)
+        if not m:
+            raise DSLRunnerError(f"Bad edit message field syntax: {line}")
+        reference_body, field_name, value_text = m.groups()
+
+        msg = self._find_message_for_lifecycle(session.user, reference_body)
+        if msg.deleted:
+            self.last_result = QueryResult(kind="message-lifecycle", items=[msg.id])
+            return
+
+        value_text = value_text.strip()
+        if value_text.startswith('"') and value_text.endswith('"'):
+            value: Any = value_text[1:-1]
+        elif value_text in {"true", "false"}:
+            value = value_text == "true"
+        elif re.fullmatch(r'-?\d+', value_text):
+            value = int(value_text)
+        elif re.fullmatch(r'[A-Za-z_][A-Za-z0-9_-]*', value_text):
+            value = value_text
+        else:
+            raise DSLRunnerError(f"Unsupported field value: {value_text}")
+
+        msg.payload[field_name] = value
+        if field_name == "body":
+            if not isinstance(value, str):
+                raise DSLRunnerError("Field body must remain string")
+            msg.body = value
+
+        self._sync_message_to_inboxes(msg.id)
         self.last_result = QueryResult(kind="message-lifecycle", items=[msg.id])
 
     def _add_to_roster(self, line: str) -> None:
