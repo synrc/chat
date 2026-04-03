@@ -193,6 +193,7 @@ class DSLRunner:
             if (
                 (line.startswith("send message to ") and line.endswith("{"))
                 or (line.startswith("expect message from ") and line.endswith("{"))
+                or (line.startswith("expect not message from ") and line.endswith("{"))
             ):
                 block_lines = [line]
                 continue_block = True
@@ -1517,6 +1518,20 @@ class DSLRunner:
             body = m.group(1)
             for item in reversed(session.inbox):
                 if item["type"] == "message" and item["body"] == body and not item.get("deleted", False):
+                    raise ExpectationFailed(line)
+            return
+
+        m = re.match(r'expect not message from (\S+) \{\n(.*)\n\}$', line, re.DOTALL)
+        if m:
+            sender = m.group(1)
+            expected_payload = self._parse_structured_fields(m.group(2))
+            for item in reversed(session.inbox):
+                if (
+                    item["type"] == "message"
+                    and item["sender"] == sender
+                    and self._payload_matches(item.get("payload", {}), expected_payload)
+                    and not item.get("deleted", False)
+                ):
                     raise ExpectationFailed(line)
             return
 

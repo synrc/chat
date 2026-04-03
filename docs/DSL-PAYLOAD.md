@@ -131,7 +131,7 @@ scenario payload mismatch
   }
 
   session bob1
-  expect message from alice {
+  expect not message from alice {
     subject: "B"
   }
-  ```
+```
