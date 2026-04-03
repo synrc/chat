@@ -184,6 +184,52 @@ send message to bob {
 - `body` є звичайним field і не має спеціального статусу всередині structured block
 - nested objects, arrays, attachments і binary payload поки що не фіксуються в базовій моделі
 
+#### Structured payload validation
+
+Для `send message to <target> { ... }` діють такі базові validation rules:
+
+- duplicate field name -> `error badRequest`
+- field `body` є обов'язковим
+- field `body` повинен бути string
+- nested object values не підтримуються і відхиляються
+- array values не підтримуються і відхиляються
+- unsupported value forms відхиляються як `error badRequest`
+
+Приклади невалідних form:
+
+```text
+send message to bob {
+  body: "x"
+  body: "y"
+}
+```
+
+```text
+send message to bob {
+  subject: "Draft"
+}
+```
+
+```text
+send message to bob {
+  body: 42
+}
+```
+
+```text
+send message to bob {
+  body: "x"
+  meta: {}
+}
+```
+
+```text
+send message to bob {
+  body: "x"
+  tags: []
+}
+```
+
 #### Message normalization
 
 Short message form повинна нормалізуватись у structured form.

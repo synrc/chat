@@ -205,3 +205,79 @@ scenario given payload baseline
     body: "doc"
   }
 ```
+
+## Payload validation
+```
+scenario payload validation duplicate field
+  session alice1
+  connect
+  auth
+
+  session alice1
+  send message to bob {
+    body: "x"
+    body: "y"
+  }
+
+  expect error badRequest
+```
+
+```
+scenario payload validation missing body
+  session alice1
+  connect
+  auth
+
+  session alice1
+  send message to bob {
+    subject: "Draft"
+    priority: high
+  }
+
+  expect error badRequest
+```
+
+```
+scenario payload validation invalid body type
+  session alice1
+  connect
+  auth
+
+  session alice1
+  send message to bob {
+    body: 42
+    subject: "Draft"
+  }
+
+  expect error badRequest
+```
+
+```
+scenario payload validation nested object unsupported
+  session alice1
+  connect
+  auth
+
+  session alice1
+  send message to bob {
+    body: "x"
+    meta: {}
+  }
+
+  expect error badRequest
+```
+
+```
+scenario payload validation array unsupported
+  session alice1
+  connect
+  auth
+
+  session alice1
+  send message to bob {
+    body: "x"
+    tags: []
+  }
+
+  expect error badRequest
+```

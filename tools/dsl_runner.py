@@ -580,6 +580,20 @@ class DSLRunner:
             fields[key] = value
         return fields
 
+    def _parse_structured_message_payload(self, block: str) -> tuple[dict[str, Any], str]:
+        try:
+            payload = self._parse_structured_fields(block)
+        except DSLRunnerError as e:
+            raise ExpectationFailed("error badRequest") from e
+
+        body = payload.get("body")
+        if body is None:
+            raise ExpectationFailed("error badRequest")
+        if not isinstance(body, str):
+            raise ExpectationFailed("error badRequest")
+
+        return payload, body
+
     def _payload_matches(self, actual: dict[str, Any], expected: dict[str, Any]) -> bool:
         for key, value in expected.items():
             if actual.get(key) != value:
@@ -836,10 +850,7 @@ class DSLRunner:
         structured = re.match(r'send message to ([^\s]+) \{\n(.*)\n\}$', line, re.DOTALL)
         if structured:
             target = structured.group(1)
-            payload = self._parse_structured_fields(structured.group(2))
-            if "body" not in payload or not isinstance(payload["body"], str):
-                raise DSLRunnerError("Structured message form requires string field body")
-            body = payload["body"]
+            payload, body = self._parse_structured_message_payload(structured.group(2))
         else:
             m = re.match(r'send message to ([^\s]+) "(.*)"$', line)
             if not m:
