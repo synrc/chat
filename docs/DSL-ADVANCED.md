@@ -119,6 +119,59 @@ edit message id m1id body "m1 edited"
 - цей сценарій фіксує semantic distinction між `ref` і captured protocol identity
 - runner підтримує цей canonical flow через `capture id as`
 ---
+
+### ADV-MUT-4. Given seeded id alias supports mutation
+
+
+```text
+scenario given seeded id mutation semantics
+
+given
+  private feed alice<->bob has messages
+    1 id "msg-123" as m1id from alice "m1"
+
+session alice
+connect
+auth
+
+edit message id m1id body "m1 edited"
+
+session bob
+connect
+auth
+
+expect message from alice body "m1 edited"
+```
+
+- `given` може явно задавати protocol-level message identity
+- `as m1id` у `given` створює DSL alias для seeded protocol identity
+- mutation через `id m1id` повинна працювати так само, як і для runtime `capture id as`
+
+---
+
+### ADV-MUT-5. Given seeded id alias supports delete
+
+```text
+scenario given seeded id delete semantics
+
+given
+  private feed alice<->bob has messages
+    1 id "msg-123" as m1id from alice "m1"
+
+session alice
+connect
+auth
+
+delete message id m1id
+
+session bob
+connect
+auth
+
+expect message deleted
+expect not message body "m1"
+```
+---
 ## ADV-STATE. Event vs state alignment
 
 ```

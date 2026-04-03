@@ -840,14 +840,21 @@ given
     "m2"
 ```
 
-Exact form:
+Exact form with explicit identity:
 
 ```
 given
   private feed alice<->bob has messages
-    1 from alice "m1"
-    2 from bob "m2"
+    1 id "msg-123" as m1id from alice "m1"
+    2 id "msg-124" from bob "m2"
 ```
+
+Тут:
+- id "..." задає protocol-level message identity у seeded state
+- as <alias> створює DSL alias для цього exact id
+- цей alias може далі використовуватись у runtime mutation form:
+  - edit message id m1id ...
+  - delete message id m1id
 
 Structured form:
 
@@ -871,6 +878,11 @@ given
 - `body` повинен бути string
 - duplicate fields -> `error badRequest`
 - nested objects і arrays у given payload не підтримуються
+- explicit identity може бути задана через id "..." у message entry
+- optional as <alias> створює DSL alias для seeded protocol identity
+- seeded id і runtime capture id as є різними способами отримати той самий addressing mode для edit/delete message id ...
+- given не виконує capture; він напряму задає exact state, включно з message identity
+- якщо explicit id повторюється в межах одного seeded world state, це є невалідним given state
 
 Structured given payload:
 - задає payload повідомлення у feed log
@@ -879,7 +891,7 @@ Structured given payload:
 - є лише описом initial state
 
 TODO:
-- explicit message identity у `given` для exact state seeding
+- edge cases для explicit message identity у `given`
 - exact mapping між canonical capture-id flow і protocol-level exact form
 - exact mapping між canonical payload/mutation form і protocol-level exact form
 
