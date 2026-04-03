@@ -334,6 +334,18 @@ BEGIN
     -- Message описує тільки саме повідомлення і його вміст.
     -- Event є уніфікованим типом для всіх подій (Ack + Activity).
     -- Такий поділ мінімізує розмір базових повідомлень і не змішує семантику.
+    --
+    -- Message Payload Semantics
+    --
+    --   * payload може бути структурованим.
+    --
+    --   * body не є єдиним полем payload.
+    --
+    --   * повідомлення може містити document-like дані
+    --     з семантикою field / value.
+    --
+    --   * така модель використовується для сценаріїв
+    --     з документами і ABAC policy evaluation.
 
     MessageType ::= ENUMERATED { normal (0), sys (1), reply (2), forward (3), ... }
 
