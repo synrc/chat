@@ -190,7 +190,10 @@ class DSLRunner:
             if current_name is None:
                 continue
 
-            if line.startswith("send message to ") and line.endswith("{"):
+            if (
+                (line.startswith("send message to ") and line.endswith("{"))
+                or (line.startswith("expect message from ") and line.endswith("{"))
+            ):
                 block_lines = [line]
                 continue_block = True
                 continue
@@ -572,6 +575,12 @@ class DSLRunner:
                 raise DSLRunnerError(f"Unsupported structured field value: {value_text}")
             fields[key] = value
         return fields
+
+    def _payload_matches(self, actual: dict[str, Any], expected: dict[str, Any]) -> bool:
+        for key, value in expected.items():
+            if actual.get(key) != value:
+                return False
+        return True
 
     def _append_message(self, feed: str, sender: str, body: str, payload: dict[str, Any] | None = None) -> MessageRecord:
         log = self.world.feed_logs.setdefault(feed, [])
@@ -1510,6 +1519,20 @@ class DSLRunner:
                 if item["type"] == "message" and item["body"] == body and not item.get("deleted", False):
                     raise ExpectationFailed(line)
             return
+
+        m = re.match(r'expect message from (\S+) \{\n(.*)\n\}$', line, re.DOTALL)
+        if m:
+            sender = m.group(1)
+            expected_payload = self._parse_structured_fields(m.group(2))
+            for item in reversed(session.inbox):
+                if (
+                    item["type"] == "message"
+                    and item["sender"] == sender
+                    and self._payload_matches(item.get("payload", {}), expected_payload)
+                    and not item.get("deleted", False)
+                ):
+                    return
+            raise ExpectationFailed(line)
 
         m = re.match(r'expect message from (\S+) body "(.*)"$', line)
         if m:
