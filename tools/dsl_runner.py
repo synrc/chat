@@ -553,7 +553,7 @@ class DSLRunner:
         return session
 
     def _parse_body(self, line: str) -> str:
-        m = re.search(r'"(.*)"$', line)
+        m = re.search(r'"([^"]*)"$', line)
         if not m:
             raise DSLRunnerError(f"Cannot parse quoted body from: {line}")
         return m.group(1)
@@ -930,18 +930,18 @@ class DSLRunner:
                     item["payload"] = dict(msg.payload)
                     item["deleted"] = msg.deleted
 
-    def _parse_message_reference(self, line: str, action: str) -> tuple[str, str]:
+    def _parse_message_reference(self, line: str, action: str) -> tuple[str, str] | tuple[str, str, str]:
         if action == "delete":
             patterns = (
-                (r'delete message ref "(.*)"$', "ref"),
-                (r'delete message id "(.*)"$', "id"),
-                (r'delete message "(.*)"$', "ref"),
+                (r'delete message ref "([^"]*)"$', "ref"),
+                (r'delete message id "([^"]*)"$', "id"),
+                (r'delete message "([^"]*)"$', "ref"),
             )
         else:
             patterns = (
-                (r'edit message ref "(.*)" body "(.*)"$', "ref"),
-                (r'edit message id "(.*)" body "(.*)"$', "id"),
-                (r'edit message "(.*)" body "(.*)"$', "ref"),
+                (r'edit message ref "([^"]*)" body "([^"]*)"$', "ref"),
+                (r'edit message id "([^"]*)" body "([^"]*)"$', "id"),
+                (r'edit message "([^"]*)" body "([^"]*)"$', "ref"),
             )
 
         for pattern, ref_kind in patterns:
@@ -951,15 +951,17 @@ class DSLRunner:
                 reference = groups[0]
                 if ref_kind == "id":
                     raise DSLRunnerError(f"Unsupported message id mutation syntax: {line}")
+                if action == "edit":
+                    return ref_kind, reference, groups[1]
                 return ref_kind, reference
 
         raise DSLRunnerError(f"Bad {action} message syntax: {line}")
 
     def _parse_message_field_reference(self, line: str) -> tuple[str, str, str, str]:
         patterns = (
-            (r'edit message ref "(.*)" field ([A-Za-z_][A-Za-z0-9_-]*) (.+)$', "ref"),
-            (r'edit message id "(.*)" field ([A-Za-z_][A-Za-z0-9_-]*) (.+)$', "id"),
-            (r'edit message "(.*)" field ([A-Za-z_][A-Za-z0-9_-]*) (.+)$', "ref"),
+            (r'edit message ref "([^"]*)" field ([A-Za-z_][A-Za-z0-9_-]*) (.+)$', "ref"),
+            (r'edit message id "([^"]*)" field ([A-Za-z_][A-Za-z0-9_-]*) (.+)$', "id"),
+            (r'edit message "([^"]*)" field ([A-Za-z_][A-Za-z0-9_-]*) (.+)$', "ref"),
         )
 
         for pattern, ref_kind in patterns:
@@ -983,8 +985,7 @@ class DSLRunner:
 
     def _edit_message(self, line: str) -> None:
         session = self._require_authenticated()
-        _ref_kind, reference_body = self._parse_message_reference(line, action="edit")
-        new_body = self._parse_body(line)
+        _ref_kind, reference_body, new_body = self._parse_message_reference(line, action="edit")
         msg = self._find_message_for_lifecycle(session.user, reference_body)
         if not msg.deleted:
             msg.body = new_body
