@@ -44,6 +44,7 @@ class MessageRecord:
     body: str
     seq: int
     original_body: str
+    payload: dict[str, Any] = field(default_factory=dict)
     deleted: bool = False
 
 
@@ -161,6 +162,8 @@ class DSLRunner:
         scenarios: list[tuple[str, list[str]]] = []
         current_name: str | None = None
         current_lines: list[str] = []
+        continue_block = False
+        block_lines: list[str] = []
 
         for raw in script.splitlines():
             line = raw.strip()
@@ -185,6 +188,19 @@ class DSLRunner:
                 continue
 
             if current_name is None:
+                continue
+
+            if line.startswith("send message to ") and line.endswith("{"):
+                block_lines = [line]
+                continue_block = True
+                continue
+
+            if continue_block:
+                block_lines.append(line)
+                if line == "}":
+                    current_lines.append("\n".join(block_lines))
+                    del block_lines
+                    continue_block = False
                 continue
 
             current_lines.append(line)
@@ -309,6 +325,7 @@ class DSLRunner:
                             "feed": feed,
                             "sender": msg.sender,
                             "body": msg.body,
+                            "payload": dict(msg.payload),
                             "seq": msg.seq,
                             "message_id": mid,
                             "deleted": msg.deleted,
@@ -530,7 +547,33 @@ class DSLRunner:
             raise DSLRunnerError(f"Cannot parse quoted body from: {line}")
         return m.group(1)
 
-    def _append_message(self, feed: str, sender: str, body: str) -> MessageRecord:
+    def _parse_structured_fields(self, block: str) -> dict[str, Any]:
+        fields: dict[str, Any] = {}
+        for raw in block.splitlines():
+            line = raw.strip()
+            if not line or line in {"{", "}"}:
+                continue
+            m = re.match(r'([A-Za-z_][A-Za-z0-9_-]*)\s*:\s*(.+)$', line)
+            if not m:
+                raise DSLRunnerError(f"Bad structured field syntax: {raw}")
+            key, value_text = m.groups()
+            if key in fields:
+                raise DSLRunnerError(f"Duplicate structured field: {key}")
+            value_text = value_text.strip()
+            if value_text.startswith('"') and value_text.endswith('"'):
+                value: Any = value_text[1:-1]
+            elif value_text in {"true", "false"}:
+                value = value_text == "true"
+            elif re.fullmatch(r'-?\d+', value_text):
+                value = int(value_text)
+            elif re.fullmatch(r'[A-Za-z_][A-Za-z0-9_-]*', value_text):
+                value = value_text
+            else:
+                raise DSLRunnerError(f"Unsupported structured field value: {value_text}")
+            fields[key] = value
+        return fields
+
+    def _append_message(self, feed: str, sender: str, body: str, payload: dict[str, Any] | None = None) -> MessageRecord:
         log = self.world.feed_logs.setdefault(feed, [])
         seq = len(log) + 1
         msg = MessageRecord(
@@ -540,6 +583,7 @@ class DSLRunner:
             body=body,
             seq=seq,
             original_body=body,
+            payload=dict(payload or {"body": body}),
         )
         self.world.messages[msg.id] = msg
         log.append(msg.id)
@@ -551,6 +595,7 @@ class DSLRunner:
                     "feed": feed,
                     "sender": sender,
                     "body": body,
+                    "payload": dict(msg.payload),
                     "seq": seq,
                     "message_id": msg.id,
                 })
@@ -774,10 +819,19 @@ class DSLRunner:
     def _send_message(self, line: str) -> None:
         session = self._require_authenticated()
 
-        m = re.match(r'send message to ([^\s]+) "(.*)"$', line)
-        if not m:
-            raise DSLRunnerError(f"Bad send message syntax: {line}")
-        target, body = m.group(1), m.group(2)
+        structured = re.match(r'send message to ([^\s]+) \{\n(.*)\n\}$', line, re.DOTALL)
+        if structured:
+            target = structured.group(1)
+            payload = self._parse_structured_fields(structured.group(2))
+            if "body" not in payload or not isinstance(payload["body"], str):
+                raise DSLRunnerError("Structured message form requires string field body")
+            body = payload["body"]
+        else:
+            m = re.match(r'send message to ([^\s]+) "(.*)"$', line)
+            if not m:
+                raise DSLRunnerError(f"Bad send message syntax: {line}")
+            target, body = m.group(1), m.group(2)
+            payload = {"body": body}
 
         # federation: strip domain
         if "@" in target:
@@ -788,13 +842,13 @@ class DSLRunner:
             group = self._group_or_raise(group_name)
             if session.user not in group.members:
                 raise ExpectationFailed("error forbidden")
-            self._append_message(target, session.user, body)
+            self._append_message(target, session.user, body, payload=payload)
             self.last_result = QueryResult(kind="send")
             return
 
         self._check_moderation(session.user, target)
         feed = self._private_feed(session.user, target)
-        self._append_message(feed, session.user, body)
+        self._append_message(feed, session.user, body, payload=payload)
         self.last_result = QueryResult(kind="send")
 
     def _find_message_for_lifecycle(self, actor: str, reference_body: str) -> MessageRecord:
@@ -813,6 +867,7 @@ class DSLRunner:
             for item in session.inbox:
                 if item.get("message_id") == message_id:
                     item["body"] = msg.body
+                    item["payload"] = dict(msg.payload)
                     item["deleted"] = msg.deleted
 
     def _delete_message(self, line: str) -> None:
@@ -992,6 +1047,7 @@ class DSLRunner:
                 "feed": feed,
                 "sender": self.world.messages[mid].sender,
                 "body": self.world.messages[mid].body,
+                "payload": dict(self.world.messages[mid].payload),
                 "seq": self.world.messages[mid].seq,
                 "message_id": mid,
             }
@@ -1032,6 +1088,7 @@ class DSLRunner:
                 "feed": feed,
                 "sender": self.world.messages[mid].sender,
                 "body": self.world.messages[mid].body,
+                "payload": dict(self.world.messages[mid].payload),
                 "seq": self.world.messages[mid].seq,
                 "message_id": mid,
             }
