@@ -155,6 +155,82 @@ send message to bob {
 На цьому етапі structured form фіксується як syntax-level design,
 навіть якщо runner ще не підтримує її виконання.
 
+#### Structured field values
+
+У structured message form поле задається як `name: value`.
+
+Мінімальний набір значень на цьому етапі:
+
+- string
+- integer
+- boolean
+- atom / enum
+
+Приклади:
+
+```text
+send message to bob {
+  body: "hi"
+  amount: 1000
+  urgent: true
+  priority: high
+}
+```
+
+Правила:
+
+- імена полів у межах одного block мають бути унікальними
+- порядок полів не має semantic значення
+- `body` є звичайним field і не має спеціального статусу всередині structured block
+- nested objects, arrays, attachments і binary payload поки що не фіксуються в базовій моделі
+
+#### Message normalization
+
+Short message form повинна нормалізуватись у structured form.
+
+Приклад:
+
+```text
+send message to bob "hi"
+```
+
+нормалізується у:
+
+```text
+send message to bob {
+  body: "hi"
+}
+```
+
+Тобто short form є sugar над мінімальною structured form
+з одним полем `body`.
+
+Structured form не змінює базову семантику `send message`,
+а лише робить payload явним і придатним для field-based сценаріїв.
+
+#### Structured expect form
+
+Окрім short expect form, DSL надалі може підтримувати
+розширену expect form для structured payload.
+
+Short form:
+
+```text
+expect message from alice body "hi"
+```
+
+Майбутня structured form:
+
+```text
+expect message from alice {
+  body: "hi"
+  subject: "Draft"
+}
+```
+
+На цьому етапі structured expect form фіксується як напрямок розвитку DSL,
+але не вимагається для runner.
+
 #### Default resolution
 
 контекст команди визначає, як інтерпретується identifier
