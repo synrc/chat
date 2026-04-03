@@ -173,47 +173,7 @@ expect not message body "m1"
 ```
 ---
 
-### ADV-MUT-6. Duplicate explicit id in given is invalid
-
-```
-scenario duplicate explicit id in given
-
-given
-  private feed alice<->bob has messages
-    1 id "msg-123" from alice "m1"
-    2 id "msg-123" from bob "m2"
-
-session bob
-connect
-auth
-
-expect error badRequest
-```
-- explicit message identity у given повинна бути унікальною в межах seeded world state
-- повтор одного й того самого protocol-level id робить given невалідним
----
-
-### ADV-MUT-7. Duplicate seeded id alias in given is invalid
-
-```
-scenario duplicate seeded id alias in given
-
-given
-  private feed alice<->bob has messages
-    1 id "msg-123" as m1id from alice "m1"
-    2 id "msg-124" as m1id from bob "m2"
-
-session bob
-connect
-auth
-
-expect error badRequest
-```
-- seeded alias у given повинен бути унікальним
-- два різні protocol ids не повинні ділити один і той самий DSL alias
----
-
-### ADV-MUT-8. Structured given payload supports seeded id alias
+### ADV-MUT-6. Structured given payload supports seeded id alias
 
 ```
 scenario structured given payload with seeded id alias

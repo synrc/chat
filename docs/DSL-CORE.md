@@ -192,6 +192,23 @@ send message to bob {
 - `body` є звичайним field і не має спеціального статусу всередині structured block
 - nested objects, arrays, attachments і binary payload поки що не фіксуються в базовій моделі
 
+Невалідні приклади explicit identity у `given`:
+```
+given
+  private feed alice<->bob has messages
+  1 id "msg-123" from alice "m1"
+  2 id "msg-123" from bob "m2"
+```
+- duplicate explicit id у seeded world state є невалідним
+```
+given
+  private feed alice<->bob has messages
+  1 id "msg-123" as m1id from alice "m1"
+  2 id "msg-124" as m1id from bob "m2"
+```
+- duplicate seeded alias у `given` є невалідним
+- такі помилки є validation failure of given state, а не runtime error badRequest
+
 #### Structured payload validation
 
 Для `send message to <target> { ... }` діють такі базові validation rules:
@@ -891,7 +908,6 @@ Structured given payload:
 - є лише описом initial state
 
 TODO:
-- edge cases для explicit message identity у `given`
 - exact mapping між canonical capture-id flow і protocol-level exact form
 - exact mapping між canonical payload/mutation form і protocol-level exact form
 
