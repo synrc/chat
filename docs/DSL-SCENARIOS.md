@@ -15,6 +15,7 @@
 - [DSL-ADVANCED.md](./DSL-ADVANCED.md) — conflict semantics, version, federation
 - [DSL-GROUP.md](./DSL-GROUP.md) — group
 - [DSL-MODERATION.md](./DSL-MODERATION.md) — moderation / block policy
+- [DSL-PAYLOAD.md](./DSL-PAYLOAD.md) — structured payload
 
 ## Coverage
 
