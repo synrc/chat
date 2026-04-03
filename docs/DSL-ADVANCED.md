@@ -118,6 +118,93 @@ edit message id "msg-123" body "m1 edited"
 - exact mutation form буде визначена окремо
 - цей сценарій фіксує semantic distinction, навіть без runner support
 
+## ADV-STATE. Event vs state alignment
+
+```
+scenario edit does not create second message
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+edit message "m1" body "m1 edited"
+
+session bob
+expect message from alice body "m1 edited"
+expect not message body "m1"
+```
+
+- `edit` змінює current visible state існуючого повідомлення
+- `edit` не повинен створювати другий visible message
+
+---
+
+```
+scenario replay returns final edited state only
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+edit message "m1" body "m1 edited"
+
+session bob
+query events peer alice after 0
+
+expect message from alice body "m1 edited"
+expect not message body "m1"
+```
+
+- replay повинен віддавати current final state, а не попередню visible версію повідомлення
+- event history не повинен ламати state-level semantics для клієнта
+
+---
+
+```
+scenario replay keeps deleted state over old payload
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob {
+  body: "doc"
+  subject: "Draft"
+}
+delete message ref "doc"
+
+session bob
+query events peer alice after 0
+
+expect message deleted
+expect not message from alice {
+  body: "doc"
+  subject: "Draft"
+}
+```
+
+- deleted state має мати пріоритет над old payload у replay/current state
+- state assertion важливіша за наявність historical mutation events
+
+---
+
 ## ADV-1. Delete overrides reordered edit
 
 ```
