@@ -96,6 +96,10 @@ class DSLRunner:
         self.reports: list[ScenarioReport] = []
         self.current_scenario_name: str | None = None
         self.unsupported_scenarios = set()
+        # TODO(payload-replay):
+        # - add scenarios for structured payload replay after reconnect
+        # - verify snapshot/inbox consistency for structured payload
+        # - verify final-state behavior for payload after edit/delete across replay
 
     def _reset_for_scenario(self) -> None:
         self.world = World()

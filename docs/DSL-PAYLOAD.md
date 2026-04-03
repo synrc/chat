@@ -303,3 +303,12 @@ scenario given structured payload
     priority: high
   }
 ```
+
+
+## TODO
+
+- payload + replay after reconnect
+- payload + snapshot / inbox bootstrap consistency
+- payload + edit then replay final-state verification
+- payload + delete final-state verification
+- payload visibility across replay / inbox / home boundaries

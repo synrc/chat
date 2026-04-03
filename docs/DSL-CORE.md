@@ -767,6 +767,12 @@ Structured given payload:
 - не означає inbox state
 - є лише описом initial state
 
+TODO:
+- перевірити replay consistency для structured payload після reconnect
+- перевірити snapshot / inbox bootstrap consistency для structured payload
+- перевірити final-state semantics для payload після edit + replay
+- перевірити delete semantics для structured payload у replay та inbox view
+
 ---
 
 ### Group / membership
