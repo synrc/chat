@@ -83,6 +83,7 @@ class World:
     messages: dict[str, MessageRecord] = field(default_factory=dict)
     feed_logs: dict[str, list[str]] = field(default_factory=dict)
     read_cursors: dict[tuple[str, str], int] = field(default_factory=dict)
+    captured_message_ids: dict[str, str] = field(default_factory=dict)
 
 
 class DSLRunner:
@@ -95,7 +96,7 @@ class DSLRunner:
         self.trace = trace
         self.reports: list[ScenarioReport] = []
         self.current_scenario_name: str | None = None
-        self.unsupported_scenarios = {"id mutation semantics"}
+        self.unsupported_scenarios: set[str] = set()
         # TODO(payload-replay):
         # - add scenarios for structured payload replay after reconnect
         # - verify snapshot/inbox consistency for structured payload
@@ -921,6 +922,15 @@ class DSLRunner:
                     return msg
         raise ExpectationFailed("error notFound")
 
+    def _resolve_message_reference(self, actor: str, ref_kind: str, reference: str) -> MessageRecord:
+        if ref_kind == "ref":
+            return self._find_message_for_lifecycle(actor, reference)
+        message_id = self.world.captured_message_ids.get(reference, reference)
+        msg = self.world.messages.get(message_id)
+        if not msg or msg.sender != actor:
+            raise ExpectationFailed("error notFound")
+        return msg
+
     def _sync_message_to_inboxes(self, message_id: str) -> None:
         msg = self.world.messages[message_id]
         for session in self.world.sessions.values():
@@ -934,12 +944,14 @@ class DSLRunner:
         if action == "delete":
             patterns = (
                 (r'delete message ref "([^"]*)"$', "ref"),
+                (r'delete message id ([A-Za-z_][A-Za-z0-9_-]*)$', "id"),
                 (r'delete message id "([^"]*)"$', "id"),
                 (r'delete message "([^"]*)"$', "ref"),
             )
         else:
             patterns = (
                 (r'edit message ref "([^"]*)" body "([^"]*)"$', "ref"),
+                (r'edit message id ([A-Za-z_][A-Za-z0-9_-]*) body "([^"]*)"$', "id"),
                 (r'edit message id "([^"]*)" body "([^"]*)"$', "id"),
                 (r'edit message "([^"]*)" body "([^"]*)"$', "ref"),
             )
@@ -949,8 +961,6 @@ class DSLRunner:
             if match:
                 groups = match.groups()
                 reference = groups[0]
-                if ref_kind == "id":
-                    raise DSLRunnerError(f"Unsupported message id mutation syntax: {line}")
                 if action == "edit":
                     return ref_kind, reference, groups[1]
                 return ref_kind, reference
@@ -960,6 +970,7 @@ class DSLRunner:
     def _parse_message_field_reference(self, line: str) -> tuple[str, str, str, str]:
         patterns = (
             (r'edit message ref "([^"]*)" field ([A-Za-z_][A-Za-z0-9_-]*) (.+)$', "ref"),
+            (r'edit message id ([A-Za-z_][A-Za-z0-9_-]*) field ([A-Za-z_][A-Za-z0-9_-]*) (.+)$', "id"),
             (r'edit message id "([^"]*)" field ([A-Za-z_][A-Za-z0-9_-]*) (.+)$', "id"),
             (r'edit message "([^"]*)" field ([A-Za-z_][A-Za-z0-9_-]*) (.+)$', "ref"),
         )
@@ -969,8 +980,6 @@ class DSLRunner:
             if not match:
                 continue
             reference, field_name, value_text = match.groups()
-            if ref_kind == "id":
-                raise DSLRunnerError(f"Unsupported message id mutation syntax: {line}")
             return ref_kind, reference, field_name, value_text
 
         raise DSLRunnerError(f"Bad edit message field syntax: {line}")
@@ -978,7 +987,7 @@ class DSLRunner:
     def _delete_message(self, line: str) -> None:
         session = self._require_authenticated()
         _ref_kind, reference = self._parse_message_reference(line, action="delete")
-        msg = self._find_message_for_lifecycle(session.user, reference)
+        msg = self._resolve_message_reference(session.user, _ref_kind, reference)
         msg.deleted = True
         self._sync_message_to_inboxes(msg.id)
         self.last_result = QueryResult(kind="message-lifecycle", items=[msg.id])
@@ -986,7 +995,7 @@ class DSLRunner:
     def _edit_message(self, line: str) -> None:
         session = self._require_authenticated()
         _ref_kind, reference_body, new_body = self._parse_message_reference(line, action="edit")
-        msg = self._find_message_for_lifecycle(session.user, reference_body)
+        msg = self._resolve_message_reference(session.user, _ref_kind, reference_body)
         if not msg.deleted:
             msg.body = new_body
             msg.payload["body"] = new_body
@@ -997,7 +1006,7 @@ class DSLRunner:
         session = self._require_authenticated()
         _ref_kind, reference_body, field_name, value_text = self._parse_message_field_reference(line)
 
-        msg = self._find_message_for_lifecycle(session.user, reference_body)
+        msg = self._resolve_message_reference(session.user, _ref_kind, reference_body)
         if msg.deleted:
             self.last_result = QueryResult(kind="message-lifecycle", items=[msg.id])
             return
