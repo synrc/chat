@@ -882,17 +882,26 @@ class DSLRunner:
     # ----------------------------
     def _send_message(self, line: str) -> None:
         session = self._require_authenticated()
+        capture_alias: str | None = None
 
         structured = re.match(r'send message to ([^\s]+) \{\n(.*)\n\}$', line, re.DOTALL)
         if structured:
             target = structured.group(1)
             payload, body = self._parse_structured_message_payload(structured.group(2))
         else:
-            m = re.match(r'send message to ([^\s]+) "(.*)"$', line)
-            if not m:
-                raise DSLRunnerError(f"Bad send message syntax: {line}")
-            target, body = m.group(1), m.group(2)
-            payload = {"body": body}
+            m = re.match(
+                r'send message to ([^\s]+) "(.*)" capture id as ([A-Za-z_][A-Za-z0-9_-]*)$',
+                line,
+            )
+            if m:
+                target, body, capture_alias = m.groups()
+                payload = {"body": body}
+            else:
+                m = re.match(r'send message to ([^\s]+) "(.*)"$', line)
+                if not m:
+                    raise DSLRunnerError(f"Bad send message syntax: {line}")
+                target, body = m.group(1), m.group(2)
+                payload = {"body": body}
 
         # federation: strip domain
         if "@" in target:
@@ -903,14 +912,18 @@ class DSLRunner:
             group = self._group_or_raise(group_name)
             if session.user not in group.members:
                 raise ExpectationFailed("error forbidden")
-            self._append_message(target, session.user, body, payload=payload)
-            self.last_result = QueryResult(kind="send")
+            msg = self._append_message(target, session.user, body, payload=payload)
+            if capture_alias is not None:
+                self.world.captured_message_ids[capture_alias] = msg.id
+            self.last_result = QueryResult(kind="send", items=[msg.id] if capture_alias is not None else [])
             return
 
         self._check_moderation(session.user, target)
         feed = self._private_feed(session.user, target)
-        self._append_message(feed, session.user, body, payload=payload)
-        self.last_result = QueryResult(kind="send")
+        msg = self._append_message(feed, session.user, body, payload=payload)
+        if capture_alias is not None:
+            self.world.captured_message_ids[capture_alias] = msg.id
+        self.last_result = QueryResult(kind="send", items=[msg.id] if capture_alias is not None else [])
 
     def _find_message_for_lifecycle(self, actor: str, reference_body: str) -> MessageRecord:
         for message_ids in self.world.feed_logs.values():
