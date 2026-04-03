@@ -18,6 +18,106 @@
 - snapshot дає recovery boundary,
   але не гарантує, що resource або access policy не зміниться після нього
 
+## Message identity and mutation semantics
+
+DSL розрізняє:
+- `ref` — локальний сценарний reference
+- `id` — protocol-level message identity
+
+Mutation (`edit` / `delete`) застосовується до існуючого повідомлення,
+а не створює новий message.
+
+У protocol-observable моделі це відповідає event-level семантиці:
+- mutation відображається як події (events),
+  а не як окремі message об’єкти.
+
+### ADV-MUT-1. Legacy mutation sugar = ref
+
+```
+scenario legacy mutation sugar
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+
+session alice
+edit message "m1" body "m1 edited"
+
+session bob
+expect message from alice body "m1 edited"
+```
+
+- `edit message "m1"` інтерпретується як `edit message ref "m1"`
+- legacy форма не означає protocol identity
+
+---
+
+### ADV-MUT-2. Ref is local scenario reference
+
+```
+scenario ref mutation semantics
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob {
+body: "doc"
+subject: "Draft"
+}
+
+session alice
+edit message ref "doc" field subject "Draft v2"
+
+session bob
+expect message from alice {
+body: "doc"
+subject: "Draft v2"
+}
+```
+
+- `ref` є DSL-level reference
+- він може збігатися з `body` або іншим marker
+- це не є protocol identity
+
+---
+
+### ADV-MUT-3. Id is separate from ref
+```
+scenario id mutation semantics
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+
+session alice
+edit message id "msg-123" body "m1 edited"
+```
+
+- `id` є protocol-level identity
+- `id` не дорівнює `ref`
+- exact mutation form буде визначена окремо
+- цей сценарій фіксує semantic distinction, навіть без runner support
+
 ## ADV-1. Delete overrides reordered edit
 
 ```
