@@ -188,3 +188,20 @@ scenario payload edit does not affect other fields
     priority: high
   }
 ```
+
+## Given payload support
+```
+scenario given payload baseline
+  given
+    private feed alice<->bob has messages
+      1 from alice "doc"
+
+  session bob1
+  connect
+  auth
+
+  session bob1
+  expect message from alice {
+    body: "doc"
+  }
+```

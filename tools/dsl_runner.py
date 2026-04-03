@@ -751,6 +751,7 @@ class DSLRunner:
             body=body,
             seq=actual_seq,
             original_body=body,
+            payload={"body": body},
         )
         self.world.messages[msg.id] = msg
         log.append(msg.id)
