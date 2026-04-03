@@ -121,6 +121,40 @@ Exact форма використовує `feed <token>` там, де потрі
 - `query events feed group:room1 after snapshot`
 - `query cursor read feed private:alice seq 123`
 
+#### Structured message form
+
+Canonical short form для простих chat-сценаріїв лишається базовою формою:
+
+```text
+send message to bob "hi"
+```
+
+Окремо DSL може підтримувати розширену explicit форму
+для структурованого payload без заміни canonical syntax:
+
+```text
+send message to bob {
+  body: "hi"
+}
+```
+
+```text
+send message to bob {
+  subject: "ERP/1 Document Draft"
+  body: "Please review the attached Order 40 document."
+  priority: high
+}
+```
+
+Така форма:
+- не замінює canonical short form
+- використовується для richer payload semantics
+- потрібна для document/message field scenarios
+- є природним розширенням Message payload model
+
+На цьому етапі structured form фіксується як syntax-level design,
+навіть якщо runner ще не підтримує її виконання.
+
 #### Default resolution
 
 контекст команди визначає, як інтерпретується identifier
@@ -328,6 +362,22 @@ Argument rules застосовуються до обох рівнів DSL (cano
 
 Canonical = sugar  
 Exact = protocol-observable semantics
+
+Structured message form є розширенням canonical DSL,
+а не заміною short form.
+
+Наприклад:
+
+```text
+send message to bob "hi"
+send message to bob {
+  body: "hi"
+  subject: "Draft"
+}
+```
+
+Обидві форми можуть співіснувати, але short form лишається
+основною canonical формою для простих message сценаріїв.
 
 ### Read duality
 
