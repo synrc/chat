@@ -310,6 +310,24 @@ BEGIN
        ...
     }
 
+    -- Session and Read Semantics
+    --
+    --   * session не є user.
+    --
+    --   * session не є transport connection.
+    --
+    --   * один user може мати кілька одночасно активних
+    --     session.
+    --
+    --   * last_seq є session-scoped replay position.
+    --
+    --   * read cursor є user-scoped per feed
+    --     і shared між усіма session цього user.
+    --
+    --   * read може бути ініційований з будь-якої session,
+    --     але результат синхронізується між усіма
+    --     session цього user.
+    --
     Authority ::= SEQUENCE {
        id Binary,
        vsn Version,
@@ -408,7 +426,30 @@ BEGIN
     --
     --   - seq використовується для впорядкування і recovery,
     --     але не замінює Event.id як ідентифікатор події.
-
+    --
+    -- Message Identity and Mutation Semantics
+    --
+    --   * Message.id є єдиною protocol-level identity
+    --     повідомлення.
+    --
+    --   * Message.id є глобально унікальним і стабільним
+    --     протягом усього lifecycle повідомлення.
+    --
+    --   * payload є частиною message state.
+    --
+    --   * body є лише одним із можливих полів payload,
+    --     а не всією моделлю повідомлення.
+    --
+    --   * edit/delete не створюють новий Message.
+    --
+    --   * edit/delete виражаються через Events
+    --     і адресують існуючий message state
+    --     через Message.id.
+    --
+    --   * final state повідомлення виводиться з потоку
+    --     подій і replay має конвергувати до того самого
+    --     final state.
+    --
     Message ::= SEQUENCE {
        id Binary,
        vsn Version,
@@ -874,7 +915,30 @@ BEGIN
     --   * Для складних сценаріїв (collaborative editing)
     --     можуть знадобитись CRDT або version vectors
     --     (поза межами базового протоколу).
-
+    --
+    -- Event Runtime Semantics
+    --
+    --   * Event є єдиним джерелом runtime truth.
+    --
+    --   * усі mutations повідомлення
+    --     (edit/delete/update) виражаються як events.
+    --
+    --   * message state виводиться як fold(Event stream).
+    --
+    --   * delivery model є at-least-once.
+    --
+    --   * дублікати і reorder допустимі
+    --     і не повинні ламати final state semantics.
+    --
+    -- Seq Terminology
+    --
+    --   * seq є feed-scoped порядковою позицією
+    --     події або повідомлення.
+    --
+    --   * last_seq є session-local replay cursor,
+    --     який зберігає останній відомий seq
+    --     для конкретної session.
+    --
     Event ::= SEQUENCE {
        id Binary,
        vsn Version,
