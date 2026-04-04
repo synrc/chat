@@ -1281,6 +1281,10 @@ BEGIN
     --       - список feed (діалоги / конференції)
     --       - preview (останні повідомлення)
     --       - unread/read-derived стан
+    --       - mention-derived стан
+    --
+    --   * HomeAnswer.items повертає FeedViewItem,
+    --     а не canonical domain state ресурсу.
     --
     --   * Home НЕ є джерелом істини:
     --       - це snapshot/view, подібний до Inbox або Roster
@@ -1352,21 +1356,50 @@ BEGIN
        ...
     }
 
-    HomeItem ::= SEQUENCE {
-       feed     MessageFeed,
-       message  [0] Message OPTIONAL,
+    -- Feed View Model
+    --
+    --   * FeedViewItem є агрегованим snapshot/view item
+    --     для bootstrap/home/feed list.
+    --
+    --   * FeedViewItem є спільною projection-моделлю
+    --     для private/group/channel/mailbox feed.
+    --
+    --   * FeedViewItem не є джерелом істини для:
+    --       - Message state
+    --       - Conference state
+    --       - Subscription state
+    --
+    --   * unread / mention / preview належать до view layer,
+    --     а не до canonical domain state feed ресурсу.
+    --
+    MentionView ::= SEQUENCE {
+       count      [0] INTEGER OPTIONAL,
+       latestSeq  [1] INTEGER OPTIONAL,
+       messageId  [2] Binary OPTIONAL,
+       ...
+    }
+
+    FeedViewItem ::= SEQUENCE {
+       feed      MessageFeed,
+       message   [0] Message OPTIONAL,
 
        -- headSeq — останній відомий seq у feed на момент snapshot
-       headSeq  [1] INTEGER OPTIONAL,
+       headSeq   [1] INTEGER OPTIONAL,
 
        -- readSeq — effective read cursor користувача у feed
-       readSeq  [2] INTEGER OPTIONAL,
+       readSeq   [2] INTEGER OPTIONAL,
 
        -- unread є derived/cached значенням:
        --   unread = max(0, headSeq - readSeq)
        --
        -- unread не є джерелом істини
-       unread   [3] INTEGER OPTIONAL,
+       unread    [3] INTEGER OPTIONAL,
+
+       -- mentions є user-scoped snapshot/view state:
+       --   count      = кількість unread mention для цього user у feed
+       --   latestSeq  = jump anchor до останнього mention
+       --   messageId  = stable reference до останнього mention message
+       mentions   [4] MentionView OPTIONAL,
        ...
     }
 
@@ -1440,7 +1473,7 @@ BEGIN
     --     або що access policy не змінилась після snapshot.
     --
     HomeAnswer ::= SEQUENCE {
-       items     [0] SEQUENCE OF item HomeItem OPTIONAL,
+       items     [0] SEQUENCE OF item FeedViewItem OPTIONAL,
        continue  [1] Continuation OPTIONAL,
        hasMore   [2] BOOLEAN OPTIONAL,
 
@@ -2198,39 +2231,12 @@ BEGIN
     --     а визначаються через Member relation і server-side authorization.
     --
     -- lastmsg не є частиною Conference state.
-    -- View-дані повинні передаватися через Query (Inbox/Search) або Event.
-    -- unread є cached/session-scoped view значенням.
     --
-    -- Unread Semantics
+    -- unread / mention-derived дані не є частиною
+    -- canonical Conference state.
     --
-    --   * unread є user-scoped view у межах feed.
-    --
-    --   * Джерелом істини для unread є effective read cursor(user, feed).
-    --
-    --   * unread обчислюється як похідне значення:
-    --
-    --       unread = current_seq(feed) - effective_read_cursor(user, feed)
-    --
-    --   * Поле unread у Conference є snapshot/cache полем
-    --     і не є джерелом істини.
-    --
-    --   * Різні session одного користувача не повинні розходитись
-    --     по UX-visible unread state.
-    --
-    --   * Session-local state може існувати,
-    --     але не є джерелом істини для unread.
-    --
-    -- Mention Semantics
-    --
-    --   * mentions є user-scoped view полем.
-    --
-    --   * mentions не є джерелом істини для message state.
-    --
-    --   * source of truth для mentions живе у message/event stream
-    --     і mention-targeting semantics payload/event layer.
-    --
-    --   * поле mentions у Conference є snapshot/cache представленням
-    --     для UI або bootstrap/home view.
+    -- Такі поля належать до feed view / bootstrap projection layer
+    -- (наприклад FeedViewItem), а не до Conference resource.
     --
     Conference ::= SEQUENCE {
        id Binary,
@@ -2245,8 +2251,6 @@ BEGIN
        data SEQUENCE OF fileId Binary OPTIONAL,
        type ConferenceType,
        tos Binary,
-       unread INTEGER,
-       mentions SEQUENCE OF contact INTEGER,
        update INTEGER,
        created INTEGER,
        status ConferenceStatus,
