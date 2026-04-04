@@ -306,8 +306,12 @@ class DSLRunner:
             self.pending_error = None
 
         if line.startswith("session "):
-            alias = line.split(maxsplit=1)[1].strip()
-            self._switch_session(alias)
+            payload = line.split(maxsplit=1)[1].strip()
+            match = re.match(r'^([A-Za-z_][A-Za-z0-9_-]*)(?: as ([A-Za-z_][A-Za-z0-9_-]*))?$', payload)
+            if not match:
+                raise DSLRunnerError(f"Bad session syntax: {line}")
+            alias, user = match.groups()
+            self._switch_session(alias, user=user)
             return
 
         if line == "connect" or line.startswith("connect "):
@@ -514,10 +518,14 @@ class DSLRunner:
             self._switch_session(self.current_alias)
         return self.world.sessions[self.current_alias]
 
-    def _switch_session(self, alias: str) -> None:
+    def _switch_session(self, alias: str, user: str | None = None) -> None:
         if alias not in self.world.sessions:
-            user = re.sub(r"\d+$", "", alias)
-            self.world.sessions[alias] = SessionState(alias=alias, user=user)
+            resolved_user = user or re.sub(r"\d+$", "", alias)
+            self.world.sessions[alias] = SessionState(alias=alias, user=resolved_user)
+        elif user is not None and self.world.sessions[alias].user != user:
+            raise DSLRunnerError(
+                f"Session alias {alias} already bound to user {self.world.sessions[alias].user}, cannot rebind to {user}"
+            )
         self.current_alias = alias
 
     def _private_feed(self, a: str, b: str) -> str:
