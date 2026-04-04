@@ -103,6 +103,9 @@ Session:
 Кожна session має власні:
 - `last_seq`
 
+Тут `last_seq` означає останню збережену session-local replay position
+у термінах feed-scoped `seq`.
+
 `read cursor` є user-scoped (per feed), а не session-scoped:
 - всі session одного користувача спостерігають один і той самий read state
 - read може бути ініційований будь-якою session

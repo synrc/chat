@@ -501,6 +501,20 @@ shared home snapshot інтерпретується як replay boundary
 - `last` не означає повний replay
 - `last` залежить від того, який обсяг подій був отриманий (preview / partial / full)
 
+#### Seq terminology
+
+У DSL `seq` означає feed-scoped порядкову позицію події або повідомлення.
+
+У протокольному описі може також використовуватись термін `last_seq`
+для позначення останньої збереженої replay position конкретної session.
+
+Тобто:
+- `seq` — загальна позиція в межах feed
+- `last_seq` — session-local збережене значення цього `seq` для recovery/replay
+
+DSL зазвичай використовує коротку форму `seq`,
+оскільки вона достатня для сценарного опису.
+
 #### Expect semantics
 
 - `expect authenticated` означає, що auth request завершився успішно
