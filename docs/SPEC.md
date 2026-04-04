@@ -275,6 +275,26 @@ Feed — це логічний контекст доставки й упоряд
 
 Між stream і snapshot не гарантується повна консистентність у будь-який момент часу. 
 
+### Feed View Model
+
+FeedViewItem є агрегованою view/snapshot моделлю для:
+- private feeds
+- group feeds
+- channel feeds
+- mailbox feeds
+
+FeedViewItem може містити:
+- preview message
+- headSeq
+- readSeq
+- unread
+- mention-derived state
+
+FeedViewItem не є джерелом істини для:
+- Message state
+- Conference state
+- Subscription state
+- 
 ## Pagination Model
 
 Для snapshot/view queries використовується:
@@ -310,8 +330,26 @@ Unread:
 
 `unread = current_seq(feed) - read_cursor(user)`
 
-Поле `Conference.unread` не є source of truth.  
+Unread і mention-derived поля належать до feed view layer
+(наприклад FeedViewItem), а не до canonical Conference state.
 Агрегація unread до рівня device або користувача є server-side policy. 
+
+## Mention View Model
+
+Mention-derived state є feed-level view, а не canonical domain state.
+
+Mention view:
+- є user-scoped
+- виводиться з message/event stream
+- може залежати від mention-targeting semantics payload
+- може кешуватися або агрегуватися для bootstrap/home/UI
+
+Mention view може містити:
+- count
+- latestSeq
+- messageId
+
+Такі дані належать до FeedViewItem, а не до Conference state.
 
 ## Presence / Typing Model
 

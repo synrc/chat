@@ -448,8 +448,10 @@ Exact:
 
 Home result може містити:
 - roster
-- список feed
+- список FeedViewItem
 - preview елементи для feed
+- unread view state
+- mention-derived view state
 - continuation для pagination
 - snapshot anchor для подальшого replay
 
@@ -541,6 +543,7 @@ DSL зазвичай використовує коротку форму `seq`,
 - `expect not duplicate feeds` означає, що paged home result не містить feed, уже повернутих попередньою сторінкою того самого home query
 - `expect shared snapshot` означає, що result містить один snapshot anchor для всього home result
 - `expect unread` означає, що home/feed result містить unread view state
+- `expect mentions` означає, що home/feed result містить mention-derived view state
 - `expect group <name> exists` означає, що group/conference ресурс існує
 - `expect <user> is owner` означає, що user має owner role у поточній group
 - `expect <user> is member` означає, що user є member поточної group
