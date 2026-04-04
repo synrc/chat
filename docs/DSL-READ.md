@@ -97,11 +97,11 @@ expect read cursor updated
 ```
 scenario cross-session read sync
 
-session bob1
+session bob1 as bob
 connect
 auth
 
-session bob2
+session bob2 as bob
 connect
 auth
 
@@ -118,11 +118,11 @@ send read for last
 session bob2
 expect read cursor updated
 ```
-
+- `bob1` і `bob2` є різними session одного й того самого user `bob`
 - `read` ініціюється конкретною session, але оновлює user-level read state
 - read cursor синхронізується між усіма session користувача
 - unread є user-scoped і не повинен відрізнятись між session
-
+---
 ## READ-5. Read backward ignored
 
 ```
@@ -372,11 +372,11 @@ session alice
 connect
 auth
 
-session bob1
+session bob1 as bob
 connect
 auth
 
-session bob2
+session bob2 as bob
 connect
 auth
 

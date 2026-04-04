@@ -56,6 +56,23 @@ DSL використовує два стилі: short і exact.
   доки контекст не буде змінено наступною командою `session <alias>`
 - alias resolution для private feed (`query inbox/events/read <peer>`) залежить
   від поточного session context
+- `session <session_alias> as <user_alias>` явно прив'язує session handle до user principal
+- різні session alias можуть посилатися на того самого user:
+  - `session bob1 as bob`
+  - `session bob2 as bob`
+- це використовується для multi-session сценаріїв, де state є user-scoped, а не session-scoped
+- якщо `as <user_alias>` не вказано, то `session <alias>` є скороченням для випадку,
+  де session alias і user alias збігаються
+
+```text
+session bob1 as bob
+connect
+auth
+
+session bob2 as bob
+connect
+auth
+```
 
 #### Reference kinds
 
