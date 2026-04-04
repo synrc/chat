@@ -110,6 +110,7 @@ Session:
 - всі session одного користувача спостерігають один і той самий read state
 - read може бути ініційований будь-якою session
 - результат синхронізується між усіма session цього користувача
+
 Session lifecycle:
 - створюється через `Authority.authenticate`
 - може бути відновлена після reconnect
@@ -158,7 +159,7 @@ Replay гарантує лише partial recovery.
 
 У цьому випадку сервер повертає:
 
-`Query(type=error, code=gapDetected)`
+`Query(type=error, code=gap)`
 
 Після цього клієнт повинен виконати повний sync через snapshot/view queries, зокрема Inbox. 
 
@@ -294,7 +295,7 @@ FeedViewItem не є джерелом істини для:
 - Message state
 - Conference state
 - Subscription state
-- 
+
 ## Pagination Model
 
 Для snapshot/view queries використовується:
