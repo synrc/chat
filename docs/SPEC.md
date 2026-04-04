@@ -102,14 +102,24 @@ Session:
 
 Кожна session має власні:
 - `last_seq`
-- `read cursor`
 
+`read cursor` є user-scoped (per feed), а не session-scoped:
+- всі session одного користувача спостерігають один і той самий read state
+- read може бути ініційований будь-якою session
+- результат синхронізується між усіма session цього користувача
 Session lifecycle:
 - створюється через `Authority.authenticate`
 - може бути відновлена після reconnect
 - може бути `active`, `expired`, `revoked`
 
 Reconnect не створює нову session, якщо існуюча ще валідна. `renew` не створює session, а лише перевидає access token. 
+
+Multi-session semantics:
+
+- один user може мати кілька активних session
+- session є runtime інстансами клієнтів (наприклад, різні пристрої)
+- state типу `read cursor` є user-scoped і спільний між session
+- state типу `last_seq` є session-scoped і може відрізнятись між session
 
 ## Token Model
 
@@ -283,14 +293,19 @@ Pagination:
 
 `read` інтерпретується як cursor, а не як набір message ids.
 
+Read cursor:
+- є user-scoped (per feed)
+- спільний для всіх session одного користувача
+- оновлюється через read operation з будь-якої session
+
 Unread:
-- є session-scoped
-- не є глобальним станом користувача
-- є derived/cache view
+- є derived view відносно user-level read cursor
+- не є глобальним source of truth
+- може кешуватися або агрегуватися на рівні session/device
 
 Базова формула:
 
-`unread = current_seq(feed) - read_cursor(session)`
+`unread = current_seq(feed) - read_cursor(user)`
 
 Поле `Conference.unread` не є source of truth.  
 Агрегація unread до рівня device або користувача є server-side policy. 
