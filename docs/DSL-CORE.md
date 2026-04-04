@@ -509,8 +509,8 @@ shared home snapshot інтерпретується як replay boundary
 для позначення останньої збереженої replay position конкретної session.
 
 Тобто:
-- `seq` — загальна позиція в межах feed
-- `last_seq` — session-local збережене значення цього `seq` для recovery/replay
+- `seq` — feed-scoped порядкова позиція події або повідомлення
+- `last_seq` — session-local replay position, що зберігає останній відомий `seq` для цієї session
 
 DSL зазвичай використовує коротку форму `seq`,
 оскільки вона достатня для сценарного опису.
