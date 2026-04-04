@@ -760,62 +760,87 @@ BEGIN
     --
     -- Event Throttling / Aggregation
     --
-    --   * High-frequency події (typing, presence, read)
-    --     можуть генерувати значне навантаження.
+    --   * High-frequency події (typing, presence, read, delivered)
+    --     можуть створювати значне навантаження
+    --     на broker, transport і клієнт.
+    --
+    --   * Сервер SHOULD застосовувати throttling / aggregation
+    --     для таких event family без зміни їх базової семантики.
     --
     -- Typing:
     --
-    --   * Сервер SHOULD обмежувати частоту typing подій.
+    --   * typing є короткоживучим signal/state,
+    --     а не журналом кожного натискання клавіші.
     --
-    --   * Рекомендовано:
-    --       - не частіше ніж 1 подія на 2–3 секунди
+    --   * Сервер SHOULD обмежувати typing події
+    --     не частіше ніж 1 подія на 2-3 секунди
+    --     для одного actor у межах одного feed.
     --
     --   * Повторні typing події в межах цього інтервалу
     --     MAY ігноруватись або агрегуватись.
     --
+    --   * typing не повинен replay-итись як довготривалий state,
+    --     якщо інше явно не визначено server policy.
+    --
     -- Presence:
     --
-    --   * Часті зміни (online/offline) SHOULD debounce-итись.
+    --   * Часті online/offline transitions SHOULD debounce-итись.
     --
     --   * Сервер MAY:
-    --       - відкладати зміни на короткий інтервал
-    --       - об'єднувати швидкі переходи станів
+    --       - відкладати presence update на короткий інтервал
+    --       - об'єднувати швидкі transitions
+    --       - опускати проміжні нестабільні стани
+    --
+    --   * Presence throttling не повинен ламати
+    --     observable final presence state.
     --
     -- Read:
     --
-    --   * Read події SHOULD агрегуватись до cursor-моделі:
-    --       - передається тільки останній seq (last read)
+    --   * Read є cursor-based update, а не per-message receipt model.
     --
-    --   * Сервер MAY не передавати кожну read подію окремо.
+    --   * Сервер SHOULD агрегувати read до останнього
+    --     effective read cursor у межах feed.
     --
-    --   * Клієнт повинен явно повідомляти read як cursor update
-    --     через Query / CursorCore у межах feed.
+    --   * Сервер MAY не передавати кожну проміжну read подію окремо,
+    --     якщо новіший readSeq already covers старіший.
     --
-    --   * Read подія від конкретної session оновлює
-    --     effective read cursor користувача.
+    --   * Для одного user у межах feed
+    --     більш пізній readSeq повинен витісняти попередній.
     --
-    --   * Cursor update ініціюється конкретною session,
-    --     але застосовується до effective read cursor користувача у feed.
-    --
-    --   * Мінімально read має нести:
+    --   * Мінімально значущим read update є:
     --       - feed
     --       - readSeq
     --
-    --   * messageId може використовуватись як допоміжний reference,
+    --   * messageId MAY використовуватись як допоміжний reference,
     --     але не є джерелом істини для read state.
     --
-    -- Delivery:
+    -- Delivered:
     --
-    --   * delivered події MAY агрегуватись або пропускатись,
-    --     якщо клієнт не потребує детальної інформації.
+    --   * delivered є session-level delivery fact
+    --     і MAY агрегуватись або частково опускатись,
+    --     якщо клієнт не потребує детального delivery trail.
     --
-    -- Важливо:
+    --   * Сервер MAY collapse-ити кілька delivered events
+    --     у компактніше представлення для конкретної session.
     --
-    --   * Throttling і aggregation не змінюють семантику стану,
-    --     а лише оптимізують доставку подій.
-    --   * typing інтерпретується як короткоживучий стан,
-    --     а не як кожна окрема подія натискання клавіші.
-
+    -- Batching:
+    --
+    --   * Сервер SHOULD batch-ити дрібні Event packets
+    --     у transport batch, якщо це не збільшує
+    --     user-visible latency понад прийнятний рівень.
+    --
+    --   * Batching особливо рекомендований для:
+    --       - typing / presence bursts
+    --       - replay pages
+    --       - reconnect recovery
+    --
+    -- Invariants:
+    --
+    --   * Throttling і aggregation не змінюють source-of-truth semantics.
+    --
+    --   * Вони змінюють тільки частоту і форму доставки,
+    --     але не meaning final observed state.
+    --
     MessageEvent ::= SEQUENCE {
        type       MessageEventType,
        messageId  [0] Binary OPTIONAL,
@@ -1369,7 +1394,7 @@ BEGIN
     --       - Conference state
     --       - Subscription state
     --
-    --   * unread / mention / preview належать до view layer,
+    --   * unread / mentions / preview належать до view layer,
     --     а не до canonical domain state feed ресурсу.
     --
     MentionView ::= SEQUENCE {
