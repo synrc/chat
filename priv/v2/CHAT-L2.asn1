@@ -2219,7 +2219,19 @@ BEGIN
     --
     --   * Session-local state може існувати,
     --     але не є джерелом істини для unread.
-
+    --
+    -- Mention Semantics
+    --
+    --   * mentions є user-scoped view полем.
+    --
+    --   * mentions не є джерелом істини для message state.
+    --
+    --   * source of truth для mentions живе у message/event stream
+    --     і mention-targeting semantics payload/event layer.
+    --
+    --   * поле mentions у Conference є snapshot/cache представленням
+    --     для UI або bootstrap/home view.
+    --
     Conference ::= SEQUENCE {
        id Binary,
        vsn Version,
