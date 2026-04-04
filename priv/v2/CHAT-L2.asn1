@@ -312,13 +312,6 @@ BEGIN
 
     -- Session and Read Semantics
     --
-    --   * session не є user.
-    --
-    --   * session не є transport connection.
-    --
-    --   * один user може мати кілька одночасно активних
-    --     session.
-    --
     --   * last_seq є session-scoped replay position.
     --
     --   * read cursor є user-scoped per feed
@@ -634,7 +627,10 @@ BEGIN
 
     -- Delivery and Read Semantics
     --
-    -- Події доставки і читання є session-рівня.
+    -- delivered ініціюється і спостерігається на рівні session.
+    --
+    -- read ініціюється конкретною session,
+    -- але застосовується до effective user-scoped cursor state.
     --
     -- delivered:
     --   означає, що повідомлення доставлено конкретній session.
@@ -643,7 +639,8 @@ BEGIN
     --   delivered не гарантує, що клієнт фактично обробив або відобразив повідомлення.
     --
     -- read:
-    --   означає, що повідомлення прочитано конкретною session.
+    --   означає, що клієнт ініціював оновлення read cursor
+    --   у межах feed.
     --
     -- received:
     --   optional/unstable
