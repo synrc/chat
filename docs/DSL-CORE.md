@@ -333,7 +333,7 @@ expect event presence typing bob
 
 У цій формі:
 
-- перший позиційний аргумент після типу event інтерпретується як actor
+- перший позиційний аргумент після event family/type інтерпретується як actor
 - `up to <seq>` є natural DSL формою для read cursor
 - `messageId` є protocol identity reference (через capture id as або given)
 
@@ -354,8 +354,8 @@ Exact (explicit) форма також допускається:
 
 ```
 expect event message read actor bob readSeq 12
-
 ```
+
 Exact форма:
 - використовується для protocol-level точності
 - не є основною canonical DSL формою
@@ -370,7 +370,7 @@ Event expect form узгоджується з protocol model:
 
 - MessageEvent (delivered/read/edited/deleted)
 - PresenceEvent (online/offline/typing)
-- 
+
 #### Message reference semantics
 
 У canonical mutation form DSL розрізняє два способи посилання на повідомлення:

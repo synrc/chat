@@ -293,6 +293,94 @@ expect not message from alice {
 
 ---
 
+## ADV-EVENT. Exact event observation
+
+```
+scenario exact read event observation
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+
+session bob
+query events peer alice after cursor
+expect events
+
+send read for last
+
+session alice
+query events peer bob after cursor
+
+expect event message read bob up to 1
+```
+
+- exact event form дозволяє перевіряти protocol-observable runtime fact
+- `read` спостерігається як event, а не як message state
+- canonical DSL використовує natural form `up to <seq>` замість protocol-level `readSeq`
+
+---
+
+```
+scenario exact delete event observation
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1" capture id as m1id
+delete message id m1id
+
+session bob
+query events peer alice after cursor
+
+expect event message deleted alice messageId m1id
+```
+
+- delete mutation має бути observable як message event
+- exact event form дозволяє перевірити protocol identity через `messageId`
+- це окремо від state-level assertion `expect message deleted`
+
+---
+
+```
+scenario exact presence event observation
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session bob
+query events peer alice after cursor
+
+session alice
+disconnect
+
+session bob
+query events peer alice after cursor
+
+expect event presence offline alice
+```
+
+- exact event form потрібна не лише для message family, а й для presence family
+- це вирівнює DSL із protocol-level PresenceEvent semantics
+- actor у canonical event form лишається опціональним, але тут заданий явно для точності
+
 ## ADV-1. Delete overrides reordered edit
 
 ```
