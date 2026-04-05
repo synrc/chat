@@ -545,3 +545,109 @@ expect not more
 
 - перегляд історії (inbox/history) не повинен змінювати read cursor
 - view navigation не повинна "відмотувати" unread назад
+---
+
+## READ-PARTIAL. Partial read and unread edge cases
+```
+scenario partial read keeps newer tail unread
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+send message to bob "m3"
+
+session bob
+query events peer alice after cursor limit 1
+
+expect events count <= 1
+expect more
+
+session bob
+send read for last
+
+session bob
+query events peer alice after cursor
+
+expect events non-empty
+```
+- partial replay + read не повинні позначати весь feed як read
+- newer tail після partial read повинен лишатися unread
+---
+
+```
+scenario read after partial replay advances only observed boundary
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+send message to bob "m3"
+
+session bob
+query events peer alice after cursor limit 2
+
+expect events count <= 2
+expect more
+
+session bob
+send read for last
+
+session bob
+query events peer alice after cursor
+
+expect events non-empty
+expect not more
+```
+- read after partial replay повинен оновлювати cursor тільки до locally observed boundary
+- remaining tail повинен бути доступний через наступний replay
+---
+
+```
+scenario new message after partial read stays after unread boundary
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+
+session bob
+query events peer alice after cursor limit 1
+
+expect events count <= 1
+expect more
+
+session bob
+send read for last
+
+session alice
+send message to bob "m3"
+
+session bob
+query events peer alice after cursor
+
+expect events non-empty
+```
+- partial read не "закриває" feed
+- і старий unread tail, і новіші повідомлення після read повинні лишатися за unread boundary
