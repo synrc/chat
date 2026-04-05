@@ -465,9 +465,70 @@ priority: high
 - delete через captured protocol identity повинен працювати і для structured payload
 - protocol-level `id` повинен адресувати current message state незалежно від payload form
 
+```
+scenario structured payload mutation by seeded id
+
+given
+private feed alice<->bob has messages
+1 id "msg-123" as doc1 from alice {
+body: "doc"
+subject: "Draft"
+priority: high
+}
+
+session alice
+connect
+auth
+
+edit message id doc1 field subject "Draft v2"
+
+session bob
+connect
+auth
+
+expect message from alice {
+body: "doc"
+subject: "Draft v2"
+priority: high
+}
+```
+
+- explicit seeded id у `given` повинен працювати і для structured payload
+- mutation через seeded protocol identity має поводитись так само, як і через runtime `capture id as`
+
+```
+scenario structured payload delete by seeded id
+
+given
+private feed alice<->bob has messages
+1 id "msg-123" as doc1 from alice {
+body: "doc"
+subject: "Draft"
+priority: high
+}
+
+session alice
+connect
+auth
+
+delete message id doc1
+
+session bob
+connect
+auth
+
+expect message deleted
+expect not message from alice {
+body: "doc"
+subject: "Draft"
+priority: high
+}
+```
+- delete через explicit seeded id у `given` повинен працювати і для structured payload
+- seeded protocol identity повинен адресувати current message state незалежно від payload form
+---
 ## TODO
 
-- structured payload + explicit message identity in `given`
 - structured payload + edge cases for mutation ordering and convergence
 
 ## PAYLOAD-HOME-1. Structured payload survives home bootstrap
