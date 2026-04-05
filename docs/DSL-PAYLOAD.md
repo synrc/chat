@@ -527,9 +527,80 @@ priority: high
 - delete через explicit seeded id у `given` повинен працювати і для structured payload
 - seeded protocol identity повинен адресувати current message state незалежно від payload form
 ---
+
+```
+scenario delete overrides later field edit for structured payload
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob {
+body: "doc"
+subject: "Draft"
+priority: high
+}
+
+session alice
+delete message ref "doc"
+edit message ref "doc" field subject "Draft v2"
+
+session bob
+expect message deleted
+expect not message from alice {
+body: "doc"
+subject: "Draft v2"
+priority: high
+}
+```
+
+- delete повинен домінувати над пізнішим field-level edit
+- structured payload не повинен "оживати" після delete
+
+```
+scenario replay converges after delete and later field edit
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob {
+body: "doc"
+subject: "Draft"
+priority: high
+}
+
+session alice
+delete message ref "doc"
+edit message ref "doc" field subject "Draft v2"
+
+session bob
+query events peer alice after 0
+
+expect message deleted
+expect not message from alice {
+body: "doc"
+subject: "Draft v2"
+priority: high
+}
+```
+- replay повинен конвергувати до deleted final state
+- старий або пізніше змінений structured payload не повинен лишатися visible current state
+---
+
 ## TODO
 
-- structured payload + edge cases for mutation ordering and convergence
+- structured payload + additional exact event assertions for mutation history
 
 ## PAYLOAD-HOME-1. Structured payload survives home bootstrap
 ```
