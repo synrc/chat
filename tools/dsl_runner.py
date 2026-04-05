@@ -210,7 +210,7 @@ class DSLRunner:
 
             if continue_block:
                 block_lines.append(line)
-                if line == "}":
+                if line == "}" or re.match(r'^}\s+capture\s+id\s+as\s+[A-Za-z_][A-Za-z0-9_-]*$', line):
                     current_lines.append("\n".join(block_lines))
                     del block_lines
                     continue_block = False
@@ -959,10 +959,14 @@ class DSLRunner:
         session = self._require_authenticated()
         capture_alias: str | None = None
 
-        structured = re.match(r'send message to ([^\s]+) \{\n(.*)\n\}$', line, re.DOTALL)
+        structured = re.match(
+            r'send message to ([^\s]+) \{\n(.*)\n}(?: capture id as ([A-Za-z_][A-Za-z0-9_-]*))?$',
+            line,
+            re.DOTALL,
+        )
         if structured:
-            target = structured.group(1)
-            payload, body = self._parse_structured_message_payload(structured.group(2))
+            target, payload_block, capture_alias = structured.groups()
+            payload, body = self._parse_structured_message_payload(payload_block)
         else:
             m = re.match(
                 r'send message to ([^\s]+) "(.*)" capture id as ([A-Za-z_][A-Za-z0-9_-]*)$',
