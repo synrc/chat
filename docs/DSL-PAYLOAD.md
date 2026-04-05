@@ -413,9 +413,9 @@ auth
 
 session alice
 send message to bob {
-body: "doc"
-subject: "Draft"
-priority: high
+  body: "doc"
+  subject: "Draft"
+  priority: high
 } capture id as doc1
 
 session alice
@@ -423,9 +423,9 @@ edit message id doc1 field subject "Draft v2"
 
 session bob
 expect message from alice {
-body: "doc"
-subject: "Draft v2"
-priority: high
+  body: "doc"
+  subject: "Draft v2"
+  priority: high
 }
 ```
 
@@ -445,9 +445,9 @@ auth
 
 session alice
 send message to bob {
-body: "doc"
-subject: "Draft"
-priority: high
+  body: "doc"
+  subject: "Draft"
+  priority: high
 } capture id as doc1
 
 session alice
@@ -456,9 +456,9 @@ delete message id doc1
 session bob
 expect message deleted
 expect not message from alice {
-body: "doc"
-subject: "Draft"
-priority: high
+  body: "doc"
+  subject: "Draft"
+  priority: high
 }
 ```
 
@@ -471,9 +471,9 @@ scenario structured payload mutation by seeded id
 given
 private feed alice<->bob has messages
 1 id "msg-123" as doc1 from alice {
-body: "doc"
-subject: "Draft"
-priority: high
+  body: "doc"
+  subject: "Draft"
+  priority: high
 }
 
 session alice
@@ -487,9 +487,9 @@ connect
 auth
 
 expect message from alice {
-body: "doc"
-subject: "Draft v2"
-priority: high
+  body: "doc"
+  subject: "Draft v2"
+  priority: high
 }
 ```
 
@@ -502,9 +502,9 @@ scenario structured payload delete by seeded id
 given
 private feed alice<->bob has messages
 1 id "msg-123" as doc1 from alice {
-body: "doc"
-subject: "Draft"
-priority: high
+  body: "doc"
+  subject: "Draft"
+  priority: high
 }
 
 session alice
@@ -519,9 +519,9 @@ auth
 
 expect message deleted
 expect not message from alice {
-body: "doc"
-subject: "Draft"
-priority: high
+  body: "doc"
+  subject: "Draft"
+  priority: high
 }
 ```
 - delete через explicit seeded id у `given` повинен працювати і для structured payload
@@ -541,9 +541,9 @@ auth
 
 session alice
 send message to bob {
-body: "doc"
-subject: "Draft"
-priority: high
+  body: "doc"
+  subject: "Draft"
+  priority: high
 }
 
 session alice
@@ -553,9 +553,9 @@ edit message ref "doc" field subject "Draft v2"
 session bob
 expect message deleted
 expect not message from alice {
-body: "doc"
-subject: "Draft v2"
-priority: high
+  body: "doc"
+  subject: "Draft v2"
+  priority: high
 }
 ```
 
@@ -575,9 +575,9 @@ auth
 
 session alice
 send message to bob {
-body: "doc"
-subject: "Draft"
-priority: high
+  body: "doc"
+  subject: "Draft"
+  priority: high
 }
 
 session alice
@@ -589,9 +589,9 @@ query events peer alice after 0
 
 expect message deleted
 expect not message from alice {
-body: "doc"
-subject: "Draft v2"
-priority: high
+  body: "doc"
+  subject: "Draft v2"
+  priority: high
 }
 ```
 - replay повинен конвергувати до deleted final state
