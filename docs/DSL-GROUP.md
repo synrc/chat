@@ -12,8 +12,8 @@ auth
 create group room1
 
 expect group room1 exists
-expect alice is owner
-expect alice is member
+expect alice is owner of group room1
+expect alice is member of group room1
 ```
 ---
 ## GROUP-2. Add member to group
@@ -164,7 +164,7 @@ create group room1
 query group room1
 
 expect group room1 exists
-expect alice is owner
+expect alice is owner of group room1
 ```
 ---
 ## GROUP-9. Query groups
