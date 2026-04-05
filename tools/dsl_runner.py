@@ -237,16 +237,30 @@ class DSLRunner:
         return scenarios
 
     def _split_given_block(self, lines: list[str]) -> tuple[list[str], list[str]]:
-        if not lines or lines[0] != "given":
+        if not lines:
             return [], lines
 
-        given_lines: list[str] = []
-        idx = 1
+        if lines[0] == "given":
+            given_lines: list[str] = []
+            idx = 1
+            while idx < len(lines):
+                line = lines[idx]
+                if self._looks_like_dsl(line):
+                    break
+                given_lines.append(line)
+                idx += 1
+            return given_lines, lines[idx:]
+
+        if not lines[0].startswith("given "):
+            return [], lines
+
+        given_lines = []
+        idx = 0
         while idx < len(lines):
             line = lines[idx]
-            if self._looks_like_dsl(line):
+            if not line.startswith("given "):
                 break
-            given_lines.append(line)
+            given_lines.append(line[len("given "):].strip())
             idx += 1
 
         return given_lines, lines[idx:]
@@ -749,7 +763,7 @@ class DSLRunner:
             if self._given_read_cursor(line):
                 idx += 1
                 continue
-            if self._given_abac_subject_attr(line):
+            if self._given_abac_message_field_visibility(line):
                 idx += 1
                 continue
             if self._given_abac_message_attr(line):
@@ -758,7 +772,7 @@ class DSLRunner:
             if self._given_abac_feed_attr(line):
                 idx += 1
                 continue
-            if self._given_abac_message_field_visibility(line):
+            if self._given_abac_subject_attr(line):
                 idx += 1
                 continue
             raise DSLRunnerError(f"Unsupported given line: {line}")
