@@ -484,3 +484,123 @@ expect no gaps
 - inbox/replay consistency повинна зберігатись незалежно в кожному feed
 ---
 
+## REPLAY-HOME. Home invariants
+
+```
+scenario home snapshot is consistent across feeds
+
+session bob
+connect
+auth
+add alice to roster
+
+session alice
+connect
+auth
+create group room1
+add bob to group room1
+send message to bob "p1"
+send message to group:room1 "g1"
+
+session bob
+bootstrap home limit 20 preview 1
+
+expect feeds
+expect previews
+expect shared snapshot
+
+query events feed private:alice after snapshot
+expect no gaps
+
+query events group room1 after snapshot
+expect no gaps
+```
+
+- один home bootstrap повинен задавати узгоджений recovery cut для всіх feed, вже покритих цим home result
+- replay після shared snapshot не повинен вимагати окремих незалежних bootstrap boundary для feed у межах того самого home context
+
+---
+
+```
+scenario home bootstrap does not affect read cursor
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+add alice to roster
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+
+session bob
+query events peer alice after cursor
+expect events
+
+send read for last
+
+bootstrap home limit 20 preview 1
+
+expect feeds
+expect previews
+expect shared snapshot
+
+query events peer alice after cursor
+
+expect empty replay
+expect not more
+```
+
+- home/bootstrap є view query і не повинен змінювати read state
+- якщо feed already read до current boundary, home bootstrap не повинен знову зробити його unread або зсунути replay boundary
+
+---
+
+```
+scenario home continue preserves shared snapshot
+
+session bob
+connect
+auth
+add alice to roster
+add carol to roster
+add dave to roster
+add erin to roster
+add frank to roster
+add grace to roster
+add heidi to roster
+add ivan to roster
+add judy to roster
+add mallory to roster
+add niaj to roster
+
+session alice
+connect
+auth
+send message to bob "m1"
+
+session bob
+bootstrap home limit 10 preview 1
+
+expect feeds
+expect shared snapshot
+expect more
+
+query home continue
+
+expect feeds
+expect shared snapshot
+expect not duplicate feeds
+
+query events peer alice after snapshot
+
+expect no duplicates
+expect no gaps
+```
+
+- pagination одного home query не повинна створювати новий snapshot boundary на наступній сторінці
+- shared snapshot має лишатися спільним recovery anchor для всього paged home result
