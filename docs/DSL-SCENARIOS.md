@@ -16,6 +16,7 @@ DSL використовується як інструмент проєктув�
 - [DSL-GROUP.md](./DSL-GROUP.md) — group
 - [DSL-MODERATION.md](./DSL-MODERATION.md) — moderation / block policy
 - [DSL-PAYLOAD.md](./DSL-PAYLOAD.md) — structured payload
+- [DSL-ABAC.md](./DSL-ABAC.md) — access policy / ABAC scenarios
 
 ## Coverage
 
@@ -30,3 +31,4 @@ DSL використовується як інструмент проєктув�
 - home bootstrap
 - group
 - moderation
+- access policy / ABAC
