@@ -393,3 +393,160 @@ query events peer alice after cursor
 expect empty replay
 expect not more
 ```
+---
+
+## READ-UNREAD. Unread and view semantics
+
+```
+scenario unread does not change without read
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+
+session bob
+query events peer alice after cursor
+
+expect events
+```
+- доставка або replay самі по собі не означають `read`
+- unread не повинен зменшуватись без явного read update
+
+```
+scenario read clears unread boundary for current head
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+
+session bob
+query events peer alice after cursor
+expect events
+
+session bob
+send read for last
+
+session bob
+query events peer alice after cursor
+
+expect empty replay
+expect not more
+```
+
+- після явного read unread boundary зсувається до current head
+- replay після cursor не повинен повертати вже прочитаний tail
+
+```
+scenario new message after read becomes unread again
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+
+session bob
+query events peer alice after cursor
+expect events
+
+session bob
+send read for last
+
+session alice
+send message to bob "m2"
+
+session bob
+query events peer alice after cursor
+
+expect events non-empty
+```
+
+- нові повідомлення після read формують новий unread tail
+- read фіксує boundary, але не блокує майбутні події
+
+```
+scenario reconnect does not change unread by itself
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+
+session bob
+disconnect
+wait 500ms
+reconnect
+auth resume
+
+session bob
+query events peer alice after cursor
+
+expect events non-empty
+```
+
+- reconnect або resume не повинні змінювати read/unread state
+- unread зберігається до явного read
+
+```
+scenario older history view does not change read cursor
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+
+session bob
+query events peer alice after cursor
+expect events
+
+session bob
+send read for last
+
+session bob
+query inbox peer alice
+
+expect messages
+
+session bob
+query events peer alice after cursor
+
+expect empty replay
+expect not more
+```
+
+- перегляд історії (inbox/history) не повинен змінювати read cursor
+- view navigation не повинна "відмотувати" unread назад
