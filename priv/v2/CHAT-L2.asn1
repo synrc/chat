@@ -471,88 +471,19 @@ BEGIN
     --       - дані можуть змінюватись між запитами
     --       - можливі дублікати або пропуски
     --
-    --   * snapshotSeq не означає snapshot isolation для всіх сторінок inbox,
-    --     а лише дає anchor для переходу до Event replay.
+    --   * snapshotSeq є feed-scoped snapshot boundary
+    --     для цього InboxAnswer.
     --
-    --   * клієнт не повинен покладатися на hasMore як на строгий критерій завершення.
+    --   * Якщо snapshot повертається у кількох сторінках,
+    --     snapshotSeq визначається на першій сторінці і лишається
+    --     спільним для всіх continue у межах цього snapshot.
     --
-    --   * якщо hasMore = false, сервер на момент відповіді не бачить додаткових
-    --     елементів після цієї сторінки.
-    --
-    -- result повертає набір елементів inbox для feed (може бути пустим)
-    --
-    --   * snapshotSeq визначає максимальний seq у feed,
-    --     який гарантовано покритий цим snapshot.
-    --
-    --   * клієнт MAY використовувати snapshotSeq як anchor
-    --     для подальшого Event replay:
-    --
-    --       query events after snapshot
-    --
-    --   * Це дозволяє безшовно перейти від Inbox snapshot
-    --     до Event replay після gap recovery.
-    --
-    --   * Для recovery semantics snapshotSeq утворює boundary між Inbox snapshot
-    --     і подальшим Event replay.
-    --
-    --   * Повідомлення і state, покриті snapshot з snapshotSeq = S,
-    --     не повинні повторно вимагати recovery через Event replay
-    --     з after = S.
-    --
-    --   * Event replay з after = snapshotSeq повинен повертати тільки події
-    --     з seq > snapshotSeq, які не покриті snapshot.
-    --
-    --   * Перехід від Inbox snapshot до Event replay через snapshotSeq
-    --     повинен бути lossless для recovery.
-    --
-    --   * Дані, покриті snapshot, не повинні губитись і не повинні
-    --     повторно з'являтись у replay після цього boundary.
-    --
-    --   * Якщо Inbox snapshot повертається у кількох сторінках,
-    --     snapshotSeq визначається на першій сторінці і залишається
-    --     спільним для всіх наступних continue у межах цього snapshot.
-    --   TODO:
-    --     можливе розширення моделі через явний snapshot identifier:
-    --       - snapshotId або аналогічний token
-    --
-    --     snapshotId може використовуватись для:
-    --       - явної прив'язки continue до конкретного snapshot
-    --       - гарантії консистентності multi-page snapshot
-    --       - відновлення snapshot після retry
-    --
-    --     поточна модель покладається на неявну семантику continue
-    --     і snapshotSeq як recovery anchor
-    --
-    --   * continue у такому випадку продовжує той самий snapshot boundary,
-    --     а не створює новий snapshot.
-    --
-    --   * Клієнт повинен інтерпретувати paged inbox recovery
-    --     як один логічний snapshot, якщо continue походить
-    --     від першої сторінки з snapshotSeq.
-    --
-    --   * Перехід до Event replay через after = snapshotSeq
-    --     є коректним після завершення читання всіх сторінок
-    --     цього snapshot.
-    --
-    -- Home vs Inbox snapshot
-    --
-    --   * Inbox snapshot (snapshotSeq):
-    --       - feed-scoped
-    --       - INTEGER seq
-    --
-    --   * Home snapshot:
-    --       - multi-feed
-    --       - opaque anchor (Binary)
-    --
-    --   * Обидва можуть використовуватись як boundary
-    --     для Event replay через:
-    --
-    --         query events after snapshot
+    --   * Recovery / replay semantics для after / nextAfter
+    --     визначаються в EventCore.
     --
     -- Snapshot vs Read Cursor
     --
-    --   * snapshotSeq визначає boundary snapshot,
-    --     але не є read cursor.
+    --   * snapshotSeq не є read cursor.
     --
     --   * Inbox snapshot не повинен автоматично оновлювати read state.
     --
@@ -1192,68 +1123,20 @@ BEGIN
     --
     --   * hasMore є hint про наявність додаткових feed.
     --
-    --   * snapshot є opaque anchor для цього home snapshot:
+    --   * snapshot є shared opaque anchor для цього HomeAnswer.
     --
-    --       - не є seq
-    --       - не інтерпретується клієнтом
+    --   * snapshot може використовуватись як bootstrap boundary
+    --     для replay тільки у feed, покритих цим HomeAnswer.
     --
-    --   * snapshot використовується як boundary для replay:
-    --
-    --       query events <feed> after snapshot
-    --
-    --   * replay після snapshot повинен:
-    --       - не повертати події, покриті snapshot
-    --       - повертати тільки нові події
-    --
-    --   * snapshot є shared для всіх feed у цьому HomeAnswer,
-    --     але replay boundary визначається per-feed.
-    --
-    --   * snapshot не означає однаковий seq для всіх feed.
+    --   * replay semantics для boundary / no-duplicates / no-gaps
+    --     визначаються в EventCore.
     --
     -- Consistency:
     --
-    --   * Home не гарантує snapshot isolation:
-    --       - дані можуть змінюватись під час pagination
-    --       - можливі race conditions з новими подіями
+    --   * Home не гарантує snapshot isolation.
     --
-    --   * Home snapshot узгоджений лише у межах однієї відповіді.
-    --
-    --   * Home snapshot не заморожує:
-    --       - authorization
-    --       - moderation policy
-    --       - membership
-    --       - existence resource
-    --
-    -- Home replay semantics
-    --
-    --   * Home snapshot MAY використовуватись як bootstrap boundary
-    --     для подальшого Event replay у feed, already covered цим HomeAnswer.
-    --
-    --   * При використанні:
-    --
-    --       query events <feed> after snapshot
-    --
-    --     сервер повинен інтерпретувати snapshot
-    --     як replay boundary для цього конкретного feed
-    --     у межах відповідного home snapshot context.
-    --
-    --   * Replay після home snapshot не повинен:
-    --       - дублювати події, already covered home snapshot
-    --       - залишати gap між home snapshot і event replay
-    --
-    --   * Replay після home snapshot повинен повертати
-    --     тільки події, що не покриті цим snapshot boundary.
-    --
-    --   * Якщо feed не був покритий даним HomeAnswer,
-    --     snapshot не повинен використовуватись для replay цього feed.
-    --
-    --   * Навіть якщо feed був покритий HomeAnswer,
-    --     подальші operations після snapshot
-    --     повинні перевірятись за поточним server state.
-    --
-    --   * Зокрема snapshot не гарантує,
-    --     що group/resource все ще існує
-    --     або що access policy не змінилась після snapshot.
+    --   * Home snapshot не заморожує authorization, moderation,
+    --     membership або existence resource.
     --
     HomeAnswer ::= SEQUENCE {
        items     [0] SEQUENCE OF item FeedViewItem OPTIONAL,
@@ -1312,53 +1195,22 @@ BEGIN
 
     -- Event Core (recovery / replay)
     --
-    -- EventCore usage modes
+    --   * EventCore є canonical API для replay / recovery event stream.
     --
-    --   EventCore використовується у трьох режимах:
-    --
-    --   * recovery mode:
-    --       повне відновлення подій після reconnect або gap
-    --       (query events after last_seq)
-    --
-    --   * preview mode:
-    --       отримання лише tail подій для UI (наприклад список чатів)
-    --       (query events after last_seq limit N)
-    --
-    --   * streaming mode:
-    --       покрокове читання подій через pagination
-    --       (query events after next)
-    --
-    --   Важливо:
-    --
-    --   * ці режими мають різну семантику використання,
-    --     але використовують один і той самий EventCore API.
-    --
-    --   * EventCore використовується тільки для recovery / replay event stream.
+    --   * Підтримуються три режими використання:
+    --       - recovery mode
+    --       - preview mode
+    --       - streaming mode
     --
     --   * Client-originated cursor/state updates не входять до EventCore
     --     і передаються через CursorCore.
     --
-    -- Події зберігаються як спільний stream у межах feed.
+    --   * Події є спільним stream у межах feed.
     --
-    -- Sequencing:
+    --   * seq є feed-scoped і монотонно зростаючим.
     --
-    --   * seq визначений у межах feed і є монотонно зростаючим.
-    --
-    -- Session:
-    --
-    --   * Кожна session окремо зберігає свою позицію (last_seq) у feed.
-    --   * Recovery виконується від імені конкретної session.
-    --
-    -- Recovery:
-    --
-    --   * Клієнт виконує Query з параметром after = last_seq.
-    --   * Сервер повертає події з seq > after.
-    --
-    -- Важливо:
-    --
-    --   * Події є спільними для всіх session у межах feed.
-    --   * Позиція (last_seq) є індивідуальною для кожної session.
-    --   * Сервер не веде окремі черги подій на session.
+    --   * Recovery виконується від імені конкретної session
+    --     через її local replay position (last_seq).
 
 
     EventQuery ::= SEQUENCE {
@@ -1376,22 +1228,10 @@ BEGIN
     --
     --   * Якщо відповідь обрізана, сервер MAY повернути:
     --       - nextAfter: останній seq у поточній сторінці
-    --         (у DSL canonical формі: next)
     --       - hasMore: ознаку наявності наступної сторінки
     --
-    --   * Клієнт може продовжити читання, використовуючи
-    --     nextAfter як нове значення after.
-    --
-    --   * nextAfter утворює continuation boundary для поточного replay chain.
-    --
-    --   * При продовженні replay через after = nextAfter
-    --     сервер не повинен повторно повертати події з seq <= nextAfter.
-    --
-    --   * Нові події, що з'явилися після формування попередньої сторінки,
-    --     MAY бути включені в наступну сторінку, якщо їх seq > nextAfter.
-    --
-    --   * Replay pagination через after / nextAfter повинна бути lossless
-    --     відносно continuation boundary:
+    --   * Продовження replay через after = nextAfter
+    --     утворює lossless continuation boundary:
     --       - без повторного повернення вже покритих подій
     --       - без втрати подій з seq > nextAfter
     --
