@@ -310,16 +310,12 @@ BEGIN
        ...
     }
 
-    -- Session and Read Semantics
+    -- Session / Read Note
     --
-    --   * last_seq є session-scoped replay position.
+    --   * last_seq лишається session-scoped replay position.
     --
-    --   * read cursor є user-scoped per feed
-    --     і shared між усіма session цього user.
-    --
-    --   * read може бути ініційований з будь-якої session,
-    --     але результат синхронізується між усіма
-    --     session цього user.
+    --   * read cursor не належить session:
+    --     canonical semantics і source of truth визначаються в CursorCore.
     --
     Authority ::= SEQUENCE {
        id Binary,
@@ -556,16 +552,11 @@ BEGIN
     -- Snapshot vs Read Cursor
     --
     --   * snapshotSeq визначає boundary snapshot,
-    --     але НЕ визначає read cursor.
+    --     але не є read cursor.
     --
-    --   * read cursor(user, feed) є незалежним від snapshot:
+    --   * Inbox snapshot не повинен автоматично оновлювати read state.
     --
-    --       readSeq <= snapshotSeq  (може бути)
-    --       readSeq >  snapshotSeq  (може бути)
-    --
-    --   * Inbox snapshot не повинен автоматично оновлювати read cursor.
-    --
-    --   * read cursor оновлюється тільки через CursorCore.update.
+    --   * Canonical read semantics визначаються в CursorCore.
     --
     InboxAnswer ::= SEQUENCE {
        items       [0] SEQUENCE OF item InboxItem OPTIONAL,
@@ -975,60 +966,41 @@ BEGIN
 
     -- Cursor Core (user/feed position state)
     --
-    -- CursorCore використовується для оновлення і читання cursor state у межах feed.
+    --   * CursorCore є canonical protocol-level моделлю для cursor state у feed.
     --
-    -- Початкова модель:
-    --   * підтримується тільки cursor kind = read
+    --   * У базовій моделі підтримується тільки cursor kind = read.
     --
-    -- Семантика:
+    --   * Cursor update є client-originated command через Query,
+    --     а server застосовує його до effective cursor state.
     --
-    --   * cursor update є client-originated command через Query.
-    --
-    --   * server застосовує update до effective cursor state.
-    --
-    --   * для read використовується монотонне правило:
+    --   * Для read використовується монотонне правило:
     --
     --       effective_cursor(user, feed, read) = max(current, seq)
     --
     --   * update з меншим seq не повинен зменшувати поточний cursor.
     --
-    --   * після успішного застосування server MAY згенерувати
-    --     відповідний Event (наприклад MessageEvent(type=read)).
+    --   * Після успішного застосування server MAY згенерувати
+    --     MessageEvent(type=read) як факт уже застосованого стану.
     --
-    --   * Event є фактом застосованого стану, а не client command.
+    -- Source of truth:
     --
-    -- Важливо:
+    --   * CursorCore є єдиним джерелом істини для read cursor state.
     --
-    --   * CursorCore не є replay API.
+    --   * FeedViewItem.readSeq і MessageEvent.readSeq є похідними представленнями.
     --
-    --   * replay event stream залишається в EventCore.
+    --   * Event і View не повинні використовуватись для оновлення cursor.
     --
-    --   * cursor rewind / mark unread не входить до базової моделі протоколу.
+    -- Scope / limits:
     --
-    --   * Поточна модель підтримує тільки forward (монотонний) read cursor.
+    --   * CursorCore не є replay API; replay event stream лишається в EventCore.
     --
-    --   * Підтримка unread (backward cursor) може бути додана у майбутньому
-    --     як окремий cursor kind з явною семантикою.
+    --   * cursor rewind / mark unread не входить до базової моделі.
     --
     --   TODO:
     --     визначити semantics для unread / cursor rewind:
     --       - чи дозволяється backward move effective cursor
     --       - як взаємодіє з read (монотонність vs rewind)
     --       - чи генерується окремий Event
-    --
-    -- Cursor as Source of Truth
-    --
-    --   * CursorCore є єдиним protocol-level джерелом істини
-    --     для read cursor state.
-    --
-    --   * Будь-які інші представлення (FeedViewItem.readSeq,
-    --     MessageEvent.readSeq, MentionView) є похідними.
-    --
-    --   * Client повинен використовувати тільки CursorCore.update
-    --     для зміни read state.
-    --
-    --   * Event і View не повинні використовуватись
-    --     як механізм оновлення cursor.
     --
     CursorKind ::= ENUMERATED {
        read (1),
@@ -1191,21 +1163,12 @@ BEGIN
         -- headSeq — останній відомий seq у feed на момент snapshot
        headSeq   [1] INTEGER OPTIONAL,
 
-        -- readSeq — effective read cursor користувача у feed
-        -- readSeq є projection поля read cursor у view layer.
+        -- readSeq — projection effective read cursor(user, feed)
+        --   у view layer.
         --
-        --   * readSeq НЕ є canonical storage поля у feed або message state.
+        --   * Джерелом істини лишається CursorCore.
         --
-        --   * readSeq відображає effective read cursor(user, feed),
-        --     який є user-scoped і спільний для всіх session користувача.
-        --
-        --   * readSeq є derived value:
-        --       readSeq = effective_cursor(user, feed)
-        --
-        --   * Джерелом істини є cursor state (CursorCore),
-        --     а не FeedViewItem.
-        --
-        --   * FeedViewItem не повинен використовуватись
+        --   * FeedViewItem.readSeq є derived value і не використовується
         --     для оновлення read state.
        readSeq   [2] INTEGER OPTIONAL,
 
