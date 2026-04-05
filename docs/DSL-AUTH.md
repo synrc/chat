@@ -155,10 +155,10 @@ expect same session
 - renew перевидає credentials у межах тієї самої session
 - renew не повинен створювати нову session
 ---
-## AUTH-9. Reconnect alone does not restore auth
 
+## AUTH-9. Reconnect preserves session context
 ```
-scenario reconnect alone does not restore auth
+scenario reconnect preserves session context
 
 session alice
 connect
@@ -170,11 +170,11 @@ reconnect
 
 query events peer bob after cursor
 
-expect error unauthorized
+expect not error unauthorized
 ```
-
-- reconnect сам по собі не відновлює auth context
-- для відновлення session потрібен explicit `auth resume` або інший валідний auth flow
+- reconnect сам по собі не повинен руйнувати валідний auth context
+- connection drop не дорівнює втраті session
+ 
 ---
 ## AUTH-10. Revoked token does not change protocol state
 
