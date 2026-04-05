@@ -51,7 +51,6 @@ expect message marked as read
 - цей сценарій перевіряє, що read не відбувається автоматично
 - `expect message ...` не означає `read`
 - `read` виникає тільки після явної cursor update команди клієнта
-- `read` є cursor-based update, а не просто reference на message id
 - `delivered` і `read` мають перевірятись окремо
 - `expect message marked as read` означає оновлення read cursor, а не message-level flag
 ---
@@ -86,9 +85,7 @@ expect read cursor updated
 
 - цей сценарій перевіряє cursor semantics
 - `send read for last` означає cursor update для read до seq останнього отриманого повідомлення
-- read cursor є монотонним
 - повторний read з меншим seq повинен ігноруватись
-- `id` може бути допоміжним reference, але джерелом істини є `feed + seq`
 
 ---
 
@@ -158,7 +155,6 @@ expect read cursor unchanged
 ```
 
 - update з меншим seq не повинен зменшувати read cursor
-- read cursor є монотонним
 
 
 ## READ-6. Read after reconnect
@@ -298,7 +294,6 @@ expect read cursor updated in group:room1
 expect read cursor unchanged in private:alice
 ```
 
-- read cursor є feed-scoped
 - update в одному feed не повинен впливати на інший feed
 - private і group feed повинні бути ізольовані на рівні cursor state
 
