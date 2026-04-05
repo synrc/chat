@@ -36,6 +36,16 @@ Message не обмежується plain text body і допускає сема
 `body` є лише одним із можливих полів payload і не визначає всю модель повідомлення.
 
 Message є ідемпотентним через глобально унікальний `Message.id`.  
+Message.id є єдиним protocol-level identifier повідомлення.
+
+- використовується для mutation (edit/delete)
+- не залежить від payload
+- не є пов'язаним із локальними reference (наприклад DSL ref)
+
+Це узгоджується з DSL моделлю:
+- `id` — protocol identity
+- `ref` — локальний сценарний reference
+
 Порядок повідомлень гарантується тільки в межах feed. 
 
 ### Event
@@ -55,6 +65,26 @@ Event delivery model:
 - можливі дублікати
 - можливий reorder
 - causal ordering не гарантується. 
+
+### Event as runtime truth
+
+Event є єдиним джерелом runtime truth.
+
+Message state не є окремим persisted truth,
+а виводиться як:
+
+message_state = fold(events)
+
+Це означає:
+
+- edit/delete не створюють новий message
+- вони змінюють state існуючого message
+- replay повинен конвергувати до того самого фінального стану
+
+Ця модель узгоджується з DSL сценаріями:
+- delete overrides edit
+- replay returns final state
+- event ordering може бути некаузальним, але state має бути узгодженим
 
 ### Query
 
@@ -110,6 +140,21 @@ Session:
 - всі session одного користувача спостерігають один і той самий read state
 - read може бути ініційований будь-якою session
 - результат синхронізується між усіма session цього користувача
+
+### Session vs Read
+
+Session і read cursor мають різну область:
+
+- session:
+    - має власний last_seq
+    - відображає replay position конкретного клієнта
+
+- read cursor:
+    - є user-scoped
+    - спільний між всіма session
+    - відображає логічний read state користувача
+
+Ці дві величини не повинні змішуватись.
 
 Session lifecycle:
 - створюється через `Authority.authenticate`
@@ -322,6 +367,27 @@ Read cursor:
 - спільний для всіх session одного користувача
 - оновлюється через read operation з будь-якої session
 
+### Read as boundary
+
+Read інтерпретується як верхня межа (boundary) у feed, а не як набір message ids.
+
+Тобто read означає:
+
+read_cursor(user, feed) = N
+
+де N є максимальним seq, який вважається прочитаним.
+
+Ця семантика узгоджується з DSL формою:
+
+- `send read for last`
+- `query cursor read ... up to <seq>`
+
+Read:
+
+- є монотонним (не зменшується)
+- не залежить від повноти delivery або replay
+- може обганяти фактичну доставку повідомлень у конкретну session
+
 Unread:
 - є derived view відносно user-level read cursor
 - не є глобальним source of truth
@@ -330,6 +396,17 @@ Unread:
 Базова формула:
 
 `unread = current_seq(feed) - read_cursor(user)`
+
+### Read invariants
+
+- read cursor є монотонним:
+  нове значення не може бути меншим за попереднє
+
+- повторний read з меншим seq ігнорується
+
+- read cursor не повинен ламатись через:
+    - reorder event delivery
+    - delete/edit mutation
 
 Unread і mention-derived поля належать до feed view layer
 (наприклад FeedViewItem), а не до canonical Conference state.
@@ -351,6 +428,16 @@ Mention view може містити:
 - messageId
 
 Такі дані належать до FeedViewItem, а не до Conference state.
+
+Mention state:
+
+- є view-level агрегатом
+- не є частиною canonical message або event state
+- може містити посилання на конкретне повідомлення (через message id / seq)
+
+Це узгоджується з DSL:
+- mention не є окремою подією, яка змінює state
+- це derived view поверх event stream
 
 ## Presence / Typing Model
 
