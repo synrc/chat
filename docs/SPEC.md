@@ -265,6 +265,55 @@ message_state = fold(message_events)
 
 ---
 
+### Message state derivation
+
+Стан повідомлення визначається як результат послідовного застосування подій
+(MessageEvent) до початкового payload повідомлення.
+
+Початковий стан:
+
+- initial_state = Message.payload
+
+Функція переходу стану визначається як:
+
+- apply(edited, state):
+  - якщо state.deleted == true → no-op
+  - інакше → оновлює змінювані поля (наприклад body)
+
+- apply(updated, state):
+  - якщо state.deleted == true → no-op
+  - інакше → замінює або мерджить поля відповідно до semantics update
+
+- apply(deleted, state):
+  - встановлює state.deleted = true
+  - payload стає невидимим
+
+Фінальний стан повідомлення:
+
+    final_state = fold(apply, events)
+
+де events — це впорядкований набір подій відповідно до правил ordering /
+conflict resolution протоколу.
+
+
+### Replay convergence invariants
+
+Наступні інваріанти повинні виконуватись:
+
+- replay і online-обробка повинні приводити до одного і того самого фінального стану
+
+- delete домінує:
+  після delete повідомлення не може знову стати видимим,
+  навіть якщо пізніше застосовуються старі edit/update
+
+- edit/update не створюють новий Message:
+  вони змінюють стан існуючого повідомлення
+
+- дублікати подій не повинні створювати кілька видимих станів
+  (ідемпотентність застосування)
+
+---
+
 ### Replay semantics
 
 - replay не є окремим джерелом істини
