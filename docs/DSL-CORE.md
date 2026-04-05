@@ -86,13 +86,13 @@ DSL розрізняє три типи посилань:
 
 - `query inbox peer bob`
 - `query events peer bob after cursor`
-- `query cursor read peer alice seq 123`
+- `query cursor read peer alice up to 123`
 - `query inbox group room1`
 - `query events group room1 after snapshot`
-- `query cursor read group room1 seq 5`
+- `query cursor read group room1 up to 5`
 - `query inbox feed private:bob`
 - `query events feed private:bob after cursor`
-- `query cursor read feed private:alice seq 123`
+- `query cursor read feed private:alice up to 123`
 
 Canonical форма може використовувати `peer` / `group` як typed sugar.
 Exact форма використовує `feed <token>` там, де потрібна protocol-level точність.
@@ -136,7 +136,7 @@ Exact форма використовує `feed <token>` там, де потрі
 - `query events feed private:bob after 100 limit 10`
 - `query inbox feed group:room1`
 - `query events feed group:room1 after snapshot`
-- `query cursor read feed private:alice seq 123`
+- `query cursor read feed private:alice up to 123`
 
 #### Structured message form
 
@@ -473,7 +473,7 @@ Protocol source of truth для identity лишається окремим ві�
 - `feed <token>` означає explicit feed token без alias resolution
 - `query inbox peer bob` = `query inbox feed private:bob`
 - `query events peer bob after 100 limit 10` = `query events feed private:bob after 100 limit 10`
-- `query cursor read peer alice seq 123` = `query cursor read feed private:alice seq 123`
+- `query cursor read peer alice up to 123` = `query cursor read feed private:alice up to 123`
 - `query inbox group room1` = `query inbox feed group:room1`
 - `query events group room1 after snapshot` = `query events feed group:room1 after snapshot`
 - у `session alice` reference `peer bob` означає приватний feed alice ↔ bob,
@@ -568,6 +568,8 @@ shared home snapshot інтерпретується як replay boundary
 
 DSL зазвичай використовує коротку форму `seq`,
 оскільки вона достатня для сценарного опису.
+У read/query form DSL може використовувати natural form `up to <seq>`,
+де `seq` лишається числовою feed-scoped boundary координатою.
 
 #### Expect semantics
 
@@ -644,14 +646,14 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | expect bob in roster           | expect roster contains bob                                   |
 | expect bob not in roster       | expect roster does not contain bob                           |
 | expect message from alice "hi" | expect inbound message from alice body "hi"                  |
-| send read for last             | query cursor read feed private:alice seq 123                 |
-| send read peer alice for last  | query cursor read feed private:alice seq 123                 |
-| send read group room1 for last | query cursor read feed group:room1 seq 123                   |
+| send read for last             | query cursor read feed private:alice up to 123                 |
+| send read peer alice for last  | query cursor read feed private:alice up to 123                 |
+| send read group room1 for last | query cursor read feed group:room1 up to 123                   |
 | expect more                    | expect hasMore true                                          |
 | query inbox continue           | query inbox feed private:alice continue                      |
 | query events peer bob after cursor | query events feed private:bob after cursor                   |
 | query inbox peer bob           | query inbox feed private:bob                                 |
-| query cursor read peer alice seq 123 | query cursor read feed private:alice seq 123                 |
+| query cursor read peer alice up to 123 | query cursor read feed private:alice up to 123                 |
 | query inbox group room1        | query inbox feed group:room1                                 |
 | query events group room1 after snapshot | query events feed group:room1 after snapshot                 |
 | expect events non-empty        | expect events count > 0                                      |
@@ -737,14 +739,14 @@ send read group room1 for last
 Exact:
 
 ```
-query cursor read feed private:alice seq 123
-query cursor read feed group:room1 seq 123
+query cursor read feed private:alice up to 123
+query cursor read feed group:room1 up to 123
 ```
 
 `send read ...` у canonical є sugar над `query cursor read ...` у exact формі.
 У точній формі read повинен явно визначати:
 - feed
-- seq
+- upper read boundary (`up to <seq>`)
 
 Числовий read cursor update у DSL допускається тільки в exact формі.
 
@@ -757,7 +759,7 @@ query cursor read feed group:room1 seq 123
 - read не означає, що клієнт бачив весь feed
 - read може виконуватись після partial replay або preview
 - read є cursor-based і не залежить від повноти історії
-- якщо потрібна явна позиція seq, використовується exact форма
+- якщо потрібна явна read boundary, використовується exact форма `query cursor read ... up to <seq>`
 
 #### Auth semantics
 
