@@ -147,6 +147,115 @@ ABAC використовує дані з вже існуючих шарів:
 
 ---
 
+### Schema → ABAC mapping
+
+ABAC використовує атрибути, що визначені в schema (ERP/1 catalogs).
+
+DSL не вводить власну модель атрибутів, а є лише читабельним представленням цих даних.
+
+---
+
+#### Subject (user)
+
+Формується з:
+
+- PKI:
+    - cert_serial
+
+- Employee:
+    - org
+    - branch
+    - role (legacy)
+    - group (legacy)
+    - position
+    - status
+    - type
+
+- Person:
+    - cn
+    - displayName
+    - type
+
+- Authority (IAM-lite):
+    - session_id
+    - device
+
+---
+
+#### Resource
+
+Тип ресурсу залежить від дії:
+
+- message:
+    - feed
+    - sender
+    - payload (fields)
+
+- feed:
+    - type (private / group)
+    - id (peer / group name)
+
+- group/member:
+    - org
+    - branch
+    - membership state
+
+- home/view:
+    - feeds
+    - previews
+    - derived state
+
+---
+
+#### Context
+
+Контекст формується з:
+
+- organization / tenant
+- branch hierarchy
+- session/device
+- federation boundary (local / remote)
+- policy-specific параметри (наприклад clearance, classification)
+
+---
+
+#### Action
+
+Action визначається протоколом:
+
+- send
+- edit
+- delete
+- read (cursor update)
+- query (events, home, roster, members)
+- add-member / remove-member
+- ban / unban
+
+---
+
+#### DSL representation
+
+У DSL ці атрибути використовуються у спрощеній формі, наприклад:
+
+```
+given alice has org acme
+given alice has branch security
+given alice has clearance secret
+
+when alice sends message
+expect access allowed
+```
+
+Ці вирази є sugar над schema-level моделлю і повинні
+однозначно мапитись на:
+
+- Employee
+- Person
+- Authority
+- resource/context
+
+---
+
 ### Що саме може контролювати ABAC
 
 ABAC може застосовуватись на кількох рівнях:
