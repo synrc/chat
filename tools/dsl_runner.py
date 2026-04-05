@@ -1948,7 +1948,20 @@ class DSLRunner:
                 raise ExpectationFailed(line)
             return True
 
-        m = re.match(r"expect event message deleted(?: actor)?(?: (\S+))? messageId (\S+)$", line)
+        m = re.match(r"expect event message read actor (\S+) seq (\d+)$", line)
+        if m:
+            actor, seq_text = m.groups()
+            seq = int(seq_text)
+            fact = self.world.recent_event_fact
+            if not fact or fact.get("family") != "message" or fact.get("type") != "read":
+                raise ExpectationFailed(line)
+            if fact.get("actor") != actor:
+                raise ExpectationFailed(line)
+            if fact.get("cursor") != seq:
+                raise ExpectationFailed(line)
+            return True
+
+        m = re.match(r"expect event message deleted(?: actor)?(?: (\S+))? id (\S+)$", line)
         if m:
             actor, message_ref = m.groups()
             message_id = self.world.captured_message_ids.get(message_ref, message_ref)
