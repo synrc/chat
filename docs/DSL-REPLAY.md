@@ -124,7 +124,7 @@ expect no gaps
 ```
 
 - home query повертає snapshot anchor для подальшого replay
-- replay після `snapshot` валідний тільки для feed, already covered цим home result
+- replay після `snapshot` валідний тільки для feed, вже покритих цим home result
 - replay після `snapshot` не повинен дублювати preview, уже покритий home result
 - replay після `snapshot` не повинен створювати розрив між bootstrap result і event stream
 ---
@@ -169,7 +169,7 @@ expect events
 
 - повідомлення може з'явитися після home snapshot
 - такі події повинні добиратися через replay після `snapshot`
-- replay після `snapshot` валідний тільки для feed, already covered цим home result
+- replay після `snapshot` валідний тільки для feed, вже покритих цим home result
 - home bootstrap і replay разом повинні давати безшовний recovery boundary
 ---
 
