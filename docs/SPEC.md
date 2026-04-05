@@ -332,7 +332,7 @@ FeedViewItem є агрегованою view/snapshot моделлю для:
 FeedViewItem може містити:
 - preview message
 - headSeq
-- readSeq
+- read cursor
 - unread
 - mention-derived state
 
@@ -425,7 +425,7 @@ Mention view:
 Mention view може містити:
 - count
 - latestSeq
-- messageId
+- message id
 
 Такі дані належать до FeedViewItem, а не до Conference state.
 
