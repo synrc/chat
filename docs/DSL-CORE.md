@@ -599,10 +599,8 @@ DSL зазвичай використовує коротку форму `seq`,
 - `expect unread` означає, що home/feed result містить unread view state
 - `expect mentions` означає, що home/feed result містить mention-derived view state
 - `expect group <name> exists` означає, що group/conference ресурс існує
-- `expect <user> is owner` означає, що user має owner role у поточній group
-- `expect <user> is member` означає, що user є member поточної group
-- `expect <user> is member of group <name>` означає, що user є member вказаної group
-- `expect groups` означає, що result містить список group/conference ресурсів
+- `expect <user> is owner of group <name>` означає, що user має owner role у вказаній group
+- `expect <user> is member of group <name>` означає, що user є member вказаної group- `expect groups` означає, що result містить список group/conference ресурсів
 - `expect members` означає, що result містить список member для поточної group
 - `expect <name> in groups` означає, що group <name> присутня у поточному group list result
 - `expect moderation` означає, що result містить moderation list
@@ -674,9 +672,9 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | add bob to group room1         | query member add actor bob feed group:room1                  |
 | remove bob from group room1    | query member remove actor bob feed group:room1               |
 | expect group room1 exists      | expect conference room1 exists                               |
-| expect alice is owner          | expect member alice role owner                               |
-| expect alice is member         | expect member alice role member-or-owner                     |
-| expect bob is member of group room1 | expect member bob in group:room1                             |
+| expect alice is owner of group room1 | expect member alice role owner feed group:room1         |
+| expect alice is member of group room1 | expect member alice role member-or-owner feed group:room1 |
+| expect bob is member of group room1 | expect member bob role member-or-owner feed group:room1  |
 | query group room1              | query conference get name room1                              |
 | query groups                   | query conference list type group                             |
 | query members of group room1   | query member list feed group:room1                           |
@@ -845,6 +843,12 @@ Exact group reference:
 
 `group <name>` у canonical DSL є typed reference на group feed/resource.
 `feed group:<name>` у exact DSL є explicit protocol-level form того самого ресурсу.
+Для group-related expect canonical DSL теж використовує explicit group reference:
+
+- `expect alice is owner of group room1`
+- `expect bob is member of group room1`
+
+Implicit group context для owner/member expect не використовується.
 
 - тільки member може:
   - `send message to group:<name>`
