@@ -1228,7 +1228,7 @@ class DSLRunner:
 
     def _query_cursor_read(self, line: str) -> None:
         session = self._require_authenticated()
-        m = re.match(r"query cursor read (.+) seq (\d+)$", line)
+        m = re.match(r"query cursor read (.+) (?:seq|up to) (\d+)$", line)
         if not m:
             raise DSLRunnerError(f"Bad query cursor read syntax: {line}")
         feed_ref, seq_text = m.groups()
