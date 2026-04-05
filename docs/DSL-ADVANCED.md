@@ -652,10 +652,10 @@ query events peer alice after cursor
 expect events
 send read for last
 
-query cursor read feed private:alice seq 2
+query cursor read feed private:alice up to 2
 expect read cursor unchanged
 
-query cursor read feed private:alice seq 1
+query cursor read feed private:alice up to 1
 expect read cursor unchanged
 ```
 

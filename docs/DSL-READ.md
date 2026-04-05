@@ -88,7 +88,7 @@ expect read cursor updated
 - `send read for last` означає cursor update для read до seq останнього отриманого повідомлення
 - read cursor є монотонним
 - повторний read з меншим seq повинен ігноруватись
-- `messageId` може бути допоміжним reference, але джерелом істини є `feed + seq`
+- `id` може бути допоміжним reference, але джерелом істини є `feed + seq`
 
 ---
 
@@ -145,13 +145,13 @@ expect message from alice body "m1"
 expect message from alice body "m2"
 
 session bob
-query cursor read feed private:alice seq 2
+query cursor read feed private:alice up to 2
 
 session bob
 expect read cursor updated
 
 session bob
-query cursor read feed private:alice seq 1
+query cursor read feed private:alice up to 1
 
 session bob
 expect read cursor unchanged
@@ -218,7 +218,7 @@ session bob
 expect message from alice body "hi"
 
 session bob
-query cursor read feed private:carol seq 1
+query cursor read feed private:carol up to 1
 
 session bob
 expect error badRequest
@@ -244,7 +244,7 @@ send message to bob "m1"
 send message to bob "m2"
 
 session bob
-query cursor read feed private:alice seq 2
+query cursor read feed private:alice up to 2
 
 session bob
 expect message from alice body "m1"
