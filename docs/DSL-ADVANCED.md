@@ -605,7 +605,119 @@ auth
 
 expect message from alice body "hi"
 ```
+---
 
+## ADV-FED. Federation semantics
+
+```
+scenario federated read event propagation
+
+session alice
+connect brokerA
+auth
+
+session bob
+connect brokerB
+auth
+
+session alice
+send message to bob@brokerB "m1"
+
+session bob
+query events peer alice after cursor
+expect events
+
+send read for last
+
+session alice
+query events peer bob@brokerB after cursor
+
+expect event message read bob up to 1
+```
+
+- read, виконаний у remote domain, повинен спостерігатися як той самий protocol-level event
+- federation не повинна змінювати semantics `read`
+
+---
+
+```
+scenario federated edit keeps message identity
+
+session alice
+connect brokerA
+auth
+
+session bob
+connect brokerB
+auth
+
+session alice
+send message to bob@brokerB "m1" capture id as m1id
+
+session alice
+edit message id m1id body "m1 edited"
+
+session bob
+expect message from alice body "m1 edited"
+expect not message body "m1"
+```
+
+- edit через federation не повинен створювати новий message identity
+- remote delivery повинен сходитися до того самого final state
+
+---
+
+```
+scenario federated delete converges to deleted final state
+
+session alice
+connect brokerA
+auth
+
+session bob
+connect brokerB
+auth
+
+session alice
+send message to bob@brokerB "m1" capture id as m1id
+
+session alice
+delete message id m1id
+
+session bob
+expect message deleted
+expect not message body "m1"
+```
+
+- delete через federation повинен давати той самий deleted final state
+- remote broker не повинен "оживляти" stale payload
+
+---
+
+```
+scenario federated replay returns final edited state
+
+session alice
+connect brokerA
+auth
+
+session bob
+connect brokerB
+auth
+
+session alice
+send message to bob@brokerB "m1"
+edit message "m1" body "m1 edited"
+
+session bob
+query events peer alice after 0
+
+expect message from alice body "m1 edited"
+expect not message body "m1"
+```
+
+- replay через federation повинен конвергувати до того самого final state
+- routing boundary не повинна ламати state derivation semantics
 ---
 
 
