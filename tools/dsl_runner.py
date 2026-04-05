@@ -1682,9 +1682,17 @@ class DSLRunner:
     # Expect
     # ----------------------------
     def _expect(self, line: str) -> None:
-        session = self._require_session()
+        policy_only_expects = (
+            line == "expect access allowed"
+            or line == "expect access denied"
+            or re.match(r"expect message (\S+) visible$", line) is not None
+            or re.match(r"expect message (\S+) hidden$", line) is not None
+            or re.match(r"expect message (\S+) field ([A-Za-z_][A-Za-z0-9_-]*) visible$", line) is not None
+            or re.match(r"expect message (\S+) field ([A-Za-z_][A-Za-z0-9_-]*) hidden$", line) is not None
+        )
+        session = None if policy_only_expects else self._require_session()
 
-        if self._expect_event(line, session):
+        if session is not None and self._expect_event(line, session):
             return
 
         if line == "expect access allowed":
