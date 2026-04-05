@@ -477,20 +477,19 @@ Home не повинен створювати побічних ефектів у
 
 ## Pagination Model
 
-Для snapshot/view queries використовується:
-- `limit`
-- `continue` (opaque continuation token)
+Pagination використовується для snapshot/view queries:
 
-Pagination:
+- `limit`
+- `continue`
+
+Snapshot pagination:
+
 - не гарантує snapshot isolation
 - може повертати дублікати
-- може пропускати елементи при зміні даних між сторінками
+- може пропускати елементи
 
-Для Event replay використовується окрема seq-based модель:
-- `after`
-- `limit`
-- `nextAfter`
-- `hasMore`. 
+Event replay використовує окрему seq-based модель,
+яка описана в `Event Replay Pagination Model`.
 
 ## Event Replay Pagination Model
 
