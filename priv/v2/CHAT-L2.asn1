@@ -767,7 +767,7 @@ BEGIN
     --
     --   * Протокол використовує cursor-based модель читання.
     --
-    --   * Read визначається як позиція (seq), а не як набір messageId.
+    --   * Read визначається як позиція (seq), а не як набір message ids.
     --
     --   * Деталізовані read receipts (per message / per user)
     --     не є частиною базової моделі.
@@ -877,9 +877,34 @@ BEGIN
     --
     --     то readSeq є джерелом істини.
     --
+    -- Message Mutation Event Semantics
+    --
+    --   * MessageEvent(type=edited|deleted|updated) адресує
+    --     існуючий message state через messageId.
+    --
+    --   * Такі event-и не створюють новий Message,
+    --     а змінюють current state уже існуючого Message.id.
+    --
+    --   * messageId є stable reference для mutation target.
+    --
+    --   * delete має пріоритет над edited/updated,
+    --     незалежно від timestamp ordering.
+    --
+    --   * replay і звичайна online-обробка повинні
+    --     конвергувати до однакового final state.
+    --
     MessageEvent ::= SEQUENCE {
        type       MessageEventType,
        messageId  [0] Binary OPTIONAL,
+       -- messageId:
+       --
+       --   * stable reference до Message.id,
+       --     над яким виконується lifecycle/mutation event.
+       --
+       --   * для read може бути optional auxiliary reference,
+       --     але для edited/deleted/updated саме messageId
+       --     визначає target message state.
+
        feed       [1] MessageFeed OPTIONAL,
        actor      [2] Binary OPTIONAL,
        timestamp  [3] INTEGER OPTIONAL,
