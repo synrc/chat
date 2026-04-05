@@ -1648,10 +1648,6 @@ BEGIN
     --   * Moderation є окремим policy layer,
     --     а не relation state і не roster view.
     --
-    --   * Moderation не повинна неявно змінювати:
-    --       - Subscription relation
-    --       - Roster snapshot/view
-    --
     --   * ban створює policy restriction для actor -> target.
     --
     --   * unban видаляє цю policy restriction.
@@ -1659,21 +1655,10 @@ BEGIN
     --   * list повертає moderation restrictions для поточного actor
     --     або для явно заданого actor filter.
     --
-    -- Direct Messaging:
+    --   * Moderation не повинна неявно змінювати Subscription або Roster.
     --
-    --   * У базовій моделі moderation MAY блокувати direct private messaging
-    --     між actor і target.
-    --
-    --   * Така policy не означає автоматичного видалення relation state
-    --     або roster entry.
-    --
-    -- Conflict / Timing:
-    --
-    --   * Moderation restriction застосовується до нових operations,
-    --     що обробляються після того, як ban набув чинності на сервері.
-    --
-    --   * already accepted message або command
-    --     не повинна ретроактивно відхилятись через пізніший ban.
+    --   * Timing semantics для ban/unban визначається загальними
+    --     правилами Query / Command Evaluation Semantics.
     --
     ModerationOp ::= ENUMERATED {
        ban    (1),
@@ -1782,14 +1767,8 @@ BEGIN
     --   * owner Conference також вважається валідним member
     --     для доступу до group feed.
     --
-    -- Conflict / Timing:
-    --
-    --   * Зміна membership застосовується до нових operations,
-    --     що обробляються після того, як add/remove набув чинності.
-    --
-    --   * already accepted group message або command
-    --     не повинна відкочуватись ретроактивно
-    --     через пізніше remove membership.
+    --   * Timing semantics для add/remove визначається загальними
+    --     правилами Query / Command Evaluation Semantics.
     --
     MemberQuery ::= SEQUENCE {
        op    MemberOp,
@@ -1853,13 +1832,10 @@ BEGIN
     --   * Membership і доступ до group feed не є implicit полями Conference,
     --     а визначаються через Member relation і server-side authorization.
     --
-    -- lastmsg не є частиною Conference state.
+    --   * unread / mention-derived дані належать до feed view layer,
+    --     а не до canonical Conference state.
     --
-    -- unread / mention-derived дані не є частиною
-    -- canonical Conference state.
-    --
-    -- Такі поля належать до feed view / bootstrap projection layer
-    -- (наприклад FeedViewItem), а не до Conference resource.
+    --   * lastmsg також не є частиною Conference state.
     --
     Conference ::= SEQUENCE {
        id Binary,
@@ -1907,11 +1883,8 @@ BEGIN
     --
     --   * Видалення Conference робить відповідний group feed недоступним.
     --
-    --   * Це правило застосовується до нових operations після remove.
-    --
-    --   * already accepted group message / query result
-    --     не повинні відкочуватись ретроактивно
-    --     тільки через пізніше видалення Conference.
+    --   * Timing semantics для create/update/remove визначається
+    --     загальними правилами Query / Command Evaluation Semantics.
     --
     ConferenceQuery ::= SEQUENCE {
        op    ConferenceOp,
