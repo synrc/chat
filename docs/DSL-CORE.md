@@ -319,6 +319,58 @@ expect message from alice {
 На цьому етапі structured expect form є частиною DSL semantics
 і підтримується runner для partial payload matching та field-based scenarios.
 
+#### Event expect form
+
+DSL підтримує exact expect form для protocol-level event observation.
+
+Canonical форма:
+
+```
+expect event message read bob up to 12
+expect event message deleted alice messageId m1id
+expect event presence typing bob
+```
+
+У цій формі:
+
+- перший позиційний аргумент після типу event інтерпретується як actor
+- `up to <seq>` є natural DSL формою для read cursor
+- `messageId` є protocol identity reference (через capture id as або given)
+
+Actor є опціональним.
+
+Можливі варіанти:
+
+```
+expect event message read bob up to 12
+expect event message read up to 12
+```
+
+Якщо actor не вказаний:
+- DSL інтерпретує це як wildcard match
+- подія може бути від будь-якого actor
+
+Exact (explicit) форма також допускається:
+
+```
+expect event message read actor bob readSeq 12
+
+```
+Exact форма:
+- використовується для protocol-level точності
+- не є основною canonical DSL формою
+
+Event expect form:
+
+- описує server-observable Event
+- не означає client-originated command
+- використовується для replay / runtime semantics перевірки
+
+Event expect form узгоджується з protocol model:
+
+- MessageEvent (delivered/read/edited/deleted)
+- PresenceEvent (online/offline/typing)
+- 
 #### Message reference semantics
 
 У canonical mutation form DSL розрізняє два способи посилання на повідомлення:
@@ -560,6 +612,8 @@ DSL зазвичай використовує коротку форму `seq`,
 - `expect result items` означає, що result містить список елементів (items)
 - `expect messages` означає, що result містить повідомлення (message items)
 - `expect events` означає, що result містить event items
+- `expect event <...>` означає exact match для protocol-level event
+- `expect event message read ...` використовує DSL форму `up to <seq>` замість protocol-level `readSeq`
 - `expect next` означає, що result містить continuation cursor (`next`)
 - `expect not next` означає, що continuation cursor (`next`) відсутній у result
 - `expect result items <= N` означає, що кількість items не перевищує N
