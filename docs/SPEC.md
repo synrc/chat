@@ -395,6 +395,86 @@ FeedViewItem не є джерелом істини для:
 - Conference state
 - Subscription state
 
+## Home / Bootstrap Model
+
+`home` (або bootstrap) є агрегованим snapshot/view запитом,
+який повертає початковий стан клієнта.
+
+Home включає:
+- roster
+- feeds
+- previews
+- derived view state (unread, mentions тощо)
+
+Home не є джерелом істини, а лише view поверх canonical state.
+
+---
+
+### Home snapshot
+
+Home повертає `shared snapshot`, який є recovery anchor
+для подальшого event replay.
+
+Цей snapshot:
+
+- є узгодженим зрізом (consistent cut) стану
+- покриває всі feed, включені в home result
+- використовується як boundary для replay (`after = snapshot`)
+
+---
+
+### Home + Replay
+
+Home і replay разом утворюють безшовний recovery механізм:
+
+- replay після snapshot не повинен:
+  - дублювати preview або snapshot дані
+  - створювати gaps
+
+- replay повинен повертати тільки події з `seq > snapshot`
+
+- snapshot визначає нижню межу replay для кожного feed
+
+---
+
+### Multi-feed semantics
+
+- snapshot є спільним (shared) для всіх feed у межах одного home запиту
+
+- при цьому:
+  - `seq` лишається feed-scoped
+  - replay виконується окремо для кожного feed
+
+- snapshot не означає, що всі feed мають однаковий seq,
+  але гарантує узгоджений момент часу для recovery
+
+---
+
+### Home pagination
+
+Якщо home повертається у кілька сторінок:
+
+- всі сторінки повинні використовувати один і той самий snapshot
+
+- pagination не повинна:
+  - створювати новий snapshot boundary
+  - змінювати recovery anchor
+
+- snapshot є стабільним для всього paged home result
+
+---
+
+### Home is read-neutral
+
+Home є view-операцією і не повинен змінювати state:
+
+- не викликає read
+- не змінює read cursor
+- не впливає на unread
+- не змінює subscription / roster
+
+Home не повинен створювати побічних ефектів у protocol state
+
 ## Pagination Model
 
 Для snapshot/view queries використовується:
