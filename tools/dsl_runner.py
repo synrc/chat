@@ -1869,6 +1869,14 @@ class DSLRunner:
                 raise ExpectationFailed(line)
             return
 
+        m = re.match(r"expect (\S+) is owner of group (\S+)$", line)
+        if m:
+            user, group_name = m.groups()
+            group = self._group_or_raise(group_name)
+            if group.owner != user:
+                raise ExpectationFailed(line)
+            return
+
         m = re.match(r"expect (\S+) is owner$", line)
         if m:
             user = m.group(1)
