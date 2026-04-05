@@ -396,10 +396,77 @@ expect not message from alice {
 
 - після delete replay не повинен показувати stale structured payload як current state
 - delete повинен перекривати видимість payload у current replay semantics
+---
+
+## Payload identity
+
+```
+scenario structured payload mutation by captured id
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob {
+body: "doc"
+subject: "Draft"
+priority: high
+} capture id as doc1
+
+session alice
+edit message id doc1 field subject "Draft v2"
+
+session bob
+expect message from alice {
+body: "doc"
+subject: "Draft v2"
+priority: high
+}
+```
+
+- runtime `capture id as` повинен працювати і для structured payload
+- mutation через captured protocol identity не повинна залежати від local `ref`
+
+```
+scenario structured payload delete by captured id
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob {
+body: "doc"
+subject: "Draft"
+priority: high
+} capture id as doc1
+
+session alice
+delete message id doc1
+
+session bob
+expect message deleted
+expect not message from alice {
+body: "doc"
+subject: "Draft"
+priority: high
+}
+```
+
+- delete через captured protocol identity повинен працювати і для structured payload
+- protocol-level `id` повинен адресувати current message state незалежно від payload form
 
 ## TODO
 
-- structured payload + `capture id as` / mutation by captured identity
 - structured payload + explicit message identity in `given`
 - structured payload + edge cases for mutation ordering and convergence
 
