@@ -345,11 +345,11 @@ delete message id m1id
 session bob
 query events peer alice after cursor
 
-expect event message deleted alice messageId m1id
+expect event message deleted alice id m1id
 ```
 
 - delete mutation має бути observable як message event
-- exact event form дозволяє перевірити protocol identity через `messageId`
+- exact event form дозволяє перевірити protocol identity через `id`
 - це окремо від state-level assertion `expect message deleted`
 
 ---

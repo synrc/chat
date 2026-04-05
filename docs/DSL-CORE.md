@@ -327,7 +327,7 @@ Canonical форма:
 
 ```
 expect event message read bob up to 12
-expect event message deleted alice messageId m1id
+expect event message deleted alice id m1id
 expect event presence typing bob
 ```
 
@@ -335,7 +335,7 @@ expect event presence typing bob
 
 - перший позиційний аргумент після event family/type інтерпретується як actor
 - `up to <seq>` є natural DSL формою для read cursor
-- `messageId` є protocol identity reference (через capture id as або given)
+- `id` є protocol identity reference (через capture id as або given)
 
 Actor є опціональним.
 
@@ -353,7 +353,7 @@ expect event message read up to 12
 Exact (explicit) форма також допускається:
 
 ```
-expect event message read actor bob readSeq 12
+expect event message read actor bob seq 12
 ```
 
 Exact форма:
@@ -625,73 +625,73 @@ Argument rules застосовуються до обох рівнів DSL (cano
 
 ## Duality
 
-| Canonical                      | Exact                                                      |
-|--------------------------------|------------------------------------------------------------|
-| auth                           | authority authenticate request                             |
-| auth resume                    | authority authenticate request with session/accessToken    |
-| renew                          | authority renew request with refreshToken                  |
-| add bob to roster              | query subscription create target bob                       |
-| remove bob from roster         | query subscription remove target bob                       |
-| query roster                   | query roster list                                          |
-| bootstrap home                 | query home                                                 |
-| bootstrap home limit 20        | query home limit 20                                        |
-| bootstrap home limit 20 preview 1 | query home limit 20 preview 1                           |
-| query home continue            | query home continue                                        |
-| expect feeds                   | expect result contains feeds                               |
-| expect previews                | expect result contains previews                            |
-| expect shared snapshot         | expect result contains shared snapshot anchor              |
-| expect unread                  | expect result contains unread view state                   |
-| expect bob in roster           | expect roster contains bob                                 |
-| expect bob not in roster       | expect roster does not contain bob                         |
-| expect message from alice "hi" | expect inbound message from alice body "hi"                |
-| send read for last             | query cursor read feed private:alice seq 123               |
-| send read peer alice for last  | query cursor read feed private:alice seq 123               |
-| send read group room1 for last | query cursor read feed group:room1 seq 123                 |
-| expect more                    | expect hasMore true                                        |
-| query inbox continue           | query inbox feed private:alice continue                    |
-| query events peer bob after cursor | query events feed private:bob after cursor              |
-| query inbox peer bob           | query inbox feed private:bob                               |
-| query cursor read peer alice seq 123 | query cursor read feed private:alice seq 123         |
-| query inbox group room1        | query inbox feed group:room1                               |
-| query events group room1 after snapshot | query events feed group:room1 after snapshot      |
-| expect events non-empty        | expect events count > 0                                    |
-| expect event message read bob up to 12 | expect message event type read actor bob readSeq 12 |
-| expect event message deleted alice messageId m1id | expect message event type deleted actor alice messageId m1id |
-| expect event presence offline bob | expect presence event type offline actor bob |
-| expect empty replay            | expect events = 0                                          |
-| expect no duplicates           | expect result has no duplicate items/events                |
-| expect no gaps                 | expect result covers boundary without missing items/events |
-| send message to bob "hi" capture id as m1id | send message to bob; bind returned message identity as m1id |
-| edit message ref "m1" body "m1 edited" | apply message mutation by scenario-local reference          |
-| edit message id m1id body "m1 edited" | apply message mutation by captured protocol identity        |
-| delete message ref "m1"                | apply message delete by scenario-local reference            |
-| delete message id m1id                 | apply message delete by captured protocol identity          |
-| expect message deleted             | expect final message state = deleted                       |
-| create group room1             | query conference create name room1 type group              |
-| delete group room1             | query conference remove name room1                         |
-| add bob to group room1         | query member add actor bob feed group:room1                |
-| remove bob from group room1    | query member remove actor bob feed group:room1             |
-| expect group room1 exists      | expect conference room1 exists                             |
-| expect alice is owner          | expect member alice role owner                             |
-| expect alice is member         | expect member alice role member-or-owner                   |
-| expect bob is member of group room1 | expect member bob in group:room1                      |
-| query group room1              | query conference get name room1                            |
-| query groups                   | query conference list type group                           |
-| query members of group room1   | query member list feed group:room1                         |
-| expect groups                  | expect result contains groups                              |
-| expect members                 | expect result contains members                             |
-| expect room1 in groups         | expect groups contain room1                                |
-| ban bob                        | query moderation ban target bob                            |
-| unban bob                      | query moderation unban target bob                          |
-| query moderation               | query moderation list                                      |
-| expect moderation              | expect result contains moderation items                    |
-| expect bob is banned           | expect moderation contains bob                             |
-| expect bob in moderation       | expect moderation contains bob                             |
-| query subscription bob         | query subscription get target bob                          |
-| query subscriptions            | query subscription list                                    |
-| expect subscriptions           | expect result contains subscriptions                       |
-| expect bob in subscriptions    | expect subscriptions contain bob                           |
-| expect subscription to bob     | expect subscription target bob exists                      |
+| Canonical                      | Exact                                                        |
+|--------------------------------|--------------------------------------------------------------|
+| auth                           | authority authenticate request                               |
+| auth resume                    | authority authenticate request with session/accessToken      |
+| renew                          | authority renew request with refreshToken                    |
+| add bob to roster              | query subscription create target bob                         |
+| remove bob from roster         | query subscription remove target bob                         |
+| query roster                   | query roster list                                            |
+| bootstrap home                 | query home                                                   |
+| bootstrap home limit 20        | query home limit 20                                          |
+| bootstrap home limit 20 preview 1 | query home limit 20 preview 1                                |
+| query home continue            | query home continue                                          |
+| expect feeds                   | expect result contains feeds                                 |
+| expect previews                | expect result contains previews                              |
+| expect shared snapshot         | expect result contains shared snapshot anchor                |
+| expect unread                  | expect result contains unread view state                     |
+| expect bob in roster           | expect roster contains bob                                   |
+| expect bob not in roster       | expect roster does not contain bob                           |
+| expect message from alice "hi" | expect inbound message from alice body "hi"                  |
+| send read for last             | query cursor read feed private:alice seq 123                 |
+| send read peer alice for last  | query cursor read feed private:alice seq 123                 |
+| send read group room1 for last | query cursor read feed group:room1 seq 123                   |
+| expect more                    | expect hasMore true                                          |
+| query inbox continue           | query inbox feed private:alice continue                      |
+| query events peer bob after cursor | query events feed private:bob after cursor                   |
+| query inbox peer bob           | query inbox feed private:bob                                 |
+| query cursor read peer alice seq 123 | query cursor read feed private:alice seq 123                 |
+| query inbox group room1        | query inbox feed group:room1                                 |
+| query events group room1 after snapshot | query events feed group:room1 after snapshot                 |
+| expect events non-empty        | expect events count > 0                                      |
+| expect event message read bob up to 12 | expect message event type read actor bob seq 12              |
+| expect event message deleted alice id m1id | expect message event type deleted actor alice id m1id |
+| expect event presence offline bob | expect presence event type offline actor bob                 |
+| expect empty replay            | expect events = 0                                            |
+| expect no duplicates           | expect result has no duplicate items/events                  |
+| expect no gaps                 | expect result covers boundary without missing items/events   |
+| send message to bob "hi" capture id as m1id | send message to bob; bind returned message identity as m1id  |
+| edit message ref "m1" body "m1 edited" | apply message mutation by scenario-local reference           |
+| edit message id m1id body "m1 edited" | apply message mutation by captured protocol identity         |
+| delete message ref "m1"                | apply message delete by scenario-local reference             |
+| delete message id m1id                 | apply message delete by captured protocol identity           |
+| expect message deleted             | expect final message state = deleted                         |
+| create group room1             | query conference create name room1 type group                |
+| delete group room1             | query conference remove name room1                           |
+| add bob to group room1         | query member add actor bob feed group:room1                  |
+| remove bob from group room1    | query member remove actor bob feed group:room1               |
+| expect group room1 exists      | expect conference room1 exists                               |
+| expect alice is owner          | expect member alice role owner                               |
+| expect alice is member         | expect member alice role member-or-owner                     |
+| expect bob is member of group room1 | expect member bob in group:room1                             |
+| query group room1              | query conference get name room1                              |
+| query groups                   | query conference list type group                             |
+| query members of group room1   | query member list feed group:room1                           |
+| expect groups                  | expect result contains groups                                |
+| expect members                 | expect result contains members                               |
+| expect room1 in groups         | expect groups contain room1                                  |
+| ban bob                        | query moderation ban target bob                              |
+| unban bob                      | query moderation unban target bob                            |
+| query moderation               | query moderation list                                        |
+| expect moderation              | expect result contains moderation items                      |
+| expect bob is banned           | expect moderation contains bob                               |
+| expect bob in moderation       | expect moderation contains bob                               |
+| query subscription bob         | query subscription get target bob                            |
+| query subscriptions            | query subscription list                                      |
+| expect subscriptions           | expect result contains subscriptions                         |
+| expect bob in subscriptions    | expect subscriptions contain bob                             |
+| expect subscription to bob     | expect subscription target bob exists                        |
 
 Canonical = sugar  
 Exact = protocol-observable semantics
