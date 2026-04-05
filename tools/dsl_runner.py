@@ -16,6 +16,14 @@ class ExpectationFailed(DSLRunnerError):
     pass
 
 
+CLEARANCE_ORDER = {
+    "public": 0,
+    "confidential": 1,
+    "secret": 2,
+    "topsecret": 3,
+}
+
+
 @dataclass
 class SessionState:
     alias: str
@@ -85,6 +93,10 @@ class World:
     read_cursors: dict[tuple[str, str], int] = field(default_factory=dict)
     captured_message_ids: dict[str, str] = field(default_factory=dict)
     recent_event_fact: dict[str, Any] | None = None
+    subject_attrs: dict[str, dict[str, Any]] = field(default_factory=dict)
+    resource_attrs: dict[str, dict[str, Any]] = field(default_factory=dict)
+    policy_context: dict[str, Any] = field(default_factory=dict)
+    last_policy_result: dict[str, Any] | None = None
 
 
 class DSLRunner:
@@ -148,6 +160,7 @@ class DSLRunner:
             "query ",
             "bootstrap home",
             "expect ",
+            "when ",
             "wait ",
         )
         return line.startswith(prefixes)
@@ -510,6 +523,10 @@ class DSLRunner:
             self._expect(line)
             return
 
+        if line.startswith("when "):
+            self._when_policy(line)
+            return
+
         if line.startswith("wait "):
             return
 
@@ -732,6 +749,18 @@ class DSLRunner:
             if self._given_read_cursor(line):
                 idx += 1
                 continue
+            if self._given_abac_subject_attr(line):
+                idx += 1
+                continue
+            if self._given_abac_message_attr(line):
+                idx += 1
+                continue
+            if self._given_abac_feed_attr(line):
+                idx += 1
+                continue
+            if self._given_abac_message_field_visibility(line):
+                idx += 1
+                continue
             raise DSLRunnerError(f"Unsupported given line: {line}")
 
     def _consume_given_feed_messages(self, lines: list[str], start: int) -> int:
@@ -950,6 +979,40 @@ class DSLRunner:
         else:
             feed = feed_token
         self.world.read_cursors[(user, feed)] = seq
+        return True
+
+    def _given_abac_subject_attr(self, line: str) -> bool:
+        match = re.match(r"(\S+) has ([A-Za-z_][A-Za-z0-9_-]*) (\S+)$", line)
+        if not match:
+            return False
+        subject, attr, value = match.groups()
+        self.world.subject_attrs.setdefault(subject, {})[attr] = value
+        return True
+
+    def _given_abac_message_attr(self, line: str) -> bool:
+        match = re.match(r"message(?: (\S+))? has ([A-Za-z_][A-Za-z0-9_-]*) (\S+)$", line)
+        if not match:
+            return False
+        message_name, attr, value = match.groups()
+        resource_key = "message" if message_name is None else f"message:{message_name}"
+        self.world.resource_attrs.setdefault(resource_key, {})[attr] = value
+        return True
+
+    def _given_abac_feed_attr(self, line: str) -> bool:
+        match = re.match(r"feed (\S+) has ([A-Za-z_][A-Za-z0-9_-]*) (\S+)$", line)
+        if not match:
+            return False
+        feed_name, attr, value = match.groups()
+        self.world.resource_attrs.setdefault(f"feed:{feed_name}", {})[attr] = value
+        return True
+
+    def _given_abac_message_field_visibility(self, line: str) -> bool:
+        match = re.match(r"message (\S+) field ([A-Za-z_][A-Za-z0-9_-]*) visible at level (\S+)$", line)
+        if not match:
+            return False
+        message_name, field_name, level = match.groups()
+        resource = self.world.resource_attrs.setdefault(f"message:{message_name}", {})
+        resource.setdefault("field_visibility", {})[field_name] = level
         return True
 
     # ----------------------------
@@ -1532,6 +1595,89 @@ class DSLRunner:
             error="updated" if updated else "unchanged",
         )
 
+    def _clearance_rank(self, value: str | None) -> int:
+        if value is None:
+            return -1
+        return CLEARANCE_ORDER.get(value, -1)
+
+    def _policy_message_attrs(self, message_name: str | None = None) -> dict[str, Any]:
+        if message_name is not None:
+            return dict(self.world.resource_attrs.get(f"message:{message_name}", {}))
+        return dict(self.world.resource_attrs.get("message", {}))
+
+    def _when_policy(self, line: str) -> None:
+        send_match = re.match(r"when (\S+) sends message$", line)
+        if send_match:
+            actor = send_match.group(1)
+            subject = self.world.subject_attrs.get(actor, {})
+            message_attrs = self._policy_message_attrs()
+            decision = self._clearance_rank(subject.get("clearance")) >= self._clearance_rank(
+                message_attrs.get("classification")
+            )
+            self.world.last_policy_result = {
+                "access": "allowed" if decision else "denied",
+                "visible_messages": set(),
+                "hidden_messages": set(),
+                "visible_fields": set(),
+                "hidden_fields": set(),
+            }
+            self.last_result = QueryResult(kind="policy", items=[self.world.last_policy_result["access"]])
+            return
+
+        query_events_match = re.match(r"when (\S+) queries events for group (\S+)$", line)
+        if query_events_match:
+            actor, group_name = query_events_match.groups()
+            subject = self.world.subject_attrs.get(actor, {})
+            feed_attrs = self.world.resource_attrs.get(f"feed:{group_name}", {})
+            decision = subject.get("branch") == feed_attrs.get("branch")
+            self.world.last_policy_result = {
+                "access": "allowed" if decision else "denied",
+                "visible_messages": set(),
+                "hidden_messages": set(),
+                "visible_fields": set(),
+                "hidden_fields": set(),
+            }
+            self.last_result = QueryResult(kind="policy", items=[self.world.last_policy_result["access"]])
+            return
+
+        query_inbox_match = re.match(r"when (\S+) queries inbox$", line)
+        if query_inbox_match:
+            actor = query_inbox_match.group(1)
+            subject = self.world.subject_attrs.get(actor, {})
+            subject_clearance = self._clearance_rank(subject.get("clearance"))
+            visible_messages: set[str] = set()
+            hidden_messages: set[str] = set()
+            visible_fields: set[tuple[str, str]] = set()
+            hidden_fields: set[tuple[str, str]] = set()
+
+            for resource_key, attrs in self.world.resource_attrs.items():
+                if not resource_key.startswith("message:"):
+                    continue
+                message_name = resource_key.split(":", 1)[1]
+                classification = attrs.get("classification")
+                if classification is not None and subject_clearance >= self._clearance_rank(classification):
+                    visible_messages.add(message_name)
+                elif classification is not None:
+                    hidden_messages.add(message_name)
+
+                for field_name, level in attrs.get("field_visibility", {}).items():
+                    if subject_clearance >= self._clearance_rank(level):
+                        visible_fields.add((message_name, field_name))
+                    else:
+                        hidden_fields.add((message_name, field_name))
+
+            self.world.last_policy_result = {
+                "access": "allowed",
+                "visible_messages": visible_messages,
+                "hidden_messages": hidden_messages,
+                "visible_fields": visible_fields,
+                "hidden_fields": hidden_fields,
+            }
+            self.last_result = QueryResult(kind="policy", items=["allowed"])
+            return
+
+        raise DSLRunnerError(f"Unsupported policy action: {line}")
+
     # ----------------------------
     # Expect
     # ----------------------------
@@ -1539,6 +1685,44 @@ class DSLRunner:
         session = self._require_session()
 
         if self._expect_event(line, session):
+            return
+
+        if line == "expect access allowed":
+            if not self.world.last_policy_result or self.world.last_policy_result.get("access") != "allowed":
+                raise ExpectationFailed(line)
+            return
+
+        if line == "expect access denied":
+            if not self.world.last_policy_result or self.world.last_policy_result.get("access") != "denied":
+                raise ExpectationFailed(line)
+            return
+
+        m = re.match(r"expect message (\S+) visible$", line)
+        if m:
+            message_name = m.group(1)
+            if not self.world.last_policy_result or message_name not in self.world.last_policy_result.get("visible_messages", set()):
+                raise ExpectationFailed(line)
+            return
+
+        m = re.match(r"expect message (\S+) hidden$", line)
+        if m:
+            message_name = m.group(1)
+            if not self.world.last_policy_result or message_name not in self.world.last_policy_result.get("hidden_messages", set()):
+                raise ExpectationFailed(line)
+            return
+
+        m = re.match(r"expect message (\S+) field ([A-Za-z_][A-Za-z0-9_-]*) visible$", line)
+        if m:
+            message_name, field_name = m.groups()
+            if not self.world.last_policy_result or (message_name, field_name) not in self.world.last_policy_result.get("visible_fields", set()):
+                raise ExpectationFailed(line)
+            return
+
+        m = re.match(r"expect message (\S+) field ([A-Za-z_][A-Za-z0-9_-]*) hidden$", line)
+        if m:
+            message_name, field_name = m.groups()
+            if not self.world.last_policy_result or (message_name, field_name) not in self.world.last_policy_result.get("hidden_fields", set()):
+                raise ExpectationFailed(line)
             return
 
         if line == "expect authenticated":
