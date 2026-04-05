@@ -324,7 +324,37 @@ expect event message read bob up to 1
 - exact event form дозволяє перевіряти protocol-observable runtime fact
 - `read` спостерігається як event, а не як message state
 - canonical DSL використовує natural form `up to <seq>` замість protocol-level `readSeq`
+---
 
+```
+scenario wildcard actor read event observation
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+
+session bob
+query events peer alice after cursor
+expect events
+
+send read for last
+
+session alice
+query events peer bob after cursor
+
+expect event message read up to 1
+```
+
+- actor у canonical event form може бути опущений
+- без actor DSL використовує wildcard match
+- це дозволяє перевіряти сам факт event без прив'язки до конкретного actor
 ---
 
 ```
