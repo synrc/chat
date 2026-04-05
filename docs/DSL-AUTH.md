@@ -128,4 +128,122 @@ expect not error unauthorized
 ```
 - після renew клієнт повинен мати валідний auth context
 - після renew replay повинен знову працювати
+---
+## AUTH-8. Renew does not create new session
+
+```
+scenario renew does not create new session
+
+session alice
+connect
+auth
+
+renew
+
+expect access token refreshed
+
+disconnect
+wait 500ms
+reconnect
+
+auth resume
+
+expect authenticated
+expect same session
+```
+
+- renew перевидає credentials у межах тієї самої session
+- renew не повинен створювати нову session
+---
+## AUTH-9. Reconnect alone does not restore auth
+
+```
+scenario reconnect alone does not restore auth
+
+session alice
+connect
+auth
+
+disconnect
+wait 500ms
+reconnect
+
+query events peer bob after cursor
+
+expect error unauthorized
+```
+
+- reconnect сам по собі не відновлює auth context
+- для відновлення session потрібен explicit `auth resume` або інший валідний auth flow
+---
+## AUTH-10. Revoked token does not change protocol state
+
+```
+scenario revoked token does not change protocol state
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+
+session bob
+expect message from alice body "m1"
+
+session bob
+revoke access token
+
+disconnect
+wait 500ms
+reconnect
+
+auth resume
+
+expect error unauthorized
+```
+
+- revoke access token ламає auth context, але не змінює вже існуючий message state
+- invalid auth не повинен переписувати protocol history
+---
+## AUTH-11. Resume preserves access to existing read boundary
+
+```
+scenario resume preserves read boundary
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+
+session bob
+query events peer alice after cursor
+expect events
+
+send read for last
+
+disconnect
+wait 500ms
+reconnect
+
+auth resume
+
+query events peer alice after cursor
+
+expect empty replay
+expect not more
+```
+
+- після `auth resume` session повинна бачити той самий read/replay boundary
+- reconnect/resume не повинні скидати read cursor semantics
 
