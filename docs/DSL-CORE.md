@@ -901,6 +901,28 @@ DSL може містити опціональну секцію `given`, яка 
 - `given` не проходить через auth/permission checks
 - `given` напряму задає world state
 
+`given` використовує exact / protocol-level addressing model.
+
+Тобто в `given` допустимі explicit state references на кшталт:
+
+- `private feed alice<->bob`
+- `group feed room1`
+- `bob read private:alice up to 3`
+- `bob read group:room1 up to 5`
+
+Це не canonical user-facing DSL, а опис точного seeded state.
+
+Натомість runtime сценарії за замовчуванням використовують canonical DSL:
+
+- `query events peer alice after cursor`
+- `query inbox group room1`
+- `send read for last`
+
+Таким чином:
+
+- `given` фіксує exact state
+- runtime DSL описує дії та observable behavior
+
 `given` є implementation-independent:
 - він не прив’язаний до БД
 - він не залежить від конкретної серверної логіки
