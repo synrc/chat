@@ -96,7 +96,7 @@ subject: "Draft v2"
 
 ### ADV-MUT-3. Captured id is separate from ref
 ```
-scenario captured id mutation semantics
+scenario mutation by captured id
 
 session alice
 connect
@@ -124,7 +124,7 @@ edit message id m1id body "m1 edited"
 
 
 ```
-scenario given seeded id mutation semantics
+scenario mutation by seeded id
 
 given
   private feed alice<->bob has messages
@@ -152,7 +152,7 @@ expect message from alice body "m1 edited"
 ### ADV-MUT-5. Given seeded id alias supports delete
 
 ```
-scenario given seeded id delete semantics
+scenario delete by seeded id
 
 given
   private feed alice<->bob has messages
@@ -176,7 +176,7 @@ expect not message body "m1"
 ### ADV-MUT-6. Structured given payload supports seeded id alias
 
 ```
-scenario structured given payload with seeded id alias
+scenario structured seeded id alias
 
 given
   private feed alice<->bob has messages
@@ -234,7 +234,7 @@ expect not message body "m1"
 ---
 
 ```
-scenario replay returns final edited state only
+scenario replay returns final edited state
 
 session alice
 connect
@@ -668,7 +668,7 @@ expect not message body "m1"
 ---
 
 ```
-scenario federated delete converges to deleted final state
+scenario federated delete converges to final state
 
 session alice
 connect brokerA

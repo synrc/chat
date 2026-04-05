@@ -308,7 +308,7 @@ scenario given structured payload
 
 ## Payload replay
 ```
-scenario structured payload survives replay after reconnect
+scenario structured replay survives after reconnect
 
 given
   private feed alice<->bob has messages
@@ -366,7 +366,7 @@ expect message from alice {
 - старе значення `subject: "Draft"` не повинно лишатися current state
 
 ```
-scenario delete removes structured payload from current replay state
+scenario delete removes structured replay state
 
 given
   private feed alice<->bob has messages
@@ -401,7 +401,7 @@ expect not message from alice {
 ## Payload identity
 
 ```
-scenario structured payload mutation by captured id
+scenario mutation by captured id
 
 session alice
 connect
@@ -433,7 +433,7 @@ expect message from alice {
 - mutation через captured protocol identity не повинна залежати від local `ref`
 
 ```
-scenario structured payload delete by captured id
+scenario delete by captured id
 
 session alice
 connect
@@ -466,7 +466,7 @@ expect not message from alice {
 - protocol-level `id` повинен адресувати current message state незалежно від payload form
 
 ```
-scenario structured payload mutation by seeded id
+scenario mutation by seeded id
 
 given
 private feed alice<->bob has messages
@@ -497,7 +497,7 @@ expect message from alice {
 - mutation через seeded protocol identity має поводитись так само, як і через runtime `capture id as`
 
 ```
-scenario structured payload delete by seeded id
+scenario delete by seeded id
 
 given
 private feed alice<->bob has messages
@@ -529,7 +529,7 @@ expect not message from alice {
 ---
 
 ```
-scenario delete overrides later field edit for structured payload
+scenario delete overrides later field edit
 
 session alice
 connect

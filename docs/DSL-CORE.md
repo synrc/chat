@@ -600,7 +600,8 @@ DSL зазвичай використовує коротку форму `seq`,
 - `expect mentions` означає, що home/feed result містить mention-derived view state
 - `expect group <name> exists` означає, що group/conference ресурс існує
 - `expect <user> is owner of group <name>` означає, що user має owner role у вказаній group
-- `expect <user> is member of group <name>` означає, що user є member вказаної group- `expect groups` означає, що result містить список group/conference ресурсів
+- `expect <user> is member of group <name>` означає, що user є member вказаної group
+- `expect groups` означає, що result містить список group/conference ресурсів
 - `expect members` означає, що result містить список member для поточної group
 - `expect <name> in groups` означає, що group <name> присутня у поточному group list result
 - `expect moderation` означає, що result містить moderation list

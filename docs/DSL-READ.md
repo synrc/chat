@@ -481,7 +481,7 @@ expect events non-empty
 - read фіксує boundary, але не блокує майбутні події
 
 ```
-scenario reconnect does not change unread by itself
+scenario reconnect does not change unread
 
 session alice
 connect

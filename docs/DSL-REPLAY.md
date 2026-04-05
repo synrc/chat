@@ -218,7 +218,7 @@ expect no gaps
 ## REPLAY-7. Replay with concurrent read and new message
 
 ```
-scenario replay read race
+scenario replay with read race
 
 given
   private feed alice<->bob has messages
