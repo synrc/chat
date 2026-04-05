@@ -305,15 +305,9 @@ scenario given structured payload
 ```
 
 
-## TODO
 
-- structured payload + `capture id as` / mutation by captured identity
-- structured payload + explicit message identity in `given`
-- structured payload + edge cases for mutation ordering and convergence
-
-```text
-## PAYLOAD-REPLAY-1. Structured payload survives replay after reconnect
-
+## Payload replay
+```
 scenario structured payload survives replay after reconnect
 
 given
@@ -340,40 +334,6 @@ expect message from alice {
 - replay повинен відтворювати structured payload, а не тільки `body`
 - reconnect/replay не повинен втрачати додаткові payload fields
 
----
-
-## PAYLOAD-REPLAY-2. Structured payload survives inbox snapshot
-```
-scenario structured payload survives inbox snapshot
-
-given
-private feed alice<->bob has messages
-1 from alice {
-body: "doc"
-subject: "Draft"
-priority: high
-}
-
-session bob
-connect
-auth
-
-query inbox peer alice
-expect snapshot
-
-expect message from alice {
-body: "doc"
-subject: "Draft"
-priority: high
-}
-```
-
-- inbox/snapshot view повинен повертати той самий structured payload
-- snapshot не повинен редукувати payload до одного `body`
-
----
-
-## PAYLOAD-REPLAY-3. Field edit converges in replay to final payload
 ```
 scenario field edit converges in replay to final payload
 
@@ -405,19 +365,16 @@ expect message from alice {
 - після field-level edit replay повинен конвергувати до final payload
 - старе значення `subject: "Draft"` не повинно лишатися current state
 
----
-
-## PAYLOAD-REPLAY-4. Delete removes structured payload from current replay state
 ```
 scenario delete removes structured payload from current replay state
 
 given
-private feed alice<->bob has messages
-1 from alice {
-body: "doc"
-subject: "Draft"
-priority: high
-}
+  private feed alice<->bob has messages
+    1 from alice {
+      body: "doc"
+      subject: "Draft"
+      priority: high
+    }
 
 session alice
 connect
@@ -431,17 +388,22 @@ query events peer alice after 0
 
 expect message deleted
 expect not message from alice {
-body: "doc"
-subject: "Draft"
-priority: high
+  body: "doc"
+  subject: "Draft"
+  priority: high
 }
 ```
 
 - після delete replay не повинен показувати stale structured payload як current state
-- delete повинен перекривати видимість payload у current replay/inbox semantics
+- delete повинен перекривати видимість payload у current replay semantics
 
----
+## TODO
 
+- structured payload + `capture id as` / mutation by captured identity
+- structured payload + explicit message identity in `given`
+- structured payload + edge cases for mutation ordering and convergence
+
+```text
 ## PAYLOAD-HOME-1. Structured payload survives home bootstrap
 ```
 scenario structured payload survives home bootstrap
