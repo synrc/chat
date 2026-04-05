@@ -117,6 +117,34 @@ Authority може виступати як:
 
 Протокол не виконує parsing або validation PKIX/CMS payload на своєму рівні; certificate-related дані передаються як opaque binary. 
 
+### Access policy and ABAC
+
+Протокол не визначає політику доступу як частину canonical state.
+
+Access control (зокрема ABAC — attribute-based access control)
+розглядається як окремий policy layer поверх protocol model.
+
+Цей layer визначає:
+
+- чи дозволена дія (send, edit, delete, read, query)
+- які ресурси доступні (feeds, messages, members, roster)
+- які частини view видимі (payload fields, mentions, unread aggregates)
+
+ABAC не змінює:
+
+- Message state
+- Event stream
+- feed ordering (`seq`)
+- replay semantics
+- read cursor як canonical truth
+
+Тобто:
+
+- протокол визначає істину (truth)
+- policy layer визначає доступ до цієї істини
+
+Деталі моделі доступу та policy evaluation описані в ARCH-AUTH.md.
+
 ## Session Model
 
 Протокол розділяє:
