@@ -744,6 +744,100 @@ Mention state:
 - mention не є окремою подією, яка змінює state
 - це derived view поверх event stream
 
+### Mention semantics
+
+Mention є derived сигналом, а не частиною canonical state.
+
+Це означає:
+
+- mention не створює окремих подій
+- mention не змінює message state
+- mention не впливає на replay або ordering
+
+Mention визначається виключно payload + context.
+
+---
+
+### Mention detection
+
+Mention виникає, якщо payload повідомлення містить посилання на user:
+
+- explicit (наприклад `@user`)
+- або через structured payload (наприклад поле `mentions`)
+
+Сервер може інтерпретувати mention:
+
+- під час ingestion message
+- або під час побудови view
+
+---
+
+### Mention as view
+
+Mention state:
+
+- є user-scoped
+- є feed-scoped
+- не є частиною canonical message/event state
+
+Це означає:
+
+- mention може кешуватись
+- mention може агрегуватись
+- mention може змінюватись без зміни underlying event stream
+
+---
+
+### Interaction with read
+
+Mention не є незалежним від read:
+
+- якщо message.seq <= read_cursor:
+  - mention не повинен вважатися активним
+
+- якщо message.seq > read_cursor:
+  - mention входить в unread mention set
+
+Тобто:
+
+mention_unread ⊆ unread
+
+---
+
+### Interaction with replay
+
+Replay не повинен окремо “відновлювати” mention:
+
+- mention повинен автоматично виводитись із replay event stream
+- replay не повинен містити спеціальних mention-подій
+
+---
+
+### Interaction with delete/edit
+
+Оскільки mention є derived:
+
+- delete повідомлення:
+  - видаляє mention із view
+
+- edit повідомлення:
+  - може:
+    - додати mention
+    - видалити mention
+
+- replay після edit/delete повинен давати той самий mention state
+
+---
+
+### Invariants
+
+- mention не є частиною canonical state
+- mention не повинен впливати на replay semantics
+- mention не повинен створювати окремих event
+- mention завжди узгоджений з:
+  - message payload
+  - read cursor
+
 ## Presence / Typing Model
 
 Presence і typing передаються через Event.
