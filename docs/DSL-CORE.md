@@ -521,7 +521,7 @@ Home query повертає shared snapshot anchor для всього home resu
 - `query events peer bob after snapshot`
 - `query events group room1 after snapshot`
 - `query events feed private:bob after snapshot`
-   для будь-якого feed, already covered тим самим home result.
+   для будь-якого feed, вже покритих тим самим home result.
 
 DSL допускає natural alias у short form, але exact інтерпретація завжди повинна зводитись до явного визначення feed або target.
 
@@ -546,7 +546,7 @@ DSL підтримує symbolic cursor значення:
 При використанні в `query events ... after snapshot`
 shared home snapshot інтерпретується як replay boundary
 для конкретного feed у межах того самого home bootstrap context.
-Такий replay є валідним тільки для feed, already covered тим самим home result.
+Такий replay є валідним тільки для feed, вже покритих тим самим home result.
 
 `next` означає continuation cursor для наступної сторінки event replay
 
