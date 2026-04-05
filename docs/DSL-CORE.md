@@ -655,6 +655,9 @@ Argument rules застосовуються до обох рівнів DSL (cano
 | query inbox group room1        | query inbox feed group:room1                               |
 | query events group room1 after snapshot | query events feed group:room1 after snapshot      |
 | expect events non-empty        | expect events count > 0                                    |
+| expect event message read bob up to 12 | expect message event type read actor bob readSeq 12 |
+| expect event message deleted alice messageId m1id | expect message event type deleted actor alice messageId m1id |
+| expect event presence offline bob | expect presence event type offline actor bob |
 | expect empty replay            | expect events = 0                                          |
 | expect no duplicates           | expect result has no duplicate items/events                |
 | expect no gaps                 | expect result covers boundary without missing items/events |
@@ -692,6 +695,10 @@ Argument rules застосовуються до обох рівнів DSL (cano
 
 Canonical = sugar  
 Exact = protocol-observable semantics
+
+Для event expect form exact side у цій таблиці означає
+protocol-observable event matching semantics,
+а не остаточно зафіксований wire syntax конкретного Event packet.
 
 Для message mutation exact side у цій таблиці означає
 protocol-observable addressing semantics, а не остаточно зафіксований wire syntax.
