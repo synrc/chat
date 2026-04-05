@@ -403,7 +403,6 @@ expect not message from alice {
 - structured payload + explicit message identity in `given`
 - structured payload + edge cases for mutation ordering and convergence
 
-```text
 ## PAYLOAD-HOME-1. Structured payload survives home bootstrap
 ```
 scenario structured payload survives home bootstrap
