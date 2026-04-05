@@ -624,6 +624,83 @@ DSL зазвичай використовує коротку форму `seq`,
 
 Argument rules застосовуються до обох рівнів DSL (canonical і exact).
 
+### ABAC / Access Policy extension
+
+DSL допускає розширення для опису access policy (ABAC),
+яке працює поверх protocol model.
+
+ABAC у DSL:
+
+- не змінює Message/Event/Query semantics
+- не впливає на replay, ordering або read cursor
+- визначає лише доступ до дій і view
+
+---
+
+### ABAC DSL surface (minimal)
+
+На цьому етапі DSL підтримує мінімальний набір форм
+для policy-сценаріїв:
+
+#### Subject attributes
+
+```
+given alice has clearance secret
+given alice has branch civil
+given alice has org acme
+```
+
+#### Resource attributes
+
+```
+given message has classification confidential
+given message m1 has classification secret
+given feed room1 has branch military
+```
+
+#### Policy actions
+
+```
+when alice sends message
+when alice queries inbox
+when alice queries events for group room1
+```
+
+#### Policy expectations
+
+```
+expect access allowed
+expect access denied
+
+expect message m1 visible
+expect message m2 hidden
+
+expect message m1 field body visible
+expect message m1 field attachment hidden
+```
+---
+
+### Relation to schema
+
+ABAC DSL є sugar над schema-level моделлю
+(Person / Employee / Authority / resource / context).
+
+DSL не вводить власну модель атрибутів,
+а лише надає читабельну форму для сценаріїв.
+
+---
+
+### Scope
+
+ABAC DSL використовується виключно для:
+
+- command authorization
+- query authorization
+- view filtering
+
+ABAC DSL не є повною policy language
+і не фіксує спосіб реалізації policy engine.
+
 ## Duality
 
 | Canonical                      | Exact                                                        |
