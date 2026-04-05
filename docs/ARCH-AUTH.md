@@ -187,6 +187,35 @@ IAM → Authority table
 
 ---
 
+### Federation and trust assumptions
+
+У федеративному середовищі (між різними broker/domain):
+
+- identity користувача не створюється broker-ом, а визначається через PKI
+- remote broker не є джерелом істини для identity, а лише ретранслює її
+
+Federation спирається на такі припущення:
+
+- сертифікат (PKI) є глобальним джерелом істини для identity
+- Authority є локальним кешем (session/device binding), але не визначає identity
+- remote actor (наприклад alice@brokerA) повинен бути перевірений через trust model (PKI / chain / policy)
+
+Важливо:
+
+- routing не повинен змінювати protocol identity повідомлення
+- remote broker не повинен підміняти actor або створювати новий message identity
+- message/event semantics повинні залишатися інваріантними через federation boundary
+
+Federation не змінює базову модель протоколу:
+
+- Message, Event і Query зберігають ту саму семантику
+- read/edit/delete повинні спостерігатися як ті самі runtime факти, незалежно від домену
+
+Таким чином:
+
+- ARCH-AUTH визначає, хто є actor і чому йому довіряють
+- federation визначає, як його події маршрутизуються між domain
+
 ### DSL (майбутнє розширення)
 
 ABAC сценарії можуть виглядати як:
