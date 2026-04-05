@@ -92,6 +92,131 @@ else
 
 ABAC не залежить від roles як primary моделі.
 
+### ABAC evaluation model
+
+ABAC у цій архітектурі не є джерелом істини для state.
+
+ABAC відповідає не на питання "що є істинним у протоколі",
+а на питання "що дозволено для цього суб'єкта в цьому контексті".
+
+Базова форма evaluation:
+
+```text
+allow = evaluate(
+  subject,
+  action,
+  resource,
+  context
+)
+```
+
+де:
+
+- `subject` — identity + employee attributes + session/device context
+- `action` — send / edit / delete / read / query / add-member / ban / ...
+- `resource` — feed / message / member / roster / home / view / field
+- `context` — час, tenant, federation boundary, branch, clearance, policy inputs
+
+---
+
+### Що є input для ABAC
+
+ABAC використовує дані з вже існуючих шарів:
+
+- PKI:
+  - cryptographic identity
+  - cert serial
+  - trust chain
+
+- Directory / Employee:
+  - org
+  - branch
+  - clearance
+  - employment attributes
+  - legacy role/group, якщо ще існують
+
+- IAM / Authority:
+  - session
+  - device
+  - current auth context
+
+Тобто:
+
+- ARCH-AUTH визначає, хто є subject
+- ABAC визначає, що цьому subject дозволено
+
+---
+
+### Що саме може контролювати ABAC
+
+ABAC може застосовуватись на кількох рівнях:
+
+#### 1. Command authorization
+
+- send message
+- edit message
+- delete message
+- read / cursor update
+- add / remove member
+- ban / unban
+
+#### 2. Query authorization
+
+- query inbox
+- query events
+- query roster
+- query members
+- query moderation
+- bootstrap home
+
+#### 3. View filtering
+
+Навіть якщо query дозволений, ABAC може обмежувати видимість:
+
+- окремих feed
+- окремих messages
+- окремих payload fields
+- mention / unread aggregates
+- membership / moderation details
+
+#### 4. Field-level visibility
+
+ABAC може визначати, що actor бачить:
+
+- весь payload
+- тільки частину payload
+- тільки metadata
+- тільки summary / preview
+
+---
+
+### Чого ABAC не повинен робити
+
+ABAC не повинен змінювати canonical protocol truth.
+
+Зокрема ABAC не повинен:
+
+- змінювати Message state
+- змінювати Event stream
+- змінювати feed ordering (`seq`)
+- створювати окрему policy-specific history
+- змінювати replay semantics
+- змінювати read cursor як canonical truth
+
+ABAC визначає доступ до істини, а не саму істину.
+
+---
+
+### ABAC як future extension
+
+У базовому CHAT policy layer може бути мінімальним або зовнішнім.
+
+ABAC розглядається як майбутнє розширення, яке:
+
+- не змінює core protocol model
+- використовує вже наявні identity/session/context inputs
+- додає правила доступу поверх Message / Event / Query semantics
+
 ---
 
 ## Загальна схема
