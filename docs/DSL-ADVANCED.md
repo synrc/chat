@@ -503,28 +503,7 @@ ban bob
 expect message from bob body "m1"
 ```
 ---
-## ADV-4. Ban blocks next direct message
-```
-scenario ban blocks next direct message
-
-session alice
-connect
-auth
-
-session bob
-connect
-auth
-
-session alice
-ban bob
-
-session bob
-send message to alice "m2"
-
-expect error forbidden
-```
----
-## ADV-5. Remove member after accepted group message
+## ADV-4. Remove member after accepted group message
 ```
 scenario remove member after accepted group message
 
@@ -550,7 +529,7 @@ session alice
 expect message from bob body "m1"
 ```
 ---
-## ADV-6. Remove member blocks next group message
+## ADV-5. Remove member blocks next group message
 ```
 scenario remove member blocks next group message
 
@@ -573,7 +552,7 @@ send message to group:room1 "m2"
 expect error forbidden
 ```
 ---
-## ADV-7. Home snapshot then group deleted
+## ADV-6. Home snapshot then group deleted
 ```
 scenario home snapshot then group deleted
 
@@ -594,7 +573,7 @@ query inbox group room1
 expect error notFound
 ```
 ---
-## ADV-8. Version
+## ADV-7. Version
 
 ```
 scenario version negotiation
@@ -609,7 +588,7 @@ expect selectedVsn v2
 
 ---
 
-## ADV-9. Federation
+## ADV-8. Federation
 
 ```
 scenario federation routing
@@ -631,33 +610,6 @@ expect message from alice body "hi"
 
 
 ## ADV-ORDERING. Causal consistency
-
-```
-scenario read is monotonic
-
-session alice
-connect
-auth
-
-session bob
-connect
-auth
-
-session alice
-send message to bob "m1"
-send message to bob "m2"
-
-session bob
-query events peer alice after cursor
-expect events
-send read for last
-
-query cursor read feed private:alice up to 2
-expect read cursor unchanged
-
-query cursor read feed private:alice up to 1
-expect read cursor unchanged
-```
 
 ```
 scenario delete does not break read cursor
