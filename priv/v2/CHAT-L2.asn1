@@ -390,37 +390,9 @@ BEGIN
        payload ContentInfo,
        parentid Binary }
 
-    -- Idempotency and Ordering
+    -- Message Identity and Payload Semantics
     --
-    -- Idempotency:
-    --
-    --   - Message.id повинен бути глобально унікальним.
-    --   - Повторна відправка Message з тим самим id не повинна створювати дублі.
-    --
-    -- Ordering:
-    --
-    --   - Порядок повідомлень гарантується тільки в межах feed.
-    --   - Глобальний порядок між різними session не гарантується.
-    --
-    -- Event ordering:
-    --
-    --   - Події можуть приходити не в строгому порядку.
-    --   - Клієнт повинен обробляти можливу перестановку подій.
-    --
-    -- Важливо:
-    --
-    --   - Протокол допускає дублікати і reorder.
-    --   - Клієнт і сервер повинні бути ідемпотентними.
-    --
-    -- Event Idempotency:
-    --
-    --   - Повторна доставка Event з тим самим id не повинна
-    --     створювати дублікати побічних ефектів.
-    --
-    --   - seq використовується для впорядкування і recovery,
-    --     але не замінює Event.id як ідентифікатор події.
-    --
-    -- Message Identity and Mutation Semantics
+    --   * Message описує тільки intent/content повідомлення.
     --
     --   * Message.id є єдиною protocol-level identity
     --     повідомлення.
@@ -428,20 +400,10 @@ BEGIN
     --   * Message.id є глобально унікальним і стабільним
     --     протягом усього lifecycle повідомлення.
     --
-    --   * payload є частиною message state.
+    --   * payload є частиною message state,
+    --     а body є лише одним із можливих полів payload.
     --
-    --   * body є лише одним із можливих полів payload,
-    --     а не всією моделлю повідомлення.
-    --
-    --   * edit/delete не створюють новий Message.
-    --
-    --   * edit/delete виражаються через Events
-    --     і адресують існуючий message state
-    --     через Message.id.
-    --
-    --   * final state повідомлення виводиться з потоку
-    --     подій і replay має конвергувати до того самого
-    --     final state.
+    --   * runtime mutation semantics визначаються через MessageEvent.
     --
     Message ::= SEQUENCE {
        id Binary,
@@ -639,245 +601,35 @@ BEGIN
        deleted   (5),
        updated   (6), ...}
 
-    -- Delivery and Read Semantics
+    -- Message Event Semantics
     --
-    -- delivered ініціюється і спостерігається на рівні session.
+    --   * MessageEvent є canonical runtime-моделлю для:
+    --       - delivered / read / received
+    --       - edited / deleted / updated
     --
-    -- read ініціюється конкретною session,
-    -- але застосовується до effective user-scoped cursor state.
-    --
-    -- delivered:
-    --   означає, що повідомлення доставлено конкретній session.
-    --   на рівні серверного delivery pipeline.
-    --
-    --   delivered не гарантує, що клієнт фактично обробив або відобразив повідомлення.
-    --
-    -- read:
-    --   означає, що клієнт ініціював оновлення read cursor
-    --   у межах feed.
-    --
-    -- received:
-    --   optional/unstable
-    --
-    -- Delivered vs Read
+    -- Delivery / read:
     --
     --   * delivered і read є різними подіями і не повинні
     --     зливатися в одну семантику.
     --
-    --   * delivered не означає, що користувач бачив повідомлення
-    --     або взаємодіяв з ним.
+    --   * delivered означає доставку конкретній session,
+    --     але не означає фактичне відображення або прочитання.
     --
-    --   * read означає, що клієнт явно підтвердив прочитання
-    --     повідомлення або позиції (cursor) у feed.
+    --   * client-originated read update передається через Query / CursorCore.
     --
-    --   * read не повинен генеруватися автоматично тільки на основі
-    --     факту доставки.
+    --   * MessageEvent(type=read) є server-emitted фактом
+    --     уже застосованого read state.
     --
-    --   * read подія SHOULD інтерпретуватись як оновлення read cursor:
+    --   * readSeq є джерелом істини для read cursor у feed:
     --
-    --      effective_read_cursor(user, feed) = max(current, readSeq)
+    --         effective_read_cursor(user, feed) = max(current, readSeq)
     --
-    --      readSeq не повинен перевищувати поточний максимальний seq у feed.
+    --   * messageId для read є тільки optional auxiliary reference.
     --
-    --   * read події з меншим seq ніж поточний cursor повинні ігноруватись.
+    --   * Детальна semantics read cursor, replay і projection-виглядів
+    --     визначається в CursorCore та FeedViewItem.readSeq.
     --
-    --   * read update НЕ прив'язаний до факту доставки повідомлень у конкретну session.
-    --
-    --   * клієнт MAY оновлювати read cursor до будь-якого seq,
-    --     що існує у межах feed, навіть якщо відповідні повідомлення
-    --     ще не були отримані цією session.
-    --
-    --   * сервер повинен інтерпретувати read як позицію у feed,
-    --     а не як підтвердження отримання конкретних повідомлень.
-    --
-    --   * Клієнт не надсилає read як Event напряму.
-    --
-    --   * Client-originated read update передається через Query / CursorCore.
-    --
-    --   * MessageEvent(type=read) є server-emitted runtime fact
-    --     після успішного застосування cursor update.
-    --
-    --   * Для відправки read клієнт повинен виконати явну дію
-    --     через Query (CursorCore.update).
-    --
-    -- Cursor / Read Model
-    --
-    --   * Query / CursorCore:
-    --       client-originated команда для оновлення або читання cursor state
-    --
-    --   * Event.message.read:
-    --       server-emitted факт про вже застосований read state
-    --
-    --   * effective cursor:
-    --       user-scoped джерело істини у межах feed
-    --
-    --   * session:
-    --       actor / джерело update, але не джерело істини
-    --
-    -- Read vs Replay Semantics
-    --
-    --   * read cursor update завжди базується на позиції у feed (seq),
-    --     незалежно від того, чи був виконаний повний replay.
-    --
-    --   * якщо read виконується під час часткового replay (pagination),
-    --     він застосовується до останнього локально спостереженого seq
-    --     у межах цієї session.
-    --
-    --   * read НЕ означає, що клієнт бачив всі події feed до його head.
-    --
-    --   * preview або partial replay не повинні імпліцитно призводити
-    --     до повного read feed.
-    --
-    -- Visibility:
-    --
-    --   * read/delivered події можуть доставлятись:
-    --       - іншим учасникам feed (наприклад sender)
-    --       - або тільки actor (implementation-dependent)
-    --       - read ініціюється конкретною session,
-    --         але його ефект поширюється на всі session користувача у межах feed.
-    --
-    --   * Конкретна політика доставки подій не є частиною базового протоколу
-    --     і визначається серверною реалізацією.
-    --
-    -- Multi-device:
-    --
-    --   - Один користувач може мати кілька session.
-    --   - delivered/read можуть генеруватись окремо для кожної session.
-    --
-    -- Агрегація:
-    --
-    --   - Узагальнення до рівня device або користувача
-    --     виконується сервером і не є частиною протоколу.
-    --
-    -- Read cursor:
-    --
-    --   - Read події можуть інтерпретуватись як cursor (позиція)
-    --     у межах feed.
-    --
-    --   - Session може мати локальний технічний cursor state,
-    --     але джерелом істини є effective cursor користувача у feed.
-    --
-    --   - Unread визначається як різниця між поточним seq feed
-    --     і read cursor.
-    --
-    -- Зауваження:
-    --
-    --   * Події read/delivered є session-рівня,
-    --     але передаються через спільний stream feed.
-    --
-    --   * Протокол використовує cursor-based модель читання.
-    --
-    --   * Read визначається як позиція (seq), а не як набір message ids.
-    --
-    --   * Деталізовані read receipts (per message / per user)
-    --     не є частиною базової моделі.
-    --
-    -- Event Throttling / Aggregation
-    --
-    --   * High-frequency події (typing, presence, read, delivered)
-    --     можуть створювати значне навантаження
-    --     на broker, transport і клієнт.
-    --
-    --   * Сервер SHOULD застосовувати throttling / aggregation
-    --     для таких event family без зміни їх базової семантики.
-    --
-    -- Typing:
-    --
-    --   * typing є короткоживучим signal/state,
-    --     а не журналом кожного натискання клавіші.
-    --
-    --   * Сервер SHOULD обмежувати typing події
-    --     не частіше ніж 1 подія на 2-3 секунди
-    --     для одного actor у межах одного feed.
-    --
-    --   * Повторні typing події в межах цього інтервалу
-    --     MAY ігноруватись або агрегуватись.
-    --
-    --   * typing не повинен replay-итись як довготривалий state,
-    --     якщо інше явно не визначено server policy.
-    --
-    -- Presence:
-    --
-    --   * Часті online/offline transitions SHOULD debounce-итись.
-    --
-    --   * Сервер MAY:
-    --       - відкладати presence update на короткий інтервал
-    --       - об'єднувати швидкі transitions
-    --       - опускати проміжні нестабільні стани
-    --
-    --   * Presence throttling не повинен ламати
-    --     observable final presence state.
-    --
-    -- Read:
-    --
-    --   * Read є cursor-based update, а не per-message receipt model.
-    --
-    --   * Aggregation повинна працювати на рівні readSeq,
-    --     а не messageId.
-    --
-    --   * Сервер SHOULD агрегувати read до останнього
-    --     effective read cursor у межах feed.
-    --
-    --   * Сервер MAY не передавати кожну проміжну read подію окремо,
-    --     якщо новіший readSeq already covers старіший.
-    --
-    --   * Для одного user у межах feed
-    --     більш пізній readSeq повинен витісняти попередній.
-    --
-    --   * Мінімально значущим read update є:
-    --       - feed
-    --       - readSeq
-    --
-    --   * messageId MAY використовуватись як допоміжний reference,
-    --     але не є джерелом істини для read state.
-    --
-    -- Delivered:
-    --
-    --   * delivered є session-level delivery fact
-    --     і MAY агрегуватись або частково опускатись,
-    --     якщо клієнт не потребує детального delivery trail.
-    --
-    --   * Сервер MAY collapse-ити кілька delivered events
-    --     у компактніше представлення для конкретної session.
-    --
-    -- Batching:
-    --
-    --   * Сервер SHOULD batch-ити дрібні Event packets
-    --     у transport batch, якщо це не збільшує
-    --     user-visible latency понад прийнятний рівень.
-    --
-    --   * Batching особливо рекомендований для:
-    --       - typing / presence bursts
-    --       - replay pages
-    --       - reconnect recovery
-    --
-    -- Invariants:
-    --
-    --   * Throttling і aggregation не змінюють source-of-truth semantics.
-    --
-    --   * Вони змінюють тільки частоту і форму доставки,
-    --     але не meaning final observed state.
-    --
-    -- readSeq Semantics (Event)
-    --
-    --   * readSeq представляє effective cursor position
-    --     після застосування read update.
-    --
-    --   * MessageEvent(type=read) НЕ є командою,
-    --     а є server-emitted фактом:
-    --
-    --         cursor(user, feed) = readSeq
-    --
-    --   * messageId MAY бути присутнім як reference,
-    --     але read state визначається тільки через readSeq.
-    --
-    --   * Якщо одночасно присутні:
-    --       - messageId
-    --       - readSeq
-    --
-    --     то readSeq є джерелом істини.
-    --
-    -- Message Mutation Event Semantics
+    -- Mutation:
     --
     --   * MessageEvent(type=edited|deleted|updated) адресує
     --     існуючий message state через messageId.
@@ -887,8 +639,7 @@ BEGIN
     --
     --   * messageId є stable reference для mutation target.
     --
-    --   * delete має пріоритет над edited/updated,
-    --     незалежно від timestamp ordering.
+    --   * delete має пріоритет над edited/updated.
     --
     --   * replay і звичайна online-обробка повинні
     --     конвергувати до однакового final state.
@@ -939,88 +690,28 @@ BEGIN
        presence  [2] PresenceEvent
     }
 
-    -- Sequencing
+    -- Event Sequencing and Consistency
     --
-    -- Події мають порядок у межах feed.
+    --   * Event є єдиним transport-level каналом runtime-подій.
     --
-    --   * seq є монотонно зростаючим у межах feed.
+    --   * seq є feed-scoped порядковою позицією
+    --     і монотонно зростає в межах feed.
     --
-    -- Session:
+    --   * seq не є глобальним і використовується для replay,
+    --     recovery та виявлення пропусків.
     --
-    --   * session зберігає свою позицію (last_seq) у feed.
+    --   * last_seq є session-local replay cursor.
     --
-    -- Використання:
-    --
-    --   * reconnect і recovery
-    --   * replay подій
-    --   * виявлення пропусків
-    --
-    -- Важливо:
-    --
-    --   * seq НЕ є глобальним.
-    --   * seq визначений тільки в межах feed.
-    --
-    -- Event Consistency Model
-    --
-    --   * Події можуть:
-    --       - приходити поза порядком
-    --       - дублюватись
-    --       - приходити із затримкою
+    --   * Події можуть приходити поза порядком, дублюватись
+    --     або приходити із затримкою.
     --
     --   * Протокол не гарантує causal ordering між подіями.
     --
-    -- Conflict Resolution:
+    --   * Для state-changing events застосовується
+    --     базова conflict resolution модель протоколу.
     --
-    --   * Для подій, що змінюють стан (edited, updated, deleted),
-    --     застосовується last-write-wins на основі timestamp.
-    --
-    --   * delete має пріоритет над edit/update:
-    --       - якщо message видалено, подальші edit/update
-    --         не повинні відновлювати його.
-    --
-    --   * Повторна доставка подій не повинна змінювати стан
-    --     (ідемпотентність).
-    --
-    -- Client Requirements:
-    --
-    --   * Клієнт повинен:
-    --       - обробляти дублікати подій
-    --       - коректно обробляти reorder
-    --       - виконувати reconciliation стану
-    --
-    --   * Клієнт не повинен покладатися на порядок доставки.
-    --
-    -- Зауваження:
-    --
-    --   * seq гарантує порядок replay,
-    --     але не гарантує causal consistency.
-    --
-    --   * Для складних сценаріїв (collaborative editing)
-    --     можуть знадобитись CRDT або version vectors
-    --     (поза межами базового протоколу).
-    --
-    -- Event Runtime Semantics
-    --
-    --   * Event є єдиним джерелом runtime truth.
-    --
-    --   * усі mutations повідомлення
-    --     (edit/delete/update) виражаються як events.
-    --
-    --   * message state виводиться як fold(Event stream).
-    --
-    --   * delivery model є at-least-once.
-    --
-    --   * дублікати і reorder допустимі
-    --     і не повинні ламати final state semantics.
-    --
-    -- Seq Terminology
-    --
-    --   * seq є feed-scoped порядковою позицією
-    --     події або повідомлення.
-    --
-    --   * last_seq є session-local replay cursor,
-    --     який зберігає останній відомий seq
-    --     для конкретної session.
+    --   * Локальна semantics mutation/read визначається
+    --     відповідними payload family (MessageEvent, CursorCore).
     --
     Event ::= SEQUENCE {
        id Binary,
