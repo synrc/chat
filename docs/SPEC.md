@@ -652,6 +652,71 @@ Unread і mention-derived поля належать до feed view layer
 (наприклад FeedViewItem), а не до canonical Conference state.
 Агрегація unread до рівня device або користувача є server-side policy. 
 
+### Partial read semantics
+
+Read cursor відображає лише observed boundary, а не повний стан feed.
+
+Це означає:
+
+- read може виконуватись після часткового replay (partial delivery)
+- read не вимагає повного отримання всіх подій у feed
+
+---
+
+### Observed boundary
+
+Якщо клієнт отримав лише частину подій:
+
+- read cursor оновлюється до максимально спостереженого `seq`
+- події з більшим `seq`, які ще не були доставлені, лишаються unread
+
+Формально:
+
+- read_cursor <= max_observed_seq
+
+---
+
+### Partial replay interaction
+
+У випадку partial replay:
+
+- `send read for last` означає read до останнього локально отриманого повідомлення
+- це не означає read до head feed
+
+Наслідок:
+
+- remaining tail повинен бути доступний через наступний replay
+- replay після cursor може повертати ще події
+
+---
+
+### Unread after partial read
+
+Unread визначається відносно read cursor, а не відносно delivery:
+
+- якщо read виконано після partial replay:
+  - старіші події вважаються read
+  - новіші події (включно з ще не доставленими) лишаються unread
+
+---
+
+### Future events
+
+Read не фіксує feed:
+
+- нові події з `seq > read_cursor` автоматично формують новий unread tail
+- read не впливає на події, які з'являються після нього
+
+---
+
+### Invariants
+
+- read не може "закрити" feed без повного replay
+- read не повинен позначати як read події, які клієнт не спостерігав
+- unread tail завжди визначається як:
+
+  unread = current_seq(feed) - read_cursor
+
 ## Mention View Model
 
 Mention-derived state є feed-level view, а не canonical domain state.
