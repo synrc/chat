@@ -492,6 +492,113 @@ Pagination:
 - `nextAfter`
 - `hasMore`. 
 
+## Event Replay Pagination Model
+
+Event replay використовує seq-based pagination:
+
+- `after`
+- `limit`
+- `nextAfter`
+- `hasMore`
+
+Ця модель відрізняється від snapshot pagination і має власні інваріанти.
+
+---
+
+### Replay pagination invariants
+
+Replay pagination повинна задовольняти наступні вимоги:
+
+- події повертаються у порядку зростання `seq`
+
+- кожна сторінка replay:
+  - містить події з `seq > after`
+  - не повинна містити події з `seq <= after`
+
+- `nextAfter` визначає позицію для наступного запиту:
+  - `nextAfter >= max(seq)` поточної сторінки
+  - `nextAfter` є монотонним
+
+---
+
+### No overlap
+
+Сторінки replay не повинні перекриватися:
+
+- одна і та сама подія не повинна з'являтись у двох послідовних сторінках
+- клієнт не повинен отримувати дублікати через pagination
+
+Примітка:
+- дублікати можливі через at-least-once delivery,
+  але не повинні виникати як наслідок pagination logic
+
+---
+
+### No gaps (within retention)
+
+За відсутності `gap`:
+
+- replay не повинен пропускати події
+- усі події з `seq > after` повинні бути доступні через послідовні сторінки
+
+Якщо частина подій недоступна через retention policy:
+
+- сервер повертає `error gap`
+- клієнт повинен перейти до snapshot-based recovery
+
+---
+
+### Snapshot vs Replay
+
+Snapshot pagination і replay pagination мають різну семантику:
+
+Snapshot (`limit + continue`):
+
+- не гарантує snapshot isolation
+- може:
+  - повертати дублікати
+  - пропускати елементи
+  - змінювати склад між сторінками
+
+Replay (`after + nextAfter`):
+
+- є строго впорядкованим по `seq`
+- гарантує:
+  - відсутність overlap
+  - відсутність gaps (крім explicit gap error)
+
+---
+
+### Snapshot drift
+
+Між snapshot сторінками можуть відбуватись зміни:
+
+- нові повідомлення можуть з'являтись
+- старі можуть зникати або змінюватись
+
+Це означає:
+
+- snapshot не є стабільним зрізом
+- continuation token не гарантує той самий набір даних
+
+Для консистентного recovery:
+
+- клієнт повинен використовувати snapshot як anchor
+- і переходити до replay (`after = snapshot`)
+
+---
+
+### Interaction with Home
+
+Home bootstrap задає `shared snapshot`,
+який використовується як початкова точка для replay.
+
+Replay pagination після home:
+
+- повинна починатися з `seq > snapshot`
+- не повинна дублювати preview/snapshot дані
+- повинна залишатися узгодженою з multi-feed semantics
+
 ## Read / Unread Model
 
 `read` інтерпретується як cursor, а не як набір message ids.
