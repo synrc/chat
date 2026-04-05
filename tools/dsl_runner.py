@@ -84,6 +84,7 @@ class World:
     feed_logs: dict[str, list[str]] = field(default_factory=dict)
     read_cursors: dict[tuple[str, str], int] = field(default_factory=dict)
     captured_message_ids: dict[str, str] = field(default_factory=dict)
+    recent_event_fact: dict[str, Any] | None = None
 
 
 class DSLRunner:
@@ -319,7 +320,13 @@ class DSLRunner:
             return
 
         if line == "disconnect":
-            self._require_session().connected = False
+            session = self._require_session()
+            session.connected = False
+            self.world.recent_event_fact = {
+                "family": "presence",
+                "type": "offline",
+                "actor": session.user,
+            }
             return
 
         if line == "reconnect":
@@ -1071,6 +1078,13 @@ class DSLRunner:
         msg = self._resolve_message_reference(session.user, _ref_kind, reference)
         msg.deleted = True
         self._sync_message_to_inboxes(msg.id)
+        self.world.recent_event_fact = {
+            "family": "message",
+            "type": "deleted",
+            "actor": session.user,
+            "feed": msg.feed,
+            "message_id": msg.id,
+        }
         self.last_result = QueryResult(kind="message-lifecycle", items=[msg.id])
 
     def _edit_message(self, line: str) -> None:
@@ -1240,6 +1254,13 @@ class DSLRunner:
         prev = self.world.read_cursors.get(key, 0)
         self.world.read_cursors[key] = max(prev, seq)
         updated = self.world.read_cursors[key] != prev
+        self.world.recent_event_fact = {
+            "family": "message",
+            "type": "read",
+            "actor": session.user,
+            "feed": feed,
+            "cursor": self.world.read_cursors[key],
+        }
         self.last_result = QueryResult(
             kind="read",
             items=[self.world.read_cursors[key]],
@@ -1493,6 +1514,14 @@ class DSLRunner:
                     "cursor": self.world.read_cursors[key],
                 }
 
+        self.world.recent_event_fact = {
+            "family": "message",
+            "type": "read",
+            "actor": user,
+            "feed": feed,
+            "cursor": self.world.read_cursors[key],
+        }
+
         self.last_result = QueryResult(
             kind="read",
             items=[self.world.read_cursors[key]],
@@ -1504,6 +1533,9 @@ class DSLRunner:
     # ----------------------------
     def _expect(self, line: str) -> None:
         session = self._require_session()
+
+        if self._expect_event(line, session):
+            return
 
         if line == "expect authenticated":
             if not session.authenticated:
@@ -1901,6 +1933,48 @@ class DSLRunner:
             return
 
         raise DSLRunnerError(f"Unsupported expect line: {line}")
+
+    def _expect_event(self, line: str, session: SessionState) -> bool:
+        m = re.match(r"expect event message read(?: actor)?(?: (\S+))? up to (\d+)$", line)
+        if m:
+            actor, seq_text = m.groups()
+            seq = int(seq_text)
+            fact = self.world.recent_event_fact
+            if not fact or fact.get("family") != "message" or fact.get("type") != "read":
+                raise ExpectationFailed(line)
+            if actor is not None and fact.get("actor") != actor:
+                raise ExpectationFailed(line)
+            if fact.get("cursor") != seq:
+                raise ExpectationFailed(line)
+            return True
+
+        m = re.match(r"expect event message deleted(?: actor)?(?: (\S+))? messageId (\S+)$", line)
+        if m:
+            actor, message_ref = m.groups()
+            message_id = self.world.captured_message_ids.get(message_ref, message_ref)
+            msg = self.world.messages.get(message_id)
+            if not msg or not msg.deleted:
+                raise ExpectationFailed(line)
+            if actor is not None and msg.sender != actor:
+                raise ExpectationFailed(line)
+            fact = self.world.recent_event_fact
+            if not fact or fact.get("family") != "message" or fact.get("type") != "deleted":
+                raise ExpectationFailed(line)
+            if fact.get("message_id") != message_id:
+                raise ExpectationFailed(line)
+            return True
+
+        m = re.match(r"expect event presence (online|offline|typing)(?: actor)?(?: (\S+))?$", line)
+        if m:
+            event_type, actor = m.groups()
+            fact = self.world.recent_event_fact
+            if not fact or fact.get("family") != "presence" or fact.get("type") != event_type:
+                raise ExpectationFailed(line)
+            if actor is not None and fact.get("actor") != actor:
+                raise ExpectationFailed(line)
+            return True
+
+        return False
 
     def _expect_last_kind(self, *allowed: str) -> None:
         if not self.last_result or self.last_result.kind not in allowed:
