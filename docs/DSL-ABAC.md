@@ -170,3 +170,92 @@ expect message m1 field attachment hidden
 
 - field-level policy може давати різну видимість для різних полів одного message
 - field visibility є незалежною від того, що інші fields того ж message можуть бути hidden
+
+---
+
+## ABAC-10. Ban overrides clearance allow
+```
+scenario ban overrides clearance allow
+
+given alice has clearance secret
+given message has classification confidential
+given bob is banned
+
+when bob sends message
+
+expect access denied
+```
+
+- moderation policy (ban) має пріоритет над attribute-based allow
+- навіть якщо clearance достатній, ban блокує command
+
+---
+
+## ABAC-11. Ban blocks query even if attributes match
+```
+scenario ban blocks query even if attributes match
+
+given alice has clearance secret
+given bob is banned
+
+when bob queries inbox
+
+expect access denied
+```
+
+- ban блокує не тільки send, а й query
+- policy може комбінувати moderation і ABAC
+
+---
+
+## ABAC-12. Remove member restricts group access
+```
+scenario remove member restricts group access
+
+given alice has branch military
+given feed room1 has branch military
+given bob is not member of group room1
+
+when bob queries events for group room1
+
+expect access denied
+```
+
+- membership є частиною access policy
+- ABAC може враховувати membership як attribute
+
+---
+
+## ABAC-13. Membership allows access when attributes match
+```
+scenario membership allows access when attributes match
+
+given alice has branch military
+given feed room1 has branch military
+given alice is member of group room1
+
+when alice queries events for group room1
+
+expect access allowed
+```
+
+- membership + attributes разом визначають доступ
+- membership не замінює ABAC, а доповнює його
+
+---
+
+## ABAC-14. Ban does not hide already visible messages
+```
+scenario ban does not hide already visible messages
+
+given alice has clearance secret
+given message m1 has classification confidential
+given bob is banned
+
+when bob queries inbox
+
+expect message m1 visible
+```
+- ban не переписує history-level visibility
+- ban впливає на commands, але не обов'язково на view
+- ця поведінка може бути змінена policy
