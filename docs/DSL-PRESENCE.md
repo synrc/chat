@@ -21,8 +21,10 @@
 - disconnect однієї session не обов'язково означає `offline`
 - `offline` означає втрату останньої active session цього user
 
-`online` / `typing` semantics можуть бути розширені пізніше,
-коли runner отримає явну runtime model для них.
+`online` already fixed as aggregate user-scoped companion event to `offline`.
+
+`typing` semantics можуть бути розширені пізніше,
+коли буде погоджено явну runtime model для transient presence.
 
 ---
 
@@ -267,10 +269,106 @@ expect event online alice
   коли з'являється перша active session після fully-offline state
 - `online` є природною парою до aggregate `offline`
 
+---
+
+## PRES-8. Typing event is observable
+```
+scenario typing event is observable
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session bob
+query events peer alice after cursor
+
+session alice
+send typing to bob
+
+session bob
+query events peer alice after cursor
+
+expect event typing alice
+```
+
+- `typing` є protocol-observable presence event
+- `typing` не є message item
+- `typing` не означає delivery або replay progress
+
+---
+
+## PRES-9. Typing does not imply read
+```
+scenario typing does not imply read
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "m1"
+
+session bob
+query events peer alice after cursor
+
+session alice
+send typing to bob
+
+session bob
+query events peer alice after cursor
+
+expect event typing alice
+expect not error badRequest
+```
+
+- `typing` не означає `read`
+- `typing` не змінює read cursor
+- `typing` не є substitute для message lifecycle event
+
+---
+
+## PRES-10. Typing does not survive replay or bootstrap as stable state
+```
+scenario typing does not survive replay or bootstrap as stable state
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send typing to bob
+
+session bob
+query events peer alice after cursor
+expect event typing alice
+
+session bob
+bootstrap home
+expect feeds
+
+session bob
+query events peer alice after cursor
+expect empty replay
+```
+
+- `typing` є transient presence event
+- `typing` не повинен зберігатися як stable home state
+- `typing` не повинен повторно з'являтись як replay artifact без нового runtime source
+
 ## TODO
 
-- online presence observation
 - typing presence observation
 - typing is transient and does not affect replay
-- presence does not affect read/home semantics
-- relation between presence scope and multi-session semantics
+- typing does not affect read/home semantics

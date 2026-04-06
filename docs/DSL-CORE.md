@@ -463,13 +463,21 @@ Canonical presence form є sugar над exact presence form.
   - expectation використовує wildcard match
   - важливий сам факт presence event, а не конкретний actor
 
-На цьому етапі DSL ще не фіксує runtime source для:
+На цьому етапі DSL фіксує мінімальний runtime source для:
 
-- `online`
-- `typing`
+- `disconnect`
+  - створює `offline`, якщо закрилась остання active session user
 
-Ці форми лишаються зарезервованими для майбутнього розширення,
-коли буде погоджено explicit runtime model.
+- `connect`
+  - створює `online`, якщо це перша active session після fully-offline state
+
+- `reconnect`
+  - еквівалентний `connect` для presence semantics
+
+Для `typing` runtime source ще не зафіксований.
+
+`typing` лишається зарезервованим для майбутнього розширення,
+коли буде погоджено explicit transient runtime model.
 
 Presence event semantics:
 
@@ -753,6 +761,10 @@ DSL зазвичай використовує коротку форму `seq`,
 - `expect event offline <user>` вимагає exact actor match
 - explicit exact form теж валідна:
   - `expect event presence offline ...`
+- `connect` / `reconnect` після fully-offline state може спостерігатись як:
+  - `expect event online <user>`
+- explicit exact form теж валідна:
+  - `expect event presence online ...`
 - `expect event message read ...` використовує DSL форму `up to <seq>` замість protocol-level `readSeq`
 - `expect next` означає, що result містить continuation cursor (`next`)
 - `expect not next` означає, що continuation cursor (`next`) відсутній у result
@@ -910,6 +922,7 @@ ABAC DSL не є повною policy language
 | expect bob in subscriptions                 | expect subscriptions contain bob                            |
 | expect subscription to bob                  | expect subscription target bob exists                       |
 | expect event offline bob                    | expect event presence offline bob                           |
+| expect event online bob                     | expect event presence online bob                            |
 
 Canonical = sugar  
 Exact = protocol-observable semantics
