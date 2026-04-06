@@ -751,6 +751,9 @@ class DSLRunner:
             if self._given_group_owner(line):
                 idx += 1
                 continue
+            if self._given_group_not_member(line):
+                idx += 1
+                continue
             if self._given_group_member(line):
                 idx += 1
                 continue
@@ -758,6 +761,9 @@ class DSLRunner:
                 idx += 1
                 continue
             if self._given_moderation(line):
+                idx += 1
+                continue
+            if self._given_abac_banned(line):
                 idx += 1
                 continue
             if self._given_read_cursor(line):
@@ -965,6 +971,20 @@ class DSLRunner:
         group.members.add(user)
         return True
 
+    def _given_group_not_member(self, line: str) -> bool:
+        match = re.match(r"(\S+) is not member of group (\S+)$", line)
+        if not match:
+            return False
+        user, name = match.groups()
+        group = self.world.groups.get(name)
+        if group is None:
+            group = GroupState(name=name, owner="")
+            self.world.groups[name] = group
+        else:
+            group.deleted = False
+        group.members.discard(user)
+        return True
+
     def _given_roster(self, line: str) -> bool:
         match = re.match(r"(\S+) has (\S+) in roster$", line)
         if not match:
@@ -993,6 +1013,15 @@ class DSLRunner:
         else:
             feed = feed_token
         self.world.read_cursors[(user, feed)] = seq
+        return True
+
+
+    def _given_abac_banned(self, line: str) -> bool:
+        match = re.match(r"(\S+) is banned$", line)
+        if not match:
+            return False
+        subject = match.group(1)
+        self.world.subject_attrs.setdefault(subject, {})["banned"] = True
         return True
 
     def _given_abac_subject_attr(self, line: str) -> bool:
@@ -1625,8 +1654,11 @@ class DSLRunner:
             actor = send_match.group(1)
             subject = self.world.subject_attrs.get(actor, {})
             message_attrs = self._policy_message_attrs()
-            decision = self._clearance_rank(subject.get("clearance")) >= self._clearance_rank(
-                message_attrs.get("classification")
+            decision = (
+                not subject.get("banned", False)
+                and self._clearance_rank(subject.get("clearance")) >= self._clearance_rank(
+                    message_attrs.get("classification")
+                )
             )
             self.world.last_policy_result = {
                 "access": "allowed" if decision else "denied",
@@ -1643,7 +1675,11 @@ class DSLRunner:
             actor, group_name = query_events_match.groups()
             subject = self.world.subject_attrs.get(actor, {})
             feed_attrs = self.world.resource_attrs.get(f"feed:{group_name}", {})
-            decision = subject.get("branch") == feed_attrs.get("branch")
+            group = self.world.groups.get(group_name)
+            is_member = bool(group and actor in group.members)
+            branch_matches = subject.get("branch") == feed_attrs.get("branch")
+            not_banned = not subject.get("banned", False)
+            decision = branch_matches and is_member and not_banned
             self.world.last_policy_result = {
                 "access": "allowed" if decision else "denied",
                 "visible_messages": set(),
@@ -1659,6 +1695,7 @@ class DSLRunner:
             actor = query_inbox_match.group(1)
             subject = self.world.subject_attrs.get(actor, {})
             subject_clearance = self._clearance_rank(subject.get("clearance"))
+            banned = subject.get("banned", False)
             visible_messages: set[str] = set()
             hidden_messages: set[str] = set()
             visible_fields: set[tuple[str, str]] = set()
@@ -1669,25 +1706,29 @@ class DSLRunner:
                     continue
                 message_name = resource_key.split(":", 1)[1]
                 classification = attrs.get("classification")
-                if classification is not None and subject_clearance >= self._clearance_rank(classification):
+                if banned:
+                    if classification is not None:
+                        visible_messages.add(message_name)
+                elif classification is not None and subject_clearance >= self._clearance_rank(classification):
                     visible_messages.add(message_name)
                 elif classification is not None:
                     hidden_messages.add(message_name)
 
                 for field_name, level in attrs.get("field_visibility", {}).items():
-                    if subject_clearance >= self._clearance_rank(level):
+                    if banned or subject_clearance >= self._clearance_rank(level):
                         visible_fields.add((message_name, field_name))
                     else:
                         hidden_fields.add((message_name, field_name))
 
+            access = "denied" if banned else "allowed"
             self.world.last_policy_result = {
-                "access": "allowed",
+                "access": access,
                 "visible_messages": visible_messages,
                 "hidden_messages": hidden_messages,
                 "visible_fields": visible_fields,
                 "hidden_fields": hidden_fields,
             }
-            self.last_result = QueryResult(kind="policy", items=["allowed"])
+            self.last_result = QueryResult(kind="policy", items=[access])
             return
 
         raise DSLRunnerError(f"Unsupported policy action: {line}")
