@@ -25,6 +25,31 @@ Moderation у DSL трактується як policy layer поверх protocol
   може бути змінена server policy (ABAC)
   і не є жорстко зафіксованою на рівні DSL
 
+### Scope
+
+Moderation у DSL має два scopes:
+
+- global / subject-scoped
+- group-scoped
+
+Global forms:
+
+- `ban <user>`
+- `unban <user>`
+- `query moderation`
+
+Group-scoped forms:
+
+- `ban <user> in group <name>`
+- `unban <user> in group <name>`
+- `query moderation group <name>`
+
+Group-scoped moderation:
+
+- не означає global ban
+- не видаляє membership автоматично
+- впливає лише на future actions у цьому group resource
+
 ## MOD-1. Ban user
 ```
 scenario ban user
@@ -182,3 +207,113 @@ expect error forbidden
 ```
 - ban впливає тільки на нові дії
 - past і future чітко розділені
+
+---
+## MOD-9. Ban user in group
+```
+scenario ban user in group
+
+session alice
+connect
+auth
+
+create group room1
+add bob to group room1
+
+ban bob in group room1
+
+query moderation group room1
+
+expect moderation
+expect bob in moderation
+expect bob is banned in group room1
+```
+
+- group-scoped moderation створюється окремо від global moderation
+- moderation list для group resource має бути inspectable
+
+---
+## MOD-10. Group ban blocks future group access
+```
+scenario group ban blocks future group access
+
+session alice
+connect
+auth
+
+create group room1
+add bob to group room1
+
+session bob
+connect
+auth
+
+session alice
+ban bob in group room1
+
+session bob
+query events group room1 after cursor
+
+expect error forbidden
+```
+
+- group-scoped ban блокує future access лише до цього group resource
+- membership саме по собі вже недостатнє після group ban
+
+---
+## MOD-11. Group ban does not imply global ban
+```
+scenario group ban does not imply global ban
+
+session alice
+connect
+auth
+
+create group room1
+add bob to group room1
+
+session bob
+connect
+auth
+
+session alice
+ban bob in group room1
+
+session bob
+send message to alice "hi"
+
+session alice
+expect message from bob body "hi"
+```
+
+- group-scoped moderation не блокує не пов'язані private interactions
+- scope ban має лишатися явним
+
+---
+## MOD-12. Unban in group restores group access
+```
+scenario unban in group restores group access
+
+session alice
+connect
+auth
+
+create group room1
+add bob to group room1
+
+session bob
+connect
+auth
+
+session alice
+ban bob in group room1
+unban bob in group room1
+
+session bob
+query events group room1 after cursor
+
+expect not error forbidden
+```
+
+- group-scoped unban прибирає лише group-scoped restriction
+- global moderation state цим не змінюється

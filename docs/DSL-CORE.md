@@ -645,6 +645,7 @@ DSL зазвичай використовує коротку форму `seq`,
 - `expect moderation` означає, що result містить moderation list
 - `expect <user> is banned` означає, що для поточного actor існує moderation restriction щодо цього user
 - `expect <user> in moderation` означає, що user присутній у поточному moderation list result
+- `expect <user> is banned in group <name>` означає, що існує group-scoped moderation restriction для цього user у вказаній group
 - `expect subscriptions` означає, що result містить список subscription relation
 - `expect <user> in subscriptions` означає, що user присутній у поточному subscription list result
 - `expect subscription to <user>` означає, що directed relation до цього user існує для поточного actor
@@ -996,7 +997,16 @@ Reference kinds (`group <name>` / `feed group:<name>`) використовую�
 - `ban <user>` створює moderation restriction для поточного actor
 - `unban <user>` видаляє moderation restriction для поточного actor
 - `query moderation` означає inspection поточного moderation list
+- group-scoped runtime moderation може задаватись окремою form:
+  - `ban <user> in group <name>`
+  - `unban <user> in group <name>`
+  - `query moderation group <name>`
 
+- ці forms означають moderation state лише для цього group resource
+  і не означають global moderation state
+
+- `expect <user> is banned in group <name>`
+  означає group-scoped moderation restriction для цього group
 - moderation може обмежувати direct messaging або інший доступ,
   але не повинна неявно змінювати roster чи subscription state,
   якщо це окремо не визначено policy сервером
@@ -1027,6 +1037,10 @@ Reference kinds (`group <name>` / `feed group:<name>`) використовую�
   є різними state forms:
   - перше = global / subject-scoped moderation
   - друге = resource-scoped moderation
+
+- аналогічна різниця діє і для runtime commands:
+  - `ban <user>` / `unban <user>` = global moderation
+  - `ban <user> in group <name>` / `unban <user> in group <name>` = group-scoped moderation
 
 ## Given section
 
