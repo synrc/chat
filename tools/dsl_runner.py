@@ -2309,6 +2309,16 @@ class DSLRunner:
                 raise ExpectationFailed(line)
             return True
 
+        m = re.match(r"expect event (online|offline|typing)(?: actor)?(?: (\S+))?$", line)
+        if m:
+            event_type, actor = m.groups()
+            fact = self.world.recent_event_fact
+            if not fact or fact.get("family") != "presence" or fact.get("type") != event_type:
+                raise ExpectationFailed(line)
+            if actor is not None and fact.get("actor") != actor:
+                raise ExpectationFailed(line)
+            return True
+
         m = re.match(r"expect event presence (online|offline|typing)(?: actor)?(?: (\S+))?$", line)
         if m:
             event_type, actor = m.groups()
