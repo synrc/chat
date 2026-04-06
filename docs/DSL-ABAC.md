@@ -10,6 +10,20 @@ ABAC:
 - не змінює Message/Event/Query semantics
 - визначає доступ до дій і view
 
+Ban / moderation у цьому файлі за замовчуванням трактується як
+subject-scoped / global policy flag.
+
+Тобто:
+
+- `given bob is banned`
+
+означає global ban для subject `bob`,
+а не ban у контексті конкретної group.
+
+Group-scoped moderation, якщо буде потрібна,
+повинна задаватись окремою explicit form,
+а не через implicit context.
+
 Сценарії тут перевіряють:
 
 - command authorization

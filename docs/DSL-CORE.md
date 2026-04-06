@@ -1003,6 +1003,19 @@ Reference kinds (`group <name>` / `feed group:<name>`) використовую�
 
 - у базовій DSL semantics ban інтерпретується як policy,
   яка блокує direct messaging від banned user
+- якщо resource scope не вказаний явно, moderation трактується як subject-scoped / global policy flag
+
+- canonical form:
+  - `ban <user>`
+  - `given <user> is banned`
+
+  означає global moderation state без прив'язки до конкретного group/feed
+
+- group-scoped moderation, якщо буде потрібна, повинна задаватись явно окремою form,
+  наприклад:
+  - `given <user> is banned in group <name>`
+
+- implicit "current group" для moderation не використовується
 
 ## Given section
 
