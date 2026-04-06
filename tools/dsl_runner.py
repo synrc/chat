@@ -467,6 +467,10 @@ class DSLRunner:
             self._query_moderation()
             return
 
+        if line.startswith("query moderation group "):
+            self._query_group_moderation(line)
+            return
+
         if line.startswith("create group "):
             self._create_group(line)
             return
@@ -1273,12 +1277,32 @@ class DSLRunner:
 
     def _ban(self, line: str) -> None:
         session = self._require_authenticated()
+        match = re.match(r"ban (\S+) in group (\S+)$", line)
+        if match:
+            target, group_name = match.groups()
+            group = self._group_or_raise(group_name)
+            if session.user != group.owner:
+                raise ExpectationFailed("error forbidden")
+            self.world.group_bans.setdefault(group_name, set()).add(target)
+            self.last_result = QueryResult(kind="moderation", items=[target])
+            return
+
         target = line.split(maxsplit=1)[1].strip()
         self.world.moderation.add((session.user, target))
         self.last_result = QueryResult(kind="moderation", items=[target])
 
     def _unban(self, line: str) -> None:
         session = self._require_authenticated()
+        match = re.match(r"unban (\S+) in group (\S+)$", line)
+        if match:
+            target, group_name = match.groups()
+            group = self._group_or_raise(group_name)
+            if session.user != group.owner:
+                raise ExpectationFailed("error forbidden")
+            self.world.group_bans.setdefault(group_name, set()).discard(target)
+            self.last_result = QueryResult(kind="moderation")
+            return
+
         target = line.split(maxsplit=1)[1].strip()
         self.world.moderation.discard((session.user, target))
         self.last_result = QueryResult(kind="moderation")
@@ -1286,6 +1310,15 @@ class DSLRunner:
     def _query_moderation(self) -> None:
         session = self._require_authenticated()
         items = sorted(target for actor, target in self.world.moderation if actor == session.user)
+        self.last_result = QueryResult(kind="moderation", items=items)
+
+    def _query_group_moderation(self, line: str) -> None:
+        session = self._require_authenticated()
+        group_name = line.split("query moderation group ", 1)[1].strip()
+        group = self._group_or_raise(group_name)
+        if session.user != group.owner:
+            raise ExpectationFailed("error forbidden")
+        items = sorted(self.world.group_bans.get(group_name, set()))
         self.last_result = QueryResult(kind="moderation", items=items)
 
     def _create_group(self, line: str) -> None:
@@ -1362,6 +1395,8 @@ class DSLRunner:
             group = self._group_or_raise(group_name)
             if session.user not in group.members:
                 raise ExpectationFailed("error forbidden")
+            if session.user in self.world.group_bans.get(group_name, set()):
+                raise ExpectationFailed("error forbidden")
 
         if feed.startswith("private:"):
             _, a, b = feed.split(":")
@@ -1402,6 +1437,8 @@ class DSLRunner:
             group_name = feed.split(":", 1)[1]
             group = self._group_or_raise(group_name)
             if session.user not in group.members:
+                raise ExpectationFailed("error forbidden")
+            if session.user in self.world.group_bans.get(group_name, set()):
                 raise ExpectationFailed("error forbidden")
 
         log = self.world.feed_logs.get(feed, [])
@@ -1547,6 +1584,8 @@ class DSLRunner:
             group_name = feed.split(":", 1)[1]
             group = self._group_or_raise(group_name)
             if session.user not in group.members:
+                raise ExpectationFailed("error forbidden")
+            if session.user in self.world.group_bans.get(group_name, set()):
                 raise ExpectationFailed("error forbidden")
 
         explicit_zero = False
@@ -2090,6 +2129,13 @@ class DSLRunner:
         if m:
             user = m.group(1)
             if self.last_result and user in self.last_result.items:
+                raise ExpectationFailed(line)
+            return
+
+        m = re.match(r"expect (\S+) is banned in group (\S+)$", line)
+        if m:
+            user, group_name = m.groups()
+            if user not in self.world.group_bans.get(group_name, set()):
                 raise ExpectationFailed(line)
             return
 
