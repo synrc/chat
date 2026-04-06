@@ -98,6 +98,7 @@ class World:
     policy_context: dict[str, Any] = field(default_factory=dict)
     group_bans: dict[str, set[str]] = field(default_factory=dict)
     last_policy_result: dict[str, Any] | None = None
+    online_users: set[str] = field(default_factory=set)
 
 
 class DSLRunner:
@@ -344,21 +345,18 @@ class DSLRunner:
             return
 
         if line == "connect" or line.startswith("connect "):
-            self._require_session().connected = True
+            session = self._require_session()
+            self._handle_connect(session)
             return
 
         if line == "disconnect":
             session = self._require_session()
-            session.connected = False
-            self.world.recent_event_fact = {
-                "family": "presence",
-                "type": "offline",
-                "actor": session.user,
-            }
+            self._handle_disconnect(session)
             return
 
         if line == "reconnect":
-            self._require_session().connected = True
+            session = self._require_session()
+            self._handle_connect(session)
             return
 
         if line == "auth":
@@ -600,6 +598,39 @@ class DSLRunner:
         session.access_token = f"access-{uuid.uuid4()}"
         session.refresh_token = f"refresh-{uuid.uuid4()}"
         session.token_revoked = False
+
+    def _user_has_active_session(self, user: str, *, exclude_alias: str | None = None) -> bool:
+        for alias, session in self.world.sessions.items():
+            if exclude_alias is not None and alias == exclude_alias:
+                continue
+            if session.user == user and session.connected:
+                return True
+        return False
+
+    def _emit_presence_event(self, event_type: str, user: str) -> None:
+        self.world.recent_event_fact = {
+            "family": "presence",
+            "type": event_type,
+            "actor": user,
+        }
+
+    def _handle_connect(self, session: SessionState) -> None:
+        was_online = session.user in self.world.online_users or self._user_has_active_session(
+            session.user,
+            exclude_alias=session.alias,
+        )
+        session.connected = True
+        self.world.online_users.add(session.user)
+        if not was_online:
+            self._emit_presence_event("online", session.user)
+
+    def _handle_disconnect(self, session: SessionState) -> None:
+        session.connected = False
+        still_online = self._user_has_active_session(session.user, exclude_alias=session.alias)
+        if still_online:
+            return
+        self.world.online_users.discard(session.user)
+        self._emit_presence_event("offline", session.user)
 
     def _require_authenticated(self) -> SessionState:
         session = self._require_session()
