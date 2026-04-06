@@ -96,6 +96,7 @@ class World:
     subject_attrs: dict[str, dict[str, Any]] = field(default_factory=dict)
     resource_attrs: dict[str, dict[str, Any]] = field(default_factory=dict)
     policy_context: dict[str, Any] = field(default_factory=dict)
+    group_bans: dict[str, set[str]] = field(default_factory=dict)
     last_policy_result: dict[str, Any] | None = None
 
 
@@ -763,6 +764,9 @@ class DSLRunner:
             if self._given_moderation(line):
                 idx += 1
                 continue
+            if self._given_abac_group_banned(line):
+                idx += 1
+                continue
             if self._given_abac_banned(line):
                 idx += 1
                 continue
@@ -1015,6 +1019,14 @@ class DSLRunner:
         self.world.read_cursors[(user, feed)] = seq
         return True
 
+
+    def _given_abac_group_banned(self, line: str) -> bool:
+        match = re.match(r"(\S+) is banned in group (\S+)$", line)
+        if not match:
+            return False
+        subject, group_name = match.groups()
+        self.world.group_bans.setdefault(group_name, set()).add(subject)
+        return True
 
     def _given_abac_banned(self, line: str) -> bool:
         match = re.match(r"(\S+) is banned$", line)
@@ -1678,8 +1690,9 @@ class DSLRunner:
             group = self.world.groups.get(group_name)
             is_member = bool(group and actor in group.members)
             branch_matches = subject.get("branch") == feed_attrs.get("branch")
-            not_banned = not subject.get("banned", False)
-            decision = branch_matches and is_member and not_banned
+            globally_banned = subject.get("banned", False)
+            group_banned = actor in self.world.group_bans.get(group_name, set())
+            decision = branch_matches and is_member and not globally_banned and not group_banned
             self.world.last_policy_result = {
                 "access": "allowed" if decision else "denied",
                 "visible_messages": set(),
