@@ -18,6 +18,42 @@
 - snapshot дає recovery boundary,
   але не гарантує, що resource або access policy не зміниться після нього
 
+## Membership and moderation consistency
+
+Membership і moderation впливають на access,
+але не змінюють canonical event history.
+
+За замовчуванням:
+
+- remove member:
+  - блокує future access до group feed
+  - не переписує існуючі message/event
+
+- ban:
+  - блокує future actions
+  - не змінює існуючий state
+
+- already accepted message:
+  - не відкочується після remove/ban
+
+- нові команди після зміни membership/policy:
+  - оцінюються за новим state
+
+---
+
+History vs access:
+
+- history (events/message history) = immutable truth
+- access = policy
+
+DSL не фіксує:
+
+- чи доступ до pre-removal history зберігається
+- чи обмежується доступ до старих даних
+
+Це визначається server policy (ABAC)
+і може відрізнятись між реалізаціями.
+
 ## Message identity and mutation semantics
 
 DSL розрізняє:
