@@ -15,6 +15,7 @@ DSL використовується як інструмент проєктув�
 - [DSL-HOME.md](./DSL-HOME.md) — home/bootstrap/view semantics
 - [DSL-VISIBILITY.md](./DSL-VISIBILITY.md) — visible/hidden/field-level visibility
 - [DSL-MENTIONS.md](./DSL-MENTIONS.md) — mention-derived view semantics
+- [DSL-PRESENCE.md](./DSL-PRESENCE.md) — presence / protocol-observable presence events
 - [DSL-INVARIANTS.md](./DSL-INVARIANTS.md) — cross-layer consistency / invariants
 - [DSL-ADVANCED.md](./DSL-ADVANCED.md) — conflict semantics, version, federation
 - [DSL-GROUP.md](./DSL-GROUP.md) — group
@@ -34,6 +35,7 @@ DSL використовується як інструмент проєктув�
 - home bootstrap / view
 - visibility / filtering
 - mentions
+- presence
 - payload / mutation
 - group
 - moderation

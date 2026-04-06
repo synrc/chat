@@ -147,3 +147,11 @@ expect event presence offline alice
 - home snapshot є recovery/view boundary для feed,
   але не замінює presence observation
 - presence event після snapshot лишається окремим observable fact
+
+## TODO
+
+- online presence observation
+- typing presence observation
+- typing is transient and does not affect replay
+- presence does not affect read/home semantics
+- relation between presence scope and multi-session semantics
