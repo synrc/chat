@@ -285,11 +285,10 @@ send message to alice "hi"
 session alice
 expect message from bob body "hi"
 ```
-
 - group-scoped moderation не блокує не пов'язані private interactions
 - scope ban має лишатися явним
-
 ---
+
 ## MOD-12. Unban in group restores group access
 ```
 scenario unban in group restores group access
@@ -317,3 +316,121 @@ expect not error forbidden
 
 - group-scoped unban прибирає лише group-scoped restriction
 - global moderation state цим не змінюється
+---
+
+## MOD-13. Group ban blocks inbox query
+```
+scenario group ban blocks inbox query
+
+session alice
+connect
+auth
+
+create group room1
+add bob to group room1
+
+session bob
+connect
+auth
+
+session alice
+ban bob in group room1
+
+session bob
+query inbox group room1
+
+expect error forbidden
+```
+
+- group-scoped ban має блокувати не тільки replay/events,
+  а й inbox/view доступ до цього group resource
+
+---
+## MOD-14. Group ban blocks read update
+```
+scenario group ban blocks read update
+
+session alice
+connect
+auth
+
+create group room1
+add bob to group room1
+
+session bob
+connect
+auth
+
+session alice
+ban bob in group room1
+
+session bob
+query cursor read group room1 up to 1
+
+expect error forbidden
+```
+
+- group-scoped moderation має блокувати і cursor/read operations
+  для цього самого group resource
+
+---
+## MOD-15. Group ban after home snapshot blocks later replay
+```
+scenario group ban after home snapshot blocks later replay
+
+session alice
+connect
+auth
+
+create group room1
+add bob to group room1
+
+session bob
+connect
+auth
+
+session bob
+bootstrap home
+
+session alice
+ban bob in group room1
+
+session bob
+query events group room1 after snapshot
+
+expect error forbidden
+```
+
+- попередньо отриманий home snapshot не гарантує майбутній доступ,
+  якщо policy state змінився
+- access check має виконуватись на момент actual query,
+  а не на момент bootstrap
+
+---
+## MOD-16. Group unban restores inbox access
+```
+scenario group unban restores inbox access
+
+session alice
+connect
+auth
+
+create group room1
+add bob to group room1
+
+session bob
+connect
+auth
+
+session alice
+ban bob in group room1
+unban bob in group room1
+
+session bob
+query inbox group room1
+
+expect not error forbidden
+```
+
+- unban у group має відновлювати group-scoped view access
+- це не змінює global moderation state
