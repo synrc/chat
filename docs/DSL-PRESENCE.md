@@ -12,7 +12,8 @@
 На цьому етапі DSL фіксує лише мінімальну presence surface:
 
 - `disconnect` як джерело `offline` event
-- `expect event presence offline ...`
+- canonical: `expect event offline ...`
+- exact: `expect event presence offline ...`
 
 `online` / `typing` semantics можуть бути розширені пізніше,
 коли runner отримає явну runtime model для них.
@@ -41,7 +42,7 @@ session bob
 query events peer alice after cursor
 
 expect empty replay
-expect event presence offline
+expect event offline
 ```
 
 - presence event може перевірятись без explicit actor
@@ -77,7 +78,7 @@ disconnect
 session bob
 query events peer alice after cursor
 
-expect event presence offline alice
+expect event offline alice
 expect message from alice body "m1"
 ```
 
@@ -107,7 +108,7 @@ disconnect
 session bob
 query events peer alice after cursor
 
-expect event presence offline alice
+expect event offline alice
 ```
 
 - federation не повинна змінювати basic presence event semantics
@@ -141,7 +142,7 @@ session bob
 query events peer alice after snapshot
 
 expect empty replay
-expect event presence offline alice
+expect event offline alice
 ```
 
 - home snapshot є recovery/view boundary для feed,
