@@ -1895,6 +1895,20 @@ class DSLRunner:
                 raise ExpectationFailed(line)
             return
 
+        if line == "expect mentions":
+            if not self.last_result or self.last_result.kind != "home":
+                raise ExpectationFailed(line)
+            if not self._home_has_mentions(session):
+                raise ExpectationFailed(line)
+            return
+
+        if line == "expect not mentions":
+            if not self.last_result or self.last_result.kind != "home":
+                raise ExpectationFailed(line)
+            if self._home_has_mentions(session):
+                raise ExpectationFailed(line)
+            return
+
         if line == "expect moderation":
             self._expect_last_kind("moderation")
             return
@@ -2305,6 +2319,23 @@ class DSLRunner:
                 raise ExpectationFailed(line)
             return True
 
+        return False
+
+    def _home_has_mentions(self, session: SessionState) -> bool:
+        if not self.last_result or self.last_result.kind != "home":
+            return False
+
+        feeds = [feed for feed in self.last_result.items if isinstance(feed, str)]
+        for feed in feeds:
+            read_cursor = self.world.read_cursors.get((session.user, feed), 0)
+            for message_id in self.world.feed_logs.get(feed, []):
+                msg = self.world.messages[message_id]
+                if msg.deleted:
+                    continue
+                if msg.seq <= read_cursor:
+                    continue
+                if msg.payload.get("mention") == session.user:
+                    return True
         return False
 
     def _expect_last_kind(self, *allowed: str) -> None:
