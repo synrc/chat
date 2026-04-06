@@ -18,6 +18,7 @@ DSL — це природний опис поведінки:
 
 ## DSL Model
 
+
 DSL має два рівні:
 
 ### Canonical (simple)
@@ -42,6 +43,43 @@ expect inbound message from alice body "hi"
 
 - точний контроль
 - ближче до протоколу
+
+## Influences and Related Approaches
+
+Цей DSL є scenario-based executable specification
+для messaging / pub-sub протоколу.
+
+Він поєднує кілька усталених підходів:
+
+- Gherkin (Cucumber BDD)
+  - структура сценаріїв (scenario / given / when / expect)
+  - опис поведінки через дії та очікування
+
+- SQL
+  - декларативний стиль опису стану і запитів
+
+- Citrus Framework (messaging testing)
+  - multi-actor сценарії
+  - send / expect semantics для messaging систем
+
+- Scenario-based specification у distributed systems
+  (Z notation, protocol testing DSL, consensus testing frameworks)
+  - state-based modeling
+  - explicit scenario description для edge cases і recovery
+
+---
+
+DSL не є новою формальною мовою,
+а є executable specification layer поверх протоколу.
+
+Це domain-specific поєднання цих підходів,
+адаптоване для:
+
+- multi-session / multi-device поведінки
+- replay і snapshot semantics
+- cursor-based read
+- conflict resolution (edit / delete)
+- protocol-level edge cases
 
 ---
 
