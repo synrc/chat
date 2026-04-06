@@ -273,3 +273,69 @@ expect message m1 visible
 - ban не переписує history-level visibility
 - ban впливає на commands, але не обов'язково на view
 - ця поведінка може бути змінена policy
+
+---
+
+## ABAC-15. Deny overrides allow from another rule
+```
+scenario deny overrides allow from another rule
+
+given alice has clearance secret
+given alice is banned
+given message has classification confidential
+
+when alice sends message
+
+expect access denied
+```
+
+- якщо одна policy дає allow, а інша deny, фінальний результат є deny
+- deny має вищий пріоритет за allow
+---
+## ABAC-16. Group membership does not override global ban
+```
+scenario group membership does not override global ban
+
+given alice has branch military
+given feed room1 has branch military
+given alice is member of group room1
+given alice is banned
+
+when alice queries events for group room1
+
+expect access denied
+```
+
+- membership не скасовує global moderation deny
+- global ban має вищий пріоритет за resource-level allow
+---
+## ABAC-17. Missing membership denies even with matching branch
+```
+scenario missing membership denies even with matching branch
+
+given alice has branch military
+given feed room1 has branch military
+
+when alice queries events for group room1
+
+expect access denied
+```
+- одного branch match недостатньо
+- access вимагає виконання всіх обов'язкових умов
+---
+## ABAC-18. Allowed query may still hide part of result
+```
+scenario allowed query may still hide part of result
+
+given alice has clearance secret
+given message m1 has classification confidential
+given message m2 has classification topsecret
+
+when alice queries inbox
+
+expect message m1 visible
+expect message m2 hidden
+```
+
+- allow на query не означає повну видимість всіх items
+- command authorization і result filtering є різними рівнями policy
