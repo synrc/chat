@@ -1016,6 +1016,17 @@ Reference kinds (`group <name>` / `feed group:<name>`) використовую�
   - `given <user> is banned in group <name>`
 
 - implicit "current group" для moderation не використовується
+- `given <user> is banned in group <name>` означає moderation restriction
+  лише для цього group resource і не означає global ban
+
+- group-scoped moderation не видаляє membership автоматично,
+  якщо це окремо не визначено policy
+
+- `given <user> is banned`
+  і `given <user> is banned in group <name>`
+  є різними state forms:
+  - перше = global / subject-scoped moderation
+  - друге = resource-scoped moderation
 
 ## Given section
 

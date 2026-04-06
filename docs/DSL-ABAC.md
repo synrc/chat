@@ -23,6 +23,15 @@ subject-scoped / global policy flag.
 Group-scoped moderation, якщо буде потрібна,
 повинна задаватись окремою explicit form,
 а не через implicit context.
+Наприклад:
+
+- `given bob is banned in group room1`
+
+Це означає deny лише для resource `group room1`,
+а не global ban для subject `bob`.
+
+Group-scoped moderation не означає автоматичну втрату membership,
+якщо це окремо не визначено policy.
 
 Сценарії тут перевіряють:
 
@@ -339,3 +348,78 @@ expect message m2 hidden
 
 - allow на query не означає повну видимість всіх items
 - command authorization і result filtering є різними рівнями policy
+
+---
+
+## ABAC-19. Group-scoped ban blocks group query
+```
+scenario group-scoped ban blocks group query
+
+given alice has branch military
+given feed room1 has branch military
+given alice is member of group room1
+given alice is banned in group room1
+
+when alice queries events for group room1
+
+expect access denied
+```
+
+- group-scoped moderation блокує доступ лише до цього group resource
+- deny тут походить від resource-scoped moderation, а не від втрати membership
+
+---
+
+## ABAC-20. Group-scoped ban does not imply global ban
+```
+scenario group-scoped ban does not imply global ban
+
+given alice has clearance secret
+given message has classification confidential
+given alice is banned in group room1
+
+when alice sends message
+
+expect access allowed
+```
+
+- group-scoped moderation не означає global deny
+- resource-scoped deny не повинен блокувати не пов'язані ресурси
+
+---
+
+## ABAC-21. Group-scoped ban does not remove membership
+```
+scenario group-scoped ban does not remove membership
+
+given alice has branch military
+given feed room1 has branch military
+given alice is member of group room1
+given alice is banned in group room1
+
+when alice queries events for group room1
+
+expect access denied
+```
+
+- membership і moderation є різними policy dimensions
+- group-scoped ban не означає автоматичний remove member
+
+---
+
+## ABAC-22. Global ban overrides group-scoped allow
+```
+scenario global ban overrides group-scoped allow
+
+given alice has branch military
+given feed room1 has branch military
+given alice is member of group room1
+given alice is banned
+
+when alice queries events for group room1
+
+expect access denied
+```
+
+- global deny має вищий пріоритет за resource-scoped allow
+- precedence rules лишаються узгодженими і для group-scoped moderation
