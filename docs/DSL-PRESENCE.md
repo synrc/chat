@@ -23,9 +23,6 @@
 
 `online` already fixed as aggregate user-scoped companion event to `offline`.
 
-`typing` semantics можуть бути розширені пізніше,
-коли буде погоджено явну runtime model для transient presence.
-
 ---
 
 ## PRES-1. Wildcard offline presence observation
@@ -366,9 +363,3 @@ expect empty replay
 - `typing` є transient presence event
 - `typing` не повинен зберігатися як stable home state
 - `typing` не повинен повторно з'являтись як replay artifact без нового runtime source
-
-## TODO
-
-- typing presence observation
-- typing is transient and does not affect replay
-- typing does not affect read/home semantics

@@ -474,11 +474,6 @@ Canonical presence form є sugar над exact presence form.
 - `reconnect`
   - еквівалентний `connect` для presence semantics
 
-Для `typing` runtime source ще не зафіксований.
-
-`typing` лишається зарезервованим для майбутнього розширення,
-коли буде погоджено explicit transient runtime model.
-
 Presence event semantics:
 
 - presence event є окремим від message replay items
@@ -506,10 +501,6 @@ Presence event semantics:
 
 - `typing` не означає stable user state
   і не повинен інтерпретуватись як aggregate presence фактом
-
-На цьому етапі це є semantic rule DSL model,
-навіть якщо runtime surface для `online` і `typing`
-ще не повністю зафіксований у runner.
 
 #### Message reference semantics
 
