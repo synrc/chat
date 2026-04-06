@@ -92,16 +92,16 @@ expect message from alice body "release draft"
 
 ---
 
-## SEARCH-3. Search does not change read cursor
+## SEARCH-3. Search does not imply replay progress
 ```
-scenario search does not change read cursor
+scenario search does not imply replay progress
 
 given
   private feed alice<->bob has messages
     1 from alice "draft v1"
     2 from alice "draft v2"
 
-bob read private:alice up to 1
+  bob read private:alice up to 1
 
 session bob
 connect
@@ -110,31 +110,15 @@ auth
 query search peer alice text "draft"
 
 expect result items
-expect read cursor unchanged in private:alice
+
+query events peer alice after cursor
+
+expect events non-empty
 ```
 
 - search не є substitute для read
-- search result не зсуває read boundary
-
----
-
-## SEARCH-4. Search respects visibility policy
-```
-scenario search respects visibility policy
-
-given
-  alice has clearance secret
-  message m1 has classification topsecret
-  message m1 field body visible at level topsecret
-
-when alice queries inbox
-
-expect access denied
-```
-
-- search semantics повинна поважати той самий visibility/filtering model,
-  що і inbox/query view
-- hidden content не повинен ставати search-visible лише через match
+- search result не зсуває replay/read boundary
+- після search звичайний replay/query semantics лишається незалежним
 
 ---
 
@@ -193,39 +177,13 @@ auth
 query search text "draft"
 
 expect result items
+expect result items <= 2
 expect message from alice body "draft private"
 expect message from alice body "draft group one"
 ```
 
 - global search є union visible scopes поточного user
 - inaccessible scopes не повинні leak-ати через search
-
----
-
-## SEARCH-7. Search result does not imply replay progress
-```
-scenario search result does not imply replay progress
-
-given
-private feed alice<->bob has messages
-1 from alice "draft v1"
-2 from alice "draft v2"
-
-session bob
-connect
-auth
-
-query search peer alice text "draft"
-
-expect result items
-
-query events peer alice after cursor
-
-expect events non-empty
-```
-
-- search не означає replay progress
-- після search звичайний replay/query semantics лишається незалежним
 
 ---
 
@@ -242,3 +200,18 @@ Search на цьому етапі не фіксує:
 
 Ці речі можуть бути додані пізніше,
 коли буде погоджено базову protocol/query model для search.
+
+Visibility/ABAC-aware search filtering на цьому етапі не є частиною executable subset.
+
+Ця semantics має бути додана окремо,
+після того як базовий `query search ...` буде зафіксований у runner
+і узгоджений з visibility / ABAC model.
+
+На цьому етапі executable subset для search покриває:
+
+- scope selection
+- membership / moderation checks
+- search як view без replay/read side effects
+
+Visibility-aware search filtering і field-level search policy
+поки лишаються spec-level extension.
