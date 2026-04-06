@@ -437,6 +437,10 @@ class DSLRunner:
             self._send_message(line)
             return
 
+        if line.startswith("send typing to "):
+            self._send_typing(line)
+            return
+
         if line.startswith("add ") and " to roster" in line:
             self._add_to_roster(line)
             return
@@ -1156,6 +1160,28 @@ class DSLRunner:
         if capture_alias is not None:
             self.world.captured_message_ids[capture_alias] = msg.id
         self.last_result = QueryResult(kind="send", items=[msg.id] if capture_alias is not None else [])
+
+
+    def _send_typing(self, line: str) -> None:
+        session = self._require_authenticated()
+        match = re.match(r'send typing to ([^\s]+)$', line)
+        if not match:
+            raise DSLRunnerError(f"Bad send typing syntax: {line}")
+
+        target = match.group(1)
+        if "@" in target:
+            target = target.split("@", 1)[0]
+
+        if target.startswith("group:"):
+            raise ExpectationFailed("error badRequest")
+
+        self.world.recent_event_fact = {
+            "family": "presence",
+            "type": "typing",
+            "actor": session.user,
+            "target": target,
+        }
+        self.last_result = QueryResult(kind="presence", items=["typing"])
 
     def _find_message_for_lifecycle(self, actor: str, reference_body: str) -> MessageRecord:
         for message_ids in self.world.feed_logs.values():
