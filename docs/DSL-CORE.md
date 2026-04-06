@@ -383,6 +383,11 @@ expect event typing bob
 
 Якщо event type потенційно двозначний,
 потрібно використовувати explicit form з family.
+Для presence scope це означає:
+
+- canonical / exact form описує actor як user principal
+- session-level деталі можуть бути важливі для runtime model,
+  але `online` / `offline` за замовчуванням інтерпретуються як user-scoped aggregate facts
 
 У цій формі:
 
@@ -472,6 +477,31 @@ Presence event semantics:
 - presence event не змінює message history
 - presence event не означає `read`
 - presence event не змінює unread/home/snapshot state
+
+#### Presence scope semantics
+
+За замовчуванням DSL фіксує таку модель scope:
+
+- `online` / `offline` є user-scoped aggregate presence
+- `typing` є session-scoped transient presence
+
+Це означає:
+
+- якщо user має кілька одночасно активних session,
+  disconnect однієї session сам по собі не означає `offline` для user
+
+- `offline <user>` виникає лише тоді,
+  коли закрилась остання активна session цього user
+
+- `online <user>` виникає тоді,
+  коли з'явилась перша активна session після fully-offline state
+
+- `typing` не означає stable user state
+  і не повинен інтерпретуватись як aggregate presence фактом
+
+На цьому етапі це є semantic rule DSL model,
+навіть якщо runtime surface для `online` і `typing`
+ще не повністю зафіксований у runner.
 
 #### Message reference semantics
 

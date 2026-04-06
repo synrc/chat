@@ -15,6 +15,12 @@
 - canonical: `expect event offline ...`
 - exact: `expect event presence offline ...`
 
+На цьому етапі `offline` трактується як user-scoped aggregate presence fact.
+
+Тобто:
+- disconnect однієї session не обов'язково означає `offline`
+- `offline` означає втрату останньої active session цього user
+
 `online` / `typing` semantics можуть бути розширені пізніше,
 коли runner отримає явну runtime model для них.
 
@@ -148,6 +154,118 @@ expect event offline alice
 - home snapshot є recovery/view boundary для feed,
   але не замінює presence observation
 - presence event після snapshot лишається окремим observable fact
+
+---
+
+## PRES-5. One of two sessions disconnects does not emit offline
+```
+scenario one of two sessions disconnects does not emit offline
+
+session alice1 as alice
+connect
+auth
+
+session alice2 as alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session bob
+query events peer alice after cursor
+
+session alice1
+disconnect
+
+session bob
+query events peer alice after cursor
+
+expect empty replay
+```
+
+- `offline alice` не повинен виникати,
+  якщо в alice лишається інша активна session
+- `offline` за замовчуванням є user-scoped aggregate fact
+
+---
+
+## PRES-6. Last session disconnect emits offline
+```
+scenario last session disconnect emits offline
+
+session alice1 as alice
+connect
+auth
+
+session alice2 as alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session bob
+query events peer alice after cursor
+
+session alice1
+disconnect
+
+session bob
+query events peer alice after cursor
+expect empty replay
+
+session alice2
+disconnect
+
+session bob
+query events peer alice after cursor
+
+expect event offline alice
+```
+
+- `offline alice` має виникати лише після disconnect останньої active session
+- це фіксує aggregate user presence semantics
+
+---
+
+## PRES-7. First session after offline emits online
+```
+scenario first session after offline emits online
+
+session alice1 as alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session bob
+query events peer alice after cursor
+
+session alice1
+disconnect
+
+session bob
+query events peer alice after cursor
+expect event offline alice
+
+session alice2 as alice
+connect
+auth
+
+session bob
+query events peer alice after cursor
+
+expect event online alice
+```
+
+- `online alice` має виникати,
+  коли з'являється перша active session після fully-offline state
+- `online` є природною парою до aggregate `offline`
 
 ## TODO
 
