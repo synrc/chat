@@ -341,6 +341,208 @@ end
 
 ---
 
+## Operational semantics sketch
+
+Позначення:
+
+- Σ — state
+- Σ' — новий state
+- a — action
+- o — observation
+- J — predicate
+
+Форми суджень:
+
+- Σ ⊢ a ⇝ Σ' — дія змінює state
+- Σ ⊢ a ⇓ o — дія породжує observation
+- Σ ⊨ J — state або observation задовольняє predicate
+
+---
+
+### POST
+
+payload well-formed  
+next_seq(Σ, f) = n  
+fresh_id() = m
+
+──────────────────────────────────────── POST
+Σ ⊢ Post(s, p, f, payload) ⇝ Σ + MessageAt(f, n, m, p, payload)
+
+──────────────────────────────────────── POST-OBS
+Σ ⊢ Post(s, p, f, payload) ⇓ MsgObs(f, Some m, Some n, p, payload)
+
+---
+
+### EDIT
+
+MessageAt(f, n, m, p, old_payload) ∈ Σ
+
+──────────────────────────────────────── EDIT
+Σ ⊢ Mutate(s, p, ExistingMessage(f, m), ReplacePayload(new_payload))
+⇝ Σ[MessageAt(f, n, m, p, old_payload) := MessageAt(f, n, m, p, new_payload)]
+
+──────────────────────────────────────── EDIT-OBS
+Σ ⊢ Mutate(s, p, ExistingMessage(f, m), ReplacePayload(new_payload))
+⇓ EventObs(Edited(actor = Some p, target = ExistingMessage(f, m)))
+
+---
+
+### DELETE
+
+MessageAt(f, n, m, p0, payload) ∈ Σ
+
+──────────────────────────────────────── DELETE
+Σ ⊢ Mutate(s, p, ExistingMessage(f, m), Tombstone)
+⇝ Σ - MessageAt(f, n, m, p0, payload)
+
+──────────────────────────────────────── DELETE-OBS
+Σ ⊢ Mutate(s, p, ExistingMessage(f, m), Tombstone)
+⇓ EventObs(Deleted(actor = Some p, target = ExistingMessage(f, m)))
+
+---
+
+### READ
+
+ReadBoundary(feed = f, up_to = n) = rb
+
+──────────────────────────────────────── READ
+Σ ⊢ MarkRead(s, p, rb)
+⇝ Σ[ReadState(p, f, _) := ReadState(p, f, n)]
+
+──────────────────────────────────────── READ-OBS
+Σ ⊢ MarkRead(s, p, rb)
+⇓ EventObs(Read(actor = Some p, boundary = rb))
+
+---
+
+### REPLAY
+
+events_after(Σ, f, b, limit) = xs
+
+──────────────────────────────────────── REPLAY
+Σ ⊢ Replay(s, p, f, Some b, limit) ⇝ Σ
+
+──────────────────────────────────────── REPLAY-OBS
+Σ ⊢ Replay(s, p, f, Some b, limit)
+⇓ ViewObs(Inbox f, snapshot, count(xs), more(xs))
+
+---
+
+### HOME
+
+home_view(Σ, p, limit, preview, page) = hv
+
+──────────────────────────────────────── HOME
+Σ ⊢ View(s, p, Home, limit, preview, page) ⇝ Σ
+
+──────────────────────────────────────── HOME-OBS
+Σ ⊢ View(s, p, Home, limit, preview, page)
+⇓ ViewObs(Home, snapshot(hv), count(hv), more(hv))
+
+---
+
+### RELATION
+
+Rel(src = p, rel = r, dst = q, scope = None) ∉ Σ
+
+──────────────────────────────────────── REL-ADD
+Σ ⊢ ChangeRelation(s, p, r, q, true)
+⇝ Σ + Rel(src = p, rel = r, dst = q, scope = None)
+
+Rel(src = p, rel = r, dst = q, scope = None) ∈ Σ
+
+──────────────────────────────────────── REL-REMOVE
+Σ ⊢ ChangeRelation(s, p, r, q, false)
+⇝ Σ - Rel(src = p, rel = r, dst = q, scope = None)
+
+---
+
+### ROLE
+
+GroupExists(g) ∈ Σ
+
+──────────────────────────────────────── ROLE-ADD
+Σ ⊢ ChangeRole(s, p0, g, p, role, true)
+⇝ Σ + RoleState(principal = p, group = g, role = role)
+
+RoleState(principal = p, group = g, role = role) ∈ Σ
+
+──────────────────────────────────────── ROLE-REMOVE
+Σ ⊢ ChangeRole(s, p0, g, p, role, false)
+⇝ Σ - RoleState(principal = p, group = g, role = role)
+
+---
+
+### MODERATION
+
+──────────────────────────────────────── MOD-BAN
+Σ ⊢ ChangeModeration(s, p, q, scope, true)
+⇝ Σ + RelationState(src = p, rel = Moderation, dst = q, scope = scope)
+
+RelationState(src = p, rel = Moderation, dst = q, scope = scope) ∈ Σ
+
+──────────────────────────────────────── MOD-UNBAN
+Σ ⊢ ChangeModeration(s, p, q, scope, false)
+⇝ Σ - RelationState(src = p, rel = Moderation, dst = q, scope = scope)
+
+---
+
+## Satisfaction rules
+
+### Message observed
+
+o = MsgObs(f, id, pos, author, payload)
+
+──────────────────────────────────────── SAT-MSG
+o ⊨ Seen(o)
+
+---
+
+### Event observed
+
+o = EventObs(e)
+
+──────────────────────────────────────── SAT-EVENT
+o ⊨ Seen(o)
+
+---
+
+### HasMore
+
+o = ViewObs(kind, snap, count, more)
+
+──────────────────────────────────────── SAT-MORE
+o ⊨ HasMore(more)
+
+---
+
+### HasSnapshot
+
+o = ViewObs(kind, Some snap, count, more)
+
+──────────────────────────────────────── SAT-SNAPSHOT
+o ⊨ HasSnapshot
+
+---
+
+### Count
+
+count_of(o, metric) ⊲⊳ n
+
+──────────────────────────────────────── SAT-COUNT
+o ⊨ CountIs(metric, cmp)
+
+---
+
+### Fact holds
+
+f ∈ Σ
+
+──────────────────────────────────────── SAT-HOLDS
+Σ ⊨ Holds(f)
+
+---
+
 ## Важлива примітка
 
 Це не фінальна модель.
