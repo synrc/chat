@@ -45,13 +45,26 @@ Fielded exact:
 - `query search scope group room1 field body criteria like value "draft"`
 - `query search scope all field tag criteria equal value "release"`
 
+Projection canonical:
+
+- `query search peer alice field body like "draft" return body tag`
+- `query search group room1 field tag equal "release" return body`
+- `query search text "draft" return body tag`
+
+Projection exact:
+
+- `query search scope peer alice field body criteria like value "draft" fields body tag`
+- `query search scope group room1 field tag criteria equal value "release" fields body`
+- `query search scope all field body criteria like value "draft" fields body tag`
+
 Search result:
 
 - містить `result items`
 - може містити message items
 - не змінює message state
 - не створює read/update side effects
-
+- може повертати projection requested fields only
+- не повинен відкривати hidden fields через projection
 ---
 
 ## SEARCH-1. Search finds message in private feed
@@ -603,6 +616,174 @@ expect error forbidden
 - criteria/field search успадковує ті самі access rules, що й text search
 ---
 
+## SEARCH-19. Search projection returns requested fields only
+```
+scenario search projection returns requested fields only
+
+given
+private feed alice<->bob has messages
+  1 from alice {
+    body: "draft v1"
+    tag: "release"
+    attachment: "plan.pdf"
+  }
+  2 from alice {
+    body: "status"
+    tag: "note"
+    attachment: "note.txt"
+  }
+
+session bob
+connect
+auth
+
+query search peer alice field body like "draft" return body tag
+
+expect result items
+expect message from alice {
+  body: "draft v1"
+  tag: "release"
+}
+```
+
+- projection дозволяє повертати тільки потрібні fields
+- search result shaping не змінює matching semantics
+
+---
+
+## SEARCH-20. Hidden field is not returned even if body matched
+```
+scenario hidden field is not returned even if body matched
+
+given
+private feed alice<->bob has messages
+  1 id "m1" from bob {
+    body: "visible draft"
+    tag: "release"
+    attachment: "secret-plan.pdf"
+  }
+
+alice has clearance confidential
+message m1 has classification secret
+message m1 field body visible at level confidential
+message m1 field tag visible at level confidential
+message m1 field attachment visible at level secret
+
+when alice queries inbox
+
+expect message m1 field body visible
+expect message m1 field tag visible
+expect message m1 field attachment hidden
+
+session alice
+connect
+auth
+
+query search peer bob field body like "draft" return body tag attachment
+
+expect result items
+expect message from bob {
+  body: "visible draft"
+  tag: "release"
+}
+```
+
+- projection не повинен відкривати hidden field,
+  навіть якщо match був по іншому visible field
+- requested hidden field має silently filtered out
+  або omitted у projection result
+
+---
+
+## SEARCH-21. Projection does not bypass message visibility
+```
+scenario projection does not bypass message visibility
+
+given
+private feed alice<->bob has messages
+1 id "m1" from bob {
+  body: "visible draft"
+  tag: "release"
+}
+2 id "m2" from bob {
+  body: "hidden draft"
+  tag: "release"
+}
+
+alice has clearance confidential
+message m1 has classification confidential
+message m2 has classification secret
+message m1 field tag visible at level confidential
+message m2 field tag visible at level secret
+
+when alice queries inbox
+
+expect message m1 visible
+expect message m2 hidden
+
+session alice
+connect
+auth
+
+query search peer bob field tag equal "release" return body tag
+
+expect result items
+expect result items <= 1
+expect message from bob {
+  body: "visible draft"
+  tag: "release"
+}
+```
+
+- projection не дає обходити message-level visibility
+- requested fields не роблять hidden message visible
+
+---
+
+## SEARCH-22. Projection is preserved across pagination
+```
+scenario projection is preserved across pagination
+
+given
+private feed alice<->bob has messages
+  1 from alice {
+    body: "draft a"
+    tag: "release"
+    attachment: "a.pdf"
+  }
+  2 from alice {
+    body: "draft b"
+    tag: "release"
+    attachment: "b.pdf"
+  }
+  3 from alice {
+    body: "draft c"
+    tag: "release"
+    attachment: "c.pdf"
+  }
+
+session bob
+connect
+auth
+
+query search peer alice field tag equal "release" return body tag limit 2
+
+expect result items
+expect result items <= 2
+expect more
+expect next
+
+query search continue
+
+expect result items
+expect result items <= 1
+```
+
+- pagination не повинна скидати projection shape
+- `continue` має продовжувати той самий projected search result
+
+---
+
 ## Notes
 
 Search на цьому етапі не фіксує:
@@ -624,6 +805,7 @@ Search на цьому етапі не фіксує:
 - search як view без replay/read side effects
 - visibility-aware filtering
 - field-level visibility constraints
+- field / criteria matching
 
-Fielded / criteria search semantics і richer result shaping
+Search result shaping / projection semantics
 є наступним шаром DSL model.
