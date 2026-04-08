@@ -1403,6 +1403,7 @@ BEGIN
     }
 
     -- result повертає список знайдених елементів (може бути пустим)
+    -- у stable implementation-defined order
     SearchAnswer ::= SEQUENCE {
        items     [0] SEQUENCE OF item SearchItem OPTIONAL,
        continue  [1] Continuation OPTIONAL,
@@ -1462,6 +1463,32 @@ BEGIN
     --
     --   * Search pagination не змінює read state
     --     і не впливає на replay boundary
+    --
+    -- Search ordering semantics:
+    --
+    --   * SearchAnswer.items повертаються у stable implementation-defined order.
+    --
+    --   * Протокол на цьому етапі не визначає explicit sortBy,
+    --     ranking або relevance order policy.
+    --
+    --   * Якщо той самий SearchQuery виконується над незмінним result set,
+    --     server SHOULD повертати items у тому самому порядку.
+    --
+    --   * Query.continue для search SHOULD продовжувати той самий
+    --     order chain, який був встановлений першою сторінкою
+    --     відповідного search result.
+    --
+    --   * Projection через SearchQuery.fields не повинна змінювати
+    --     порядок SearchAnswer.items, а лише форму projected payload.
+    --
+    --   * Snapshot isolation для search pagination не гарантується:
+    --       - underlying data можуть змінюватись між сторінками
+    --       - visibility / moderation / membership / mutation
+    --         можуть змінити наступне page window
+    --
+    --   * За відсутності explicit snapshot binding server не зобов'язаний
+    --     зберігати той самий full result set між першою сторінкою
+    --     і наступним Query.continue.
     --
     SearchExtension ::= CHOICE {
        request [1] SearchQuery,
