@@ -184,7 +184,90 @@ expect message from alice body "draft group one"
 
 - global search є union visible scopes поточного user
 - inaccessible scopes не повинні leak-ати через search
+---
 
+## SEARCH-7. Search hides restricted messages
+```
+scenario search hides restricted messages
+
+given alice has clearance confidential
+given message m1 has classification confidential
+given message m2 has classification secret
+
+when alice queries inbox
+
+expect message m1 visible
+expect message m2 hidden
+
+session alice
+connect
+auth
+
+query search text "draft"
+
+expect result items <= 1
+```
+
+- search не повинен повертати message,
+  який hidden у поточному visibility / ABAC context
+- match сам по собі не дає права бачити resource
+
+---
+
+## SEARCH-8. Search does not leak restricted group content through global scope
+```
+scenario search does not leak restricted group content through global scope
+
+given alice has branch civil
+given bob has branch military
+given feed room1 has branch civil
+given feed room2 has branch military
+
+when alice queries inbox
+
+expect access allowed
+
+session alice
+connect
+auth
+
+query search text "draft"
+
+expect result items <= 1
+```
+
+- global search не повинен leak-ати inaccessible scope
+- visibility/policy rules для search повинні бути не слабші,
+  ніж для інших view query
+
+---
+
+## SEARCH-9. Search respects field-level visibility
+```
+scenario search respects field-level visibility
+
+given alice has clearance confidential
+given message m1 has classification secret
+given message m1 field body visible at level confidential
+given message m1 field attachment visible at level secret
+
+when alice queries inbox
+
+expect message m1 field body visible
+expect message m1 field attachment hidden
+
+session alice
+connect
+auth
+
+query search text "draft"
+
+expect result items <= 1
+```
+
+- search result не повинен обходити field-level visibility
+- якщо message частково видимий,
+  search view не повинен відкривати hidden fields неявно
 ---
 
 ## Notes

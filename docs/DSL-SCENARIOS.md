@@ -22,6 +22,7 @@ DSL використовується як інструмент проєктув�
 - [DSL-MODERATION.md](./DSL-MODERATION.md) — moderation / block policy
 - [DSL-PAYLOAD.md](./DSL-PAYLOAD.md) — structured payload
 - [DSL-ABAC.md](./DSL-ABAC.md) — access policy / ABAC scenarios
+- [DSL-SEARCH.md](./DSL-SEARCH.md) — search / query view semantics
 
 ## Coverage
 
@@ -34,6 +35,7 @@ DSL використовується як інструмент проєктув�
 - pagination
 - home bootstrap / view
 - visibility / filtering
+- search / query view
 - mentions
 - presence
 - payload / mutation
