@@ -503,6 +503,133 @@ Home є view-операцією і не повинен змінювати state:
 
 Home не повинен створювати побічних ефектів у protocol state
 
+## Search Model
+
+Search є query/view extension поверх protocol model.
+
+Search:
+
+- не змінює Message state
+- не генерує Event
+- не означає read
+- не рухає replay cursor
+- не є feed або event stream
+
+Search result є projection/view над існуючим state,
+аналогічно inbox/home/roster.
+
+---
+
+### Scope
+
+Search виконується у межах видимого для користувача scope:
+
+- peer (private feed)
+- group (conference feed)
+- global (union visible scopes)
+
+Search:
+
+- поважає membership
+- поважає moderation policy
+- не повинен leak-ати inaccessible scope через result
+
+---
+
+### Visibility and fields
+
+Search:
+
+- поважає message-level visibility (ABAC / classification)
+- поважає field-level visibility
+
+Інваріанти:
+
+- hidden field => не searchable
+- hidden requested field => не повертається у projection
+- match сам по собі не дає доступу до resource
+
+---
+
+### Projection
+
+Search підтримує projection через requested fields:
+
+- результат може містити лише підмножину payload
+- projection не змінює matching semantics
+- projection не обходить visibility constraints
+
+---
+
+### Pagination
+
+Search використовує continuation-based pagination:
+
+- `limit`
+- `continue`
+- `hasMore`
+
+Search pagination:
+
+- не змінює read state
+- не впливає на replay boundary
+- є view-only операцією
+
+---
+
+### Ordering
+
+Search result повертається у stable implementation-defined order.
+
+Це означає:
+
+- сервер визначає порядок items
+- explicit sortBy/ranking не визначені на цьому етапі
+
+Інваріанти:
+
+- той самий query над незмінним result set
+  повинен повертати items у тому самому порядку
+
+- `continue` повинен продовжувати той самий order chain
+
+- projection не повинна впливати на порядок items
+
+---
+
+### Consistency
+
+Search не гарантує snapshot isolation:
+
+- дані можуть змінюватись між сторінками
+- result window може змінюватись
+- можливі:
+  - дублікати
+  - пропуски
+
+Search є eventually-consistent view,
+а не стабільний snapshot.
+
+---
+
+### Relation to other views
+
+Search відрізняється від:
+
+- Inbox:
+  - feed-scoped snapshot
+  - може використовуватись для recovery
+
+- Home:
+  - multi-feed bootstrap snapshot
+  - має snapshot anchor
+
+Search:
+
+- не має snapshot anchor
+- не використовується для recovery
+- є ad-hoc projection query
+
 ## Pagination Model
 
 Pagination використовується для snapshot/view queries:
