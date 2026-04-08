@@ -276,10 +276,10 @@ expect result items <= 1
 scenario search first page returns limited items
 
 given
-private feed alice<->bob has messages
-1 from alice "draft a"
-2 from alice "draft b"
-3 from alice "draft c"
+  private feed alice<->bob has messages
+    1 from alice "draft a"
+    2 from alice "draft b"
+    3 from alice "draft c"
 
 session bob
 connect
@@ -305,10 +305,10 @@ expect next
 scenario search continue returns next page
 
 given
-private feed alice<->bob has messages
-1 from alice "draft a"
-2 from alice "draft b"
-3 from alice "draft c"
+  private feed alice<->bob has messages
+    1 from alice "draft a"
+    2 from alice "draft b"
+    3 from alice "draft c"
 
 session bob
 connect
@@ -338,10 +338,10 @@ expect not more
 scenario search pagination does not imply replay progress
 
 given
-private feed alice<->bob has messages
-1 from alice "draft a"
-2 from alice "draft b"
-3 from alice "draft c"
+  private feed alice<->bob has messages
+    1 from alice "draft a"
+    2 from alice "draft b"
+    3 from alice "draft c"
 
 bob read private:alice up to 1
 
@@ -374,6 +374,12 @@ expect events non-empty
 ```
 scenario global search pagination still respects visibility
 
+given
+  private feed alice<->bob has messages
+    1 id "m1" from bob "draft visible a"
+    2 id "m2" from bob "draft visible b"
+    3 id "m3" from bob "archive hidden"
+
 given alice has clearance confidential
 given message m1 has classification confidential
 given message m2 has classification confidential
@@ -393,11 +399,14 @@ query search text "draft" limit 1
 
 expect result items
 expect result items <= 1
+expect more
+expect next
 
 query search continue
 
 expect result items
 expect result items <= 1
+expect not more
 ```
 
 - pagination не повинна послаблювати visibility / ABAC rules
