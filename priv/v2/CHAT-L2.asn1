@@ -1352,24 +1352,13 @@ BEGIN
     --
     --   * Query.limit задає розмір search page.
     --
-    --   * Query.continue або SearchAnswer.continue
-    --     використовуються для pagination / continue semantics.
+    --   * SearchAnswer.continue повертає opaque continuation token
+    --     для наступної сторінки.
+    --
+    --   * Query.continue використовується клієнтом
+    --     для запиту наступної сторінки.
     --
     --   * requested projection fields задаються в SearchQuery.fields.
-    --
-    -- SearchItem зберігає LDAP/backend shape,
-    -- але може також нести chat-facing projected message view.
-    --
-    -- Якщо type = message:
-    --
-    --   * payload MAY містити тільки requested visible fields
-    --   * hidden fields MUST NOT з'являтися у payload
-    --   * requested hidden fields повинні silently omitted
-    --
-    --   * field-level visibility має пріоритет для searchable/projection fields
-    --
-    --   * якщо field visibility для конкретного field відсутня,
-    --     застосовується coarse message-level visibility/classification
     --
     SearchQuery ::= SEQUENCE {
        op       SearchOp,
@@ -1385,6 +1374,20 @@ BEGIN
        ...
     }
 
+    -- SearchItem зберігає LDAP/backend shape,
+    -- але може також нести chat-facing projected message view.
+    --
+    -- Якщо type = message:
+    --
+    --   * payload MAY містити тільки requested visible fields
+    --   * hidden fields MUST NOT з'являтися у payload
+    --   * requested hidden fields повинні silently omitted
+    --
+    --   * field-level visibility має пріоритет для searchable/projection fields
+    --
+    --   * якщо field visibility для конкретного field відсутня,
+    --     застосовується coarse message-level visibility/classification
+    --
     SearchItem ::= SEQUENCE {
        dn        [0] Binary OPTIONAL,
        field     [1] Binary OPTIONAL,
