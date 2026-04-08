@@ -1497,6 +1497,48 @@ class DSLRunner:
             return msg.payload.get("body", msg.body)
         return msg.payload.get(field_name)
 
+    def _search_projection_payload(
+        self,
+        user: str,
+        msg: MessageRecord,
+        requested_fields: list[str] | None,
+    ) -> dict[str, Any]:
+        if requested_fields is None:
+            return dict(msg.payload)
+
+        payload: dict[str, Any] = {}
+        for field_name in requested_fields:
+            if not self._search_field_visible(user, msg, field_name):
+                continue
+            value = self._search_field_value(msg, field_name)
+            if value is None:
+                continue
+            payload[field_name] = value
+        return payload
+
+    def _search_result_item(
+        self,
+        user: str,
+        msg: MessageRecord,
+        requested_fields: list[str] | None,
+    ) -> dict[str, Any]:
+        payload = self._search_projection_payload(user, msg, requested_fields)
+        if requested_fields is None:
+            body = msg.body
+        else:
+            body_value = payload.get("body")
+            body = body_value if isinstance(body_value, str) else ""
+        return {
+            "type": "message",
+            "feed": msg.feed,
+            "sender": msg.sender,
+            "body": body,
+            "payload": payload,
+            "seq": msg.seq,
+            "message_id": msg.id,
+            "deleted": msg.deleted,
+        }
+
     def _search_matches(self, value: Any, criteria: str, expected: str) -> bool:
         if value is None:
             return False
@@ -1515,23 +1557,72 @@ class DSLRunner:
         field_name: str
         criteria: str
         query_value: str
+        requested_fields: list[str] | None = None
         limit: int | None = None
 
         text_patterns: list[tuple[str, str]] = [
-            (r'query search text "(.*)"(?: limit (\d+))?$', "all"),
-            (r'query search peer (\S+) text "(.*)"(?: limit (\d+))?$', "peer"),
-            (r'query search group (\S+) text "(.*)"(?: limit (\d+))?$', "group"),
-            (r'query search scope all text "(.*)"(?: limit (\d+))?$', "all"),
-            (r'query search scope peer (\S+) text "(.*)"(?: limit (\d+))?$', "peer"),
-            (r'query search scope group (\S+) text "(.*)"(?: limit (\d+))?$', "group"),
+            (
+                r'query search text "([^"]*)"(?: (return|fields) '
+                r'([A-Za-z_][A-Za-z0-9_-]*(?: [A-Za-z_][A-Za-z0-9_-]*)*))?(?: limit (\d+))?$',
+                "all",
+            ),
+            (
+                r'query search peer (\S+) text "([^"]*)"(?: (return|fields) '
+                r'([A-Za-z_][A-Za-z0-9_-]*(?: [A-Za-z_][A-Za-z0-9_-]*)*))?(?: limit (\d+))?$',
+                "peer",
+            ),
+            (
+                r'query search group (\S+) text "([^"]*)"(?: (return|fields) '
+                r'([A-Za-z_][A-Za-z0-9_-]*(?: [A-Za-z_][A-Za-z0-9_-]*)*))?(?: limit (\d+))?$',
+                "group",
+            ),
+            (
+                r'query search scope all text "([^"]*)"(?: (return|fields) '
+                r'([A-Za-z_][A-Za-z0-9_-]*(?: [A-Za-z_][A-Za-z0-9_-]*)*))?(?: limit (\d+))?$',
+                "all",
+            ),
+            (
+                r'query search scope peer (\S+) text "([^"]*)"(?: (return|fields) '
+                r'([A-Za-z_][A-Za-z0-9_-]*(?: [A-Za-z_][A-Za-z0-9_-]*)*))?(?: limit (\d+))?$',
+                "peer",
+            ),
+            (
+                r'query search scope group (\S+) text "([^"]*)"(?: (return|fields) '
+                r'([A-Za-z_][A-Za-z0-9_-]*(?: [A-Za-z_][A-Za-z0-9_-]*)*))?(?: limit (\d+))?$',
+                "group",
+            ),
         ]
         field_patterns: list[tuple[str, str]] = [
-            (r'query search field ([A-Za-z_][A-Za-z0-9_-]*) (like|equal) "(.*)"(?: limit (\d+))?$', "all"),
-            (r'query search peer (\S+) field ([A-Za-z_][A-Za-z0-9_-]*) (like|equal) "(.*)"(?: limit (\d+))?$', "peer"),
-            (r'query search group (\S+) field ([A-Za-z_][A-Za-z0-9_-]*) (like|equal) "(.*)"(?: limit (\d+))?$', "group"),
-            (r'query search scope all field ([A-Za-z_][A-Za-z0-9_-]*) criteria (like|equal) value "(.*)"(?: limit (\d+))?$', "all"),
-            (r'query search scope peer (\S+) field ([A-Za-z_][A-Za-z0-9_-]*) criteria (like|equal) value "(.*)"(?: limit (\d+))?$', "peer"),
-            (r'query search scope group (\S+) field ([A-Za-z_][A-Za-z0-9_-]*) criteria (like|equal) value "(.*)"(?: limit (\d+))?$', "group"),
+            (
+                r'query search field ([A-Za-z_][A-Za-z0-9_-]*) (like|equal) "([^"]*)"(?: (return|fields) '
+                r'([A-Za-z_][A-Za-z0-9_-]*(?: [A-Za-z_][A-Za-z0-9_-]*)*))?(?: limit (\d+))?$',
+                "all",
+            ),
+            (
+                r'query search peer (\S+) field ([A-Za-z_][A-Za-z0-9_-]*) (like|equal) "([^"]*)"(?: (return|fields) '
+                r'([A-Za-z_][A-Za-z0-9_-]*(?: [A-Za-z_][A-Za-z0-9_-]*)*))?(?: limit (\d+))?$',
+                "peer",
+            ),
+            (
+                r'query search group (\S+) field ([A-Za-z_][A-Za-z0-9_-]*) (like|equal) "([^"]*)"(?: (return|fields) '
+                r'([A-Za-z_][A-Za-z0-9_-]*(?: [A-Za-z_][A-Za-z0-9_-]*)*))?(?: limit (\d+))?$',
+                "group",
+            ),
+            (
+                r'query search scope all field ([A-Za-z_][A-Za-z0-9_-]*) criteria (like|equal) value "([^"]*)"(?: (return|fields) '
+                r'([A-Za-z_][A-Za-z0-9_-]*(?: [A-Za-z_][A-Za-z0-9_-]*)*))?(?: limit (\d+))?$',
+                "all",
+            ),
+            (
+                r'query search scope peer (\S+) field ([A-Za-z_][A-Za-z0-9_-]*) criteria (like|equal) value "([^"]*)"(?: (return|fields) '
+                r'([A-Za-z_][A-Za-z0-9_-]*(?: [A-Za-z_][A-Za-z0-9_-]*)*))?(?: limit (\d+))?$',
+                "peer",
+            ),
+            (
+                r'query search scope group (\S+) field ([A-Za-z_][A-Za-z0-9_-]*) criteria (like|equal) value "([^"]*)"(?: (return|fields) '
+                r'([A-Za-z_][A-Za-z0-9_-]*(?: [A-Za-z_][A-Za-z0-9_-]*)*))?(?: limit (\d+))?$',
+                "group",
+            ),
         ]
 
         matched = False
@@ -1545,9 +1636,10 @@ class DSLRunner:
             criteria = "like"
             if matched_scope == "all":
                 scope_value = None
-                query_value, limit_text = groups
+                query_value, _projection_mode, projection_fields, limit_text = groups
             else:
-                scope_value, query_value, limit_text = groups
+                scope_value, query_value, _projection_mode, projection_fields, limit_text = groups
+            requested_fields = projection_fields.split() if projection_fields else None
             limit = int(limit_text) if limit_text else None
             matched = True
             break
@@ -1561,9 +1653,10 @@ class DSLRunner:
                 scope_kind = matched_scope
                 if matched_scope == "all":
                     scope_value = None
-                    field_name, criteria, query_value, limit_text = groups
+                    field_name, criteria, query_value, _projection_mode, projection_fields, limit_text = groups
                 else:
-                    scope_value, field_name, criteria, query_value, limit_text = groups
+                    scope_value, field_name, criteria, query_value, _projection_mode, projection_fields, limit_text = groups
+                requested_fields = projection_fields.split() if projection_fields else None
                 limit = int(limit_text) if limit_text else None
                 matched = True
                 break
@@ -1601,7 +1694,7 @@ class DSLRunner:
                 value = self._search_field_value(msg, field_name)
                 if not self._search_matches(value, criteria, query_value):
                     continue
-                items.append(self._message_item_from_record(msg))
+                items.append(self._search_result_item(session.user, msg, requested_fields))
 
         page, has_more, next_cursor, next_offset = self._paginate_items(items, limit, 0)
         session.last_search_query = {
