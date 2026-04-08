@@ -23,6 +23,42 @@
 - exact payload mapping для multiple mentions може бути розширена пізніше
 - на цьому етапі важлива саме semantics, а не остаточний wire form
 
+## Mention surface (minimal)
+
+Mention у DSL є derived view semantics, а не окремим object/state type.
+
+На цьому етапі:
+
+- mention виникає з visible message payload
+- mention є user-scoped
+- mention є feed-scoped
+- mention належить до view layer
+- mention не створює окремий Event
+- mention не змінює Message state
+- mention не означає read
+- replay сам по собі не очищає mention state
+
+Mention вважається active only if:
+
+- повідомлення видиме для user
+- повідомлення входить до unread boundary
+- payload містить explicit mention цього user
+
+Цей шар фіксує:
+
+- relation між mention і unread
+- relation між mention і read cursor
+- relation між mention і visibility/policy
+- relation між mention і home/feed view
+
+Цей шар поки не фіксує:
+
+- multiple mentions encoding
+- mention ranking/priorities
+- mention-specific events
+- explicit mention query API
+- server push policy для mention updates
+
 ---
 
 ## MENT-1. Mention appears in home after incoming mentioned message
@@ -157,6 +193,8 @@ expect message m1 hidden
 
 - hidden message не повинен породжувати visible mention-derived state
 - mention visibility підпорядковується тій самій policy semantics, що і message visibility
+- hidden mention source message не повинен з'являтися ні в mention count,
+  ні в latest mention anchor
 
 ---
 

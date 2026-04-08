@@ -1037,6 +1037,22 @@ Mention state:
 - mention не є окремою подією, яка змінює state
 - це derived view поверх event stream
 
+### Mention source conditions
+
+Mention-derived state виникає не з будь-якого message,
+а лише з message, який одночасно:
+
+- видимий для поточного user
+- входить до unread області feed
+- містить mention цього user у payload/context
+
+Це означає:
+
+- hidden message не повинен породжувати visible mention state
+- replay без explicit read не очищає mention state
+- mention cleared semantics визначається read boundary,
+  а не самим фактом delivery або replay
+
 ### Mention semantics
 
 Mention є derived сигналом, а не частиною canonical state.
@@ -1094,6 +1110,26 @@ Mention не є незалежним від read:
 Тобто:
 
 mention_unread ⊆ unread
+
+---
+
+### Interaction with visibility
+
+Mention visibility підпорядковується тим самим policy rules,
+що і visibility message/view source.
+
+Це означає:
+
+- якщо message hidden для user,
+  mention-derived state від цього message не повинен бути видимим
+
+- якщо message видимий частково,
+  mention state може існувати тільки тоді,
+  коли policy допускає видимість самого mention source
+  у feed/home view
+
+Mention не повинен бути side-channel,
+через який клієнт дізнається про hidden message.
 
 ---
 
