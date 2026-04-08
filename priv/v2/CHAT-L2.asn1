@@ -1257,6 +1257,20 @@ BEGIN
     --   * semantic model для клієнта є search over visible message/feed scope
     --
     SearchStatus ::= ENUMERATED { ok (0), ...}
+
+    -- TODO:
+    --   * вирішити, чи SearchStatus справді потрібен як окремий тип
+    --     у протоколі
+    --
+    --   * якщо success/error повністю кодуються через:
+    --       Query(type=result)
+    --       Query(type=error, code=...)
+    --     тоді SearchStatus можна прибрати як зайвий
+    --
+    --   * якщо потрібен окремий backend/service status,
+    --     треба явно визначити, де саме він повертається
+    --     (наприклад у SearchAnswer)
+
     Criteria ::= ENUMERATED { equal (0), notequal (1), like (2), ...}
 
     -- Scope визначає backend search domain / object family.
@@ -1331,6 +1345,16 @@ BEGIN
        criteria [3] Criteria OPTIONAL,
        type     [4] Scope OPTIONAL
     }
+    -- TODO:
+    --   * вирішити, чи SearchItem лишається суто LDAP/backend-shaped
+    --     result item
+    --
+    --   * якщо chat clients потребуватимуть richer search result,
+    --     потрібно окремо визначити projection form
+    --     для message-like search item
+    --
+    --   * у такому разі треба явно описати mapping:
+    --       backend LDAP result -> chat-facing search view item
 
     -- result повертає список знайдених елементів (може бути пустим)
     SearchAnswer ::= SEQUENCE {
