@@ -268,7 +268,143 @@ expect result items <= 1
 - search result не повинен обходити field-level visibility
 - якщо message частково видимий,
   search view не повинен відкривати hidden fields неявно
+
 ---
+
+## SEARCH-10. Search first page returns limited items
+```
+scenario search first page returns limited items
+
+given
+private feed alice<->bob has messages
+1 from alice "draft a"
+2 from alice "draft b"
+3 from alice "draft c"
+
+session bob
+connect
+auth
+
+query search peer alice text "draft" limit 2
+
+expect result items
+expect result items <= 2
+expect more
+expect next
+```
+
+- search pagination використовує той самий continuation model,
+  що й інші view query
+- `limit` обмежує розмір поточної сторінки,
+  але не змінює search semantics
+
+---
+
+## SEARCH-11. Search continue returns next page
+```
+scenario search continue returns next page
+
+given
+private feed alice<->bob has messages
+1 from alice "draft a"
+2 from alice "draft b"
+3 from alice "draft c"
+
+session bob
+connect
+auth
+
+query search peer alice text "draft" limit 2
+
+expect result items
+expect more
+expect next
+
+query search continue
+
+expect result items
+expect result items <= 1
+expect not more
+```
+
+- `continue` повертає наступну сторінку того самого search result
+- continuation token є opaque
+- pagination не повинна вимагати повторного формування query вручну
+
+---
+
+## SEARCH-12. Search pagination does not imply replay progress
+```
+scenario search pagination does not imply replay progress
+
+given
+private feed alice<->bob has messages
+1 from alice "draft a"
+2 from alice "draft b"
+3 from alice "draft c"
+
+bob read private:alice up to 1
+
+session bob
+connect
+auth
+
+query search peer alice text "draft" limit 1
+
+expect result items
+expect more
+expect next
+
+query search continue
+
+expect result items
+
+query events peer alice after cursor
+
+expect events non-empty
+```
+
+- search pagination лишається view-only semantics
+- `continue` у search не означає `read`
+- `continue` у search не рухає replay boundary
+
+---
+
+## SEARCH-13. Global search pagination still respects visibility
+```
+scenario global search pagination still respects visibility
+
+given alice has clearance confidential
+given message m1 has classification confidential
+given message m2 has classification confidential
+given message m3 has classification secret
+
+when alice queries inbox
+
+expect message m1 visible
+expect message m2 visible
+expect message m3 hidden
+
+session alice
+connect
+auth
+
+query search text "draft" limit 1
+
+expect result items
+expect result items <= 1
+
+query search continue
+
+expect result items
+expect result items <= 1
+```
+
+- pagination не повинна послаблювати visibility / ABAC rules
+- hidden content не повинно з'являтись на наступних сторінках лише через pagination
+
+---
+
 
 ## Notes
 
@@ -284,17 +420,13 @@ Search на цьому етапі не фіксує:
 Ці речі можуть бути додані пізніше,
 коли буде погоджено базову protocol/query model для search.
 
-Visibility/ABAC-aware search filtering на цьому етапі не є частиною executable subset.
-
-Ця semantics має бути додана окремо,
-після того як базовий `query search ...` буде зафіксований у runner
-і узгоджений з visibility / ABAC model.
-
 На цьому етапі executable subset для search покриває:
 
 - scope selection
 - membership / moderation checks
 - search як view без replay/read side effects
+- visibility-aware filtering
+- field-level visibility constraints
 
-Visibility-aware search filtering і field-level search policy
-поки лишаються spec-level extension.
+Search pagination і richer result shaping
+поки лишаються наступним шаром DSL model.
