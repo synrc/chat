@@ -1471,15 +1471,53 @@ class DSLRunner:
             feeds.append(feed)
         return feeds
 
+    def _search_message_visible(self, user: str, msg: MessageRecord) -> bool:
+        subject = self.world.subject_attrs.get(user, {})
+        if subject.get("banned", False):
+            return False
+        attrs = self.world.resource_attrs.get(f"message:{msg.id}", {})
+        classification = attrs.get("classification")
+        if classification is None:
+            return True
+        return self._clearance_rank(subject.get("clearance")) >= self._clearance_rank(classification)
+
+    def _search_field_visible(self, user: str, msg: MessageRecord, field_name: str) -> bool:
+        if not self._search_message_visible(user, msg):
+            return False
+        attrs = self.world.resource_attrs.get(f"message:{msg.id}", {})
+        field_visibility = attrs.get("field_visibility", {})
+        level = field_visibility.get(field_name)
+        if level is None:
+            return True
+        subject = self.world.subject_attrs.get(user, {})
+        return self._clearance_rank(subject.get("clearance")) >= self._clearance_rank(level)
+
+    def _search_field_value(self, msg: MessageRecord, field_name: str) -> Any:
+        if field_name == "body":
+            return msg.payload.get("body", msg.body)
+        return msg.payload.get(field_name)
+
+    def _search_matches(self, value: Any, criteria: str, expected: str) -> bool:
+        if value is None:
+            return False
+        actual = value if isinstance(value, str) else str(value)
+        if criteria == "like":
+            return expected.lower() in actual.lower()
+        if criteria == "equal":
+            return actual == expected
+        raise DSLRunnerError(f"Unsupported search criteria: {criteria}")
+
     def _query_search(self, line: str) -> None:
         session = self._require_authenticated()
 
         scope_kind: str
         scope_value: str | None
-        query_text: str
+        field_name: str
+        criteria: str
+        query_value: str
         limit: int | None = None
 
-        patterns: list[tuple[str, str]] = [
+        text_patterns: list[tuple[str, str]] = [
             (r'query search text "(.*)"(?: limit (\d+))?$', "all"),
             (r'query search peer (\S+) text "(.*)"(?: limit (\d+))?$', "peer"),
             (r'query search group (\S+) text "(.*)"(?: limit (\d+))?$', "group"),
@@ -1487,22 +1525,48 @@ class DSLRunner:
             (r'query search scope peer (\S+) text "(.*)"(?: limit (\d+))?$', "peer"),
             (r'query search scope group (\S+) text "(.*)"(?: limit (\d+))?$', "group"),
         ]
+        field_patterns: list[tuple[str, str]] = [
+            (r'query search field ([A-Za-z_][A-Za-z0-9_-]*) (like|equal) "(.*)"(?: limit (\d+))?$', "all"),
+            (r'query search peer (\S+) field ([A-Za-z_][A-Za-z0-9_-]*) (like|equal) "(.*)"(?: limit (\d+))?$', "peer"),
+            (r'query search group (\S+) field ([A-Za-z_][A-Za-z0-9_-]*) (like|equal) "(.*)"(?: limit (\d+))?$', "group"),
+            (r'query search scope all field ([A-Za-z_][A-Za-z0-9_-]*) criteria (like|equal) value "(.*)"(?: limit (\d+))?$', "all"),
+            (r'query search scope peer (\S+) field ([A-Za-z_][A-Za-z0-9_-]*) criteria (like|equal) value "(.*)"(?: limit (\d+))?$', "peer"),
+            (r'query search scope group (\S+) field ([A-Za-z_][A-Za-z0-9_-]*) criteria (like|equal) value "(.*)"(?: limit (\d+))?$', "group"),
+        ]
 
         matched = False
-        for pattern, matched_scope in patterns:
+        for pattern, matched_scope in text_patterns:
             m = re.match(pattern, line)
             if not m:
                 continue
             groups = m.groups()
             scope_kind = matched_scope
+            field_name = "body"
+            criteria = "like"
             if matched_scope == "all":
                 scope_value = None
-                query_text, limit_text = groups
+                query_value, limit_text = groups
             else:
-                scope_value, query_text, limit_text = groups
+                scope_value, query_value, limit_text = groups
             limit = int(limit_text) if limit_text else None
             matched = True
             break
+
+        if not matched:
+            for pattern, matched_scope in field_patterns:
+                m = re.match(pattern, line)
+                if not m:
+                    continue
+                groups = m.groups()
+                scope_kind = matched_scope
+                if matched_scope == "all":
+                    scope_value = None
+                    field_name, criteria, query_value, limit_text = groups
+                else:
+                    scope_value, field_name, criteria, query_value, limit_text = groups
+                limit = int(limit_text) if limit_text else None
+                matched = True
+                break
 
         if not matched:
             raise DSLRunnerError(f"Bad query search syntax: {line}")
@@ -1522,7 +1586,6 @@ class DSLRunner:
                 raise ExpectationFailed("error forbidden")
             feeds = [f"group:{scope_value}"]
 
-        lowered = query_text.lower()
         items: list[dict[str, Any]] = []
         for feed in feeds:
             if feed.startswith("group:"):
@@ -1533,7 +1596,10 @@ class DSLRunner:
                 msg = self.world.messages[message_id]
                 if msg.deleted:
                     continue
-                if lowered not in msg.body.lower():
+                if not self._search_field_visible(session.user, msg, field_name):
+                    continue
+                value = self._search_field_value(msg, field_name)
+                if not self._search_matches(value, criteria, query_value):
                     continue
                 items.append(self._message_item_from_record(msg))
 

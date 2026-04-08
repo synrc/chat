@@ -450,8 +450,8 @@ query search peer alice field body like "draft"
 
 expect result items
 expect message from alice {
-body: "draft v1"
-tag: "release"
+  body: "draft v1"
+  tag: "release"
 }
 ```
 
@@ -484,8 +484,8 @@ query search peer alice field tag equal "release"
 expect result items
 expect result items <= 1
 expect message from alice {
-body: "draft v1"
-tag: "release"
+  body: "draft v1"
+  tag: "release"
 }
 ```
 
@@ -585,10 +585,10 @@ bob is member of group room1
 bob is banned in group room1
 
 group feed room1 has messages
-1 from alice {
-body: "release draft"
-tag: "release"
-}
+  1 from alice {
+    body: "release draft"
+    tag: "release"
+  }
 
 session bob
 connect
@@ -602,7 +602,6 @@ expect error forbidden
 - fielded search не обходить group-scoped moderation
 - criteria/field search успадковує ті самі access rules, що й text search
 ---
-
 
 ## Notes
 
