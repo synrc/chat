@@ -379,11 +379,10 @@ given
     1 id "m1" from bob "draft visible a"
     2 id "m2" from bob "draft visible b"
     3 id "m3" from bob "archive hidden"
-
-given alice has clearance confidential
-given message m1 has classification confidential
-given message m2 has classification confidential
-given message m3 has classification secret
+  alice has clearance confidential
+  message m1 has classification confidential
+  message m2 has classification confidential
+  message m3 has classification secret
 
 when alice queries inbox
 
