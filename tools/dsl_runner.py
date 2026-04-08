@@ -512,6 +512,10 @@ class DSLRunner:
             self._query_members_of_group(line)
             return
 
+        if line.startswith("query search "):
+            self._query_search(line)
+            return
+
         if line.startswith("query cursor read "):
             self._query_cursor_read(line)
             return
@@ -1438,6 +1442,103 @@ class DSLRunner:
         group = self._group_or_raise(group_name)
         self.last_result = QueryResult(kind="members", items=sorted(group.members))
 
+    def _message_item_from_record(self, msg: MessageRecord) -> dict[str, Any]:
+        return {
+            "type": "message",
+            "feed": msg.feed,
+            "sender": msg.sender,
+            "body": msg.body,
+            "payload": dict(msg.payload),
+            "seq": msg.seq,
+            "message_id": msg.id,
+            "deleted": msg.deleted,
+        }
+
+    def _iter_search_feeds(self, session: SessionState) -> list[str]:
+        feeds: list[str] = []
+        for feed in sorted(self.world.feed_logs):
+            if not self._session_can_see_feed(session.user, feed):
+                continue
+            if feed.startswith("group:"):
+                group_name = feed.split(":", 1)[1]
+                if session.user in self.world.group_bans.get(group_name, set()):
+                    continue
+            feeds.append(feed)
+        return feeds
+
+    def _query_search(self, line: str) -> None:
+        session = self._require_authenticated()
+
+        scope_kind: str
+        scope_value: str | None
+        query_text: str
+
+        m = re.match(r'query search text "(.*)"$', line)
+        if m:
+            scope_kind = "all"
+            scope_value = None
+            query_text = m.group(1)
+        else:
+            m = re.match(r'query search peer (\S+) text "(.*)"$', line)
+            if m:
+                scope_kind = "peer"
+                scope_value, query_text = m.groups()
+            else:
+                m = re.match(r'query search group (\S+) text "(.*)"$', line)
+                if m:
+                    scope_kind = "group"
+                    scope_value, query_text = m.groups()
+                else:
+                    m = re.match(r'query search scope all text "(.*)"$', line)
+                    if m:
+                        scope_kind = "all"
+                        scope_value = None
+                        query_text = m.group(1)
+                    else:
+                        m = re.match(r'query search scope peer (\S+) text "(.*)"$', line)
+                        if m:
+                            scope_kind = "peer"
+                            scope_value, query_text = m.groups()
+                        else:
+                            m = re.match(r'query search scope group (\S+) text "(.*)"$', line)
+                            if m:
+                                scope_kind = "group"
+                                scope_value, query_text = m.groups()
+                            else:
+                                raise DSLRunnerError(f"Bad query search syntax: {line}")
+
+        feeds: list[str]
+        if scope_kind == "all":
+            feeds = self._iter_search_feeds(session)
+        elif scope_kind == "peer":
+            assert scope_value is not None
+            feeds = [self._private_feed(session.user, scope_value)]
+        else:
+            assert scope_value is not None
+            group = self._group_or_raise(scope_value)
+            if session.user not in group.members:
+                raise ExpectationFailed("error forbidden")
+            if session.user in self.world.group_bans.get(scope_value, set()):
+                raise ExpectationFailed("error forbidden")
+            feeds = [f"group:{scope_value}"]
+
+        lowered = query_text.lower()
+        items: list[dict[str, Any]] = []
+        for feed in feeds:
+            if feed.startswith("group:"):
+                group_name = feed.split(":", 1)[1]
+                if session.user in self.world.group_bans.get(group_name, set()):
+                    continue
+            for message_id in self.world.feed_logs.get(feed, []):
+                msg = self.world.messages[message_id]
+                if msg.deleted:
+                    continue
+                if lowered not in msg.body.lower():
+                    continue
+                items.append(self._message_item_from_record(msg))
+
+        self.last_result = QueryResult(kind="search", items=items)
+
     def _query_cursor_read(self, line: str) -> None:
         session = self._require_authenticated()
         m = re.match(r"query cursor read (.+) (?:seq|up to) (\d+)$", line)
@@ -1988,7 +2089,7 @@ class DSLRunner:
             return
 
         if line == "expect messages":
-            if not self.last_result or self.last_result.kind != "inbox" or not self.last_result.items:
+            if not self.last_result or self.last_result.kind not in {"inbox", "search"} or not self.last_result.items:
                 raise ExpectationFailed(line)
             return
 
@@ -2134,7 +2235,7 @@ class DSLRunner:
                     if getattr(item, "deleted", False):
                         return
 
-            for item in reversed(session.inbox):
+            for item in reversed(self._message_expect_items(session)):
                 if item["type"] == "message" and item.get("deleted", False):
                     return
 
@@ -2143,7 +2244,7 @@ class DSLRunner:
         m = re.match(r'expect not message body "(.*)"$', line)
         if m:
             body = m.group(1)
-            for item in reversed(session.inbox):
+            for item in reversed(self._message_expect_items(session)):
                 if item["type"] == "message" and item["body"] == body and not item.get("deleted", False):
                     raise ExpectationFailed(line)
             return
@@ -2152,7 +2253,7 @@ class DSLRunner:
         if m:
             sender = m.group(1)
             expected_payload = self._parse_structured_fields(m.group(2))
-            for item in reversed(session.inbox):
+            for item in reversed(self._message_expect_items(session)):
                 if (
                     item["type"] == "message"
                     and item["sender"] == sender
@@ -2166,7 +2267,7 @@ class DSLRunner:
         if m:
             sender = m.group(1)
             expected_payload = self._parse_structured_fields(m.group(2))
-            for item in reversed(session.inbox):
+            for item in reversed(self._message_expect_items(session)):
                 if (
                     item["type"] == "message"
                     and item["sender"] == sender
@@ -2387,6 +2488,11 @@ class DSLRunner:
             return True
 
         return False
+
+    def _message_expect_items(self, session: SessionState) -> list[dict[str, Any]]:
+        if self.last_result and self.last_result.kind == "search":
+            return [item for item in self.last_result.items if isinstance(item, dict) and item.get("type") == "message"]
+        return session.inbox
 
     def _home_has_mentions(self, session: SessionState) -> bool:
         if not self.last_result or self.last_result.kind != "home":
