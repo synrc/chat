@@ -39,6 +39,7 @@ class SessionState:
     last_inbox_query: dict[str, Any] | None = None
     last_events_query: dict[str, Any] | None = None
     last_home_query: dict[str, Any] | None = None
+    last_search_query: dict[str, Any] | None = None
     last_home_snapshot: set[str] = field(default_factory=set)
     snapshot_bounds: dict[str, int] = field(default_factory=dict)
     last_read_update: dict[str, Any] | None = None
@@ -510,6 +511,10 @@ class DSLRunner:
 
         if line.startswith("query members of group "):
             self._query_members_of_group(line)
+            return
+
+        if line == "query search continue":
+            self._query_search_continue()
             return
 
         if line.startswith("query search "):
@@ -1472,40 +1477,35 @@ class DSLRunner:
         scope_kind: str
         scope_value: str | None
         query_text: str
+        limit: int | None = None
 
-        m = re.match(r'query search text "(.*)"$', line)
-        if m:
-            scope_kind = "all"
-            scope_value = None
-            query_text = m.group(1)
-        else:
-            m = re.match(r'query search peer (\S+) text "(.*)"$', line)
-            if m:
-                scope_kind = "peer"
-                scope_value, query_text = m.groups()
+        patterns: list[tuple[str, str]] = [
+            (r'query search text "(.*)"(?: limit (\d+))?$', "all"),
+            (r'query search peer (\S+) text "(.*)"(?: limit (\d+))?$', "peer"),
+            (r'query search group (\S+) text "(.*)"(?: limit (\d+))?$', "group"),
+            (r'query search scope all text "(.*)"(?: limit (\d+))?$', "all"),
+            (r'query search scope peer (\S+) text "(.*)"(?: limit (\d+))?$', "peer"),
+            (r'query search scope group (\S+) text "(.*)"(?: limit (\d+))?$', "group"),
+        ]
+
+        matched = False
+        for pattern, matched_scope in patterns:
+            m = re.match(pattern, line)
+            if not m:
+                continue
+            groups = m.groups()
+            scope_kind = matched_scope
+            if matched_scope == "all":
+                scope_value = None
+                query_text, limit_text = groups
             else:
-                m = re.match(r'query search group (\S+) text "(.*)"$', line)
-                if m:
-                    scope_kind = "group"
-                    scope_value, query_text = m.groups()
-                else:
-                    m = re.match(r'query search scope all text "(.*)"$', line)
-                    if m:
-                        scope_kind = "all"
-                        scope_value = None
-                        query_text = m.group(1)
-                    else:
-                        m = re.match(r'query search scope peer (\S+) text "(.*)"$', line)
-                        if m:
-                            scope_kind = "peer"
-                            scope_value, query_text = m.groups()
-                        else:
-                            m = re.match(r'query search scope group (\S+) text "(.*)"$', line)
-                            if m:
-                                scope_kind = "group"
-                                scope_value, query_text = m.groups()
-                            else:
-                                raise DSLRunnerError(f"Bad query search syntax: {line}")
+                scope_value, query_text, limit_text = groups
+            limit = int(limit_text) if limit_text else None
+            matched = True
+            break
+
+        if not matched:
+            raise DSLRunnerError(f"Bad query search syntax: {line}")
 
         feeds: list[str]
         if scope_kind == "all":
@@ -1537,7 +1537,40 @@ class DSLRunner:
                     continue
                 items.append(self._message_item_from_record(msg))
 
-        self.last_result = QueryResult(kind="search", items=items)
+        page, has_more, next_cursor, next_offset = self._paginate_items(items, limit, 0)
+        session.last_search_query = {
+            "items": items,
+            "limit": limit,
+            "offset": next_offset,
+        }
+        self.last_result = QueryResult(
+            kind="search",
+            items=page,
+            has_more=has_more,
+            next_cursor=next_cursor,
+        )
+
+    def _query_search_continue(self) -> None:
+        session = self._require_authenticated()
+        ctx = session.last_search_query
+        if not ctx:
+            raise ExpectationFailed("error badRequest")
+
+        items = ctx["items"]
+        limit = ctx["limit"]
+        offset = ctx["offset"]
+        page, has_more, next_cursor, next_offset = self._paginate_items(items, limit, offset)
+        session.last_search_query = {
+            "items": items,
+            "limit": limit,
+            "offset": next_offset,
+        }
+        self.last_result = QueryResult(
+            kind="search",
+            items=page,
+            has_more=has_more,
+            next_cursor=next_cursor,
+        )
 
     def _query_cursor_read(self, line: str) -> None:
         session = self._require_authenticated()
@@ -2280,7 +2313,7 @@ class DSLRunner:
         m = re.match(r'expect message from (\S+) body "(.*)"$', line)
         if m:
             sender, body = m.groups()
-            for item in reversed(session.inbox):
+            for item in reversed(self._message_expect_items(session)):
                 if (
                     item["type"] == "message"
                     and item["sender"] == sender
