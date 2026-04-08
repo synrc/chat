@@ -31,6 +31,20 @@ Exact:
 - `query search scope peer alice text "draft"`
 - `query search scope group room1 text "draft"`
 
+Fielded canonical:
+
+- `query search field body like "draft"`
+- `query search peer alice field body like "draft"`
+- `query search group room1 field body like "draft"`
+- `query search field tag equal "release"`
+
+Fielded exact:
+
+- `query search scope all field body criteria like value "draft"`
+- `query search scope peer alice field body criteria like value "draft"`
+- `query search scope group room1 field body criteria like value "draft"`
+- `query search scope all field tag criteria equal value "release"`
+
 Search result:
 
 - містить `result items`
@@ -413,6 +427,182 @@ expect not more
 
 ---
 
+## SEARCH-14. Search by field body like
+```
+scenario search by field body like
+
+given
+  private feed alice<->bob has messages
+  1 from alice {
+    body: "draft v1"
+    tag: "release"
+  }
+  2 from alice {
+    body: "status"
+    tag: "note"
+  }
+
+session bob
+connect
+auth
+
+query search peer alice field body like "draft"
+
+expect result items
+expect message from alice {
+body: "draft v1"
+tag: "release"
+}
+```
+
+- fielded search може працювати по explicit payload field
+- `body like` є природним field-specific варіантом text search
+
+---
+
+## SEARCH-15. Search by field exact match
+```
+scenario search by field exact match
+
+given
+  private feed alice<->bob has messages
+  1 from alice {
+    body: "draft v1"
+    tag: "release"
+  }
+  2 from alice {
+    body: "draft v2"
+    tag: "note"
+  }
+
+session bob
+connect
+auth
+
+query search peer alice field tag equal "release"
+
+expect result items
+expect result items <= 1
+expect message from alice {
+body: "draft v1"
+tag: "release"
+}
+```
+
+- `equal` не повинен поводитись як substring match
+- fielded search повинен дозволяти exact-match semantics
+
+---
+
+## SEARCH-16. Hidden field is not searchable
+```
+scenario hidden field is not searchable
+
+given
+  private feed alice<->bob has messages
+    1 id "m1" from bob {
+      body: "visible draft"
+      attachment: "secret-plan.pdf"
+    }
+
+alice has clearance confidential
+message m1 has classification secret
+message m1 field body visible at level confidential
+message m1 field attachment visible at level secret
+
+when alice queries inbox
+
+expect message m1 field body visible
+expect message m1 field attachment hidden
+
+session alice
+connect
+auth
+
+query search peer bob field attachment like "secret"
+
+expect result items = 0
+```
+
+- hidden field не повинен бути searchable
+- search index не повинен обходити field-level visibility
+
+---
+
+## SEARCH-17. Peer field search respects visibility
+```
+scenario peer field search respects visibility
+
+given
+  private feed alice<->bob has messages
+  1 id "m1" from bob {
+    body: "visible draft"
+    tag: "release"
+  }
+  2 id "m2" from bob {
+    body: "hidden draft"
+    tag: "release"
+  }
+
+alice has clearance confidential
+message m1 has classification confidential
+message m2 has classification secret
+message m1 field tag visible at level confidential
+message m2 field tag visible at level secret
+
+when alice queries inbox
+
+expect message m1 visible
+expect message m2 hidden
+
+session alice
+connect
+auth
+
+query search peer bob field tag equal "release"
+
+expect result items
+expect result items <= 1
+expect message from bob {
+body: "visible draft"
+tag: "release"
+}
+```
+
+- peer field search повинен поважати message-level visibility
+- однакове field value не дає права бачити hidden message
+
+---
+
+## SEARCH-18. Group field search respects moderation
+```
+scenario group field search respects moderation
+
+given
+group room1 exists
+alice is owner of group room1
+bob is member of group room1
+bob is banned in group room1
+
+group feed room1 has messages
+1 from alice {
+body: "release draft"
+tag: "release"
+}
+
+session bob
+connect
+auth
+
+query search group room1 field tag equal "release"
+
+expect error forbidden
+```
+
+- fielded search не обходить group-scoped moderation
+- criteria/field search успадковує ті самі access rules, що й text search
+---
+
 
 ## Notes
 
@@ -422,8 +612,8 @@ Search на цьому етапі не фіксує:
 - stemming
 - fuzzy matching
 - snippets/highlighting
-- pagination form для search result
 - sort order beyond stable implementation-defined order
+- richer result shaping for fielded search
 
 Ці речі можуть бути додані пізніше,
 коли буде погоджено базову protocol/query model для search.
@@ -436,5 +626,5 @@ Search на цьому етапі не фіксує:
 - visibility-aware filtering
 - field-level visibility constraints
 
-Search pagination і richer result shaping
-поки лишаються наступним шаром DSL model.
+Fielded / criteria search semantics і richer result shaping
+є наступним шаром DSL model.
