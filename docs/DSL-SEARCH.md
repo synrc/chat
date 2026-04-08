@@ -65,6 +65,7 @@ Search result:
 - не створює read/update side effects
 - може повертати projection requested fields only
 - не повинен відкривати hidden fields через projection
+
 ---
 
 ## SEARCH-1. Search finds message in private feed
@@ -547,7 +548,7 @@ expect result items = 0
 scenario peer field search respects visibility
 
 given
-  private feed alice<->bob has messages
+private feed alice<->bob has messages
   1 id "m1" from bob {
     body: "visible draft"
     tag: "release"
@@ -577,8 +578,8 @@ query search peer bob field tag equal "release"
 expect result items
 expect result items <= 1
 expect message from bob {
-body: "visible draft"
-tag: "release"
+  body: "visible draft"
+  tag: "release"
 }
 ```
 
@@ -592,16 +593,16 @@ tag: "release"
 scenario group field search respects moderation
 
 given
-group room1 exists
-alice is owner of group room1
-bob is member of group room1
-bob is banned in group room1
+  group room1 exists
+  alice is owner of group room1
+  bob is member of group room1
+  bob is banned in group room1
 
 group feed room1 has messages
-  1 from alice {
-    body: "release draft"
-    tag: "release"
-  }
+1 from alice {
+  body: "release draft"
+  tag: "release"
+}
 
 session bob
 connect
@@ -621,7 +622,7 @@ expect error forbidden
 scenario search projection returns requested fields only
 
 given
-private feed alice<->bob has messages
+  private feed alice<->bob has messages
   1 from alice {
     body: "draft v1"
     tag: "release"
@@ -793,10 +794,10 @@ Search на цьому етапі не фіксує:
 - fuzzy matching
 - snippets/highlighting
 - sort order beyond stable implementation-defined order
-- richer result shaping for fielded search
+- richer LDAP/backend result mapping
 
 Ці речі можуть бути додані пізніше,
-коли буде погоджено базову protocol/query model для search.
+коли буде погоджено наступний шар protocol/query model для search.
 
 На цьому етапі executable subset для search покриває:
 
@@ -806,6 +807,8 @@ Search на цьому етапі не фіксує:
 - visibility-aware filtering
 - field-level visibility constraints
 - field / criteria matching
+- projection / requested fields
+- pagination / continue semantics
 
 Search result shaping / projection semantics
 є наступним шаром DSL model.
