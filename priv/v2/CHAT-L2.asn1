@@ -1328,13 +1328,60 @@ BEGIN
     -- Тобто dn у search semantics є anchor / container scope
     -- для backend LDAP query, а не обов'язково literal user-facing DN.
     --
-    SearchQuery ::= SEQUENCE {
-       op       SearchOp,
-       dn       [0] Binary OPTIONAL,
-       field    [1] Binary OPTIONAL,
-       value    [2] Binary OPTIONAL,
-       criteria [3] Criteria OPTIONAL,
-       type     [4] Scope OPTIONAL,
+    --   query search field tag equal "release"
+    --     -> SearchQuery {
+    --          op       = execute,
+    --          field    = "tag",
+    --          value    = "release",
+    --          criteria = equal,
+    --          type     = message
+    --        }
+    --
+    --   query search peer alice field body like "draft" return body tag
+    --     -> SearchQuery {
+    --          op       = execute,
+    --          dn       = "private:alice",
+    --          field    = "body",
+    --          value    = "draft",
+    --          criteria = like,
+    --          type     = message,
+    --          fields   = { "body", "tag" }
+    --        }
+    --
+    -- Projection / pagination:
+    --
+    --   * Query.limit задає розмір search page.
+    --
+    --   * Query.continue або SearchAnswer.continue
+    --     використовуються для pagination / continue semantics.
+    --
+    --   * requested projection fields задаються в SearchQuery.fields.
+    --
+    -- SearchItem зберігає LDAP/backend shape,
+    -- але може також нести chat-facing projected message view.
+    --
+    -- Якщо type = message:
+    --
+    --   * payload MAY містити тільки requested visible fields
+    --   * hidden fields MUST NOT з'являтися у payload
+    --   * requested hidden fields повинні silently omitted
+    --
+    --   * field-level visibility має пріоритет для searchable/projection fields
+    --
+    --   * якщо field visibility для конкретного field відсутня,
+    --     застосовується coarse message-level visibility/classification
+    --
+    SearchItem ::= SEQUENCE {
+       dn        [0] Binary OPTIONAL,
+       field     [1] Binary OPTIONAL,
+       value     [2] Binary OPTIONAL,
+       criteria  [3] Criteria OPTIONAL,
+       type      [4] Scope OPTIONAL,
+
+       -- optional chat-facing projection for message search
+       messageId [5] Binary OPTIONAL,
+       feed      [6] MessageFeed OPTIONAL,
+       payload   [7] ContentInfo OPTIONAL,
        ...
     }
 
@@ -1384,6 +1431,38 @@ BEGIN
     --
     --   * Global search не повинен leak-ати inaccessible scope
     --     через result items
+    --
+    -- Field / visibility semantics:
+    --
+    --   * hidden field => not searchable
+    --
+    --   * requested hidden field => omitted from projected result
+    --
+    --   * field-level visibility MAY бути точнішою,
+    --     ніж coarse message classification
+    --
+    --   * якщо для field задано explicit visibility policy,
+    --     саме вона визначає searchable / projected visibility цього field
+    --
+    --   * якщо explicit field visibility відсутня,
+    --     використовується message-level visibility/classification
+    --
+    -- Projection semantics:
+    --
+    --   * SearchQuery.fields MAY обмежувати projected result fields
+    --
+    --   * Якщо SearchQuery.fields відсутній,
+    --     server MAY повернути default visible payload projection
+    --
+    -- Pagination semantics:
+    --
+    --   * Query.limit задає page size для SearchAnswer.items
+    --
+    --   * continue / hasMore працюють так само,
+    --     як для інших snapshot/view query
+    --
+    --   * Search pagination не змінює read state
+    --     і не впливає на replay boundary
     --
     SearchExtension ::= CHOICE {
        request [1] SearchQuery,
