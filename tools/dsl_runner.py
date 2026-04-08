@@ -1482,15 +1482,20 @@ class DSLRunner:
         return self._clearance_rank(subject.get("clearance")) >= self._clearance_rank(classification)
 
     def _search_field_visible(self, user: str, msg: MessageRecord, field_name: str) -> bool:
-        if not self._search_message_visible(user, msg):
+        subject = self.world.subject_attrs.get(user, {})
+        if subject.get("banned", False):
             return False
+
         attrs = self.world.resource_attrs.get(f"message:{msg.id}", {})
         field_visibility = attrs.get("field_visibility", {})
         level = field_visibility.get(field_name)
-        if level is None:
+        if level is not None:
+            return self._clearance_rank(subject.get("clearance")) >= self._clearance_rank(level)
+
+        classification = attrs.get("classification")
+        if classification is None:
             return True
-        subject = self.world.subject_attrs.get(user, {})
-        return self._clearance_rank(subject.get("clearance")) >= self._clearance_rank(level)
+        return self._clearance_rank(subject.get("clearance")) >= self._clearance_rank(classification)
 
     def _search_field_value(self, msg: MessageRecord, field_name: str) -> Any:
         if field_name == "body":
@@ -1503,11 +1508,10 @@ class DSLRunner:
         msg: MessageRecord,
         requested_fields: list[str] | None,
     ) -> dict[str, Any]:
-        if requested_fields is None:
-            return dict(msg.payload)
+        fields = list(msg.payload.keys()) if requested_fields is None else requested_fields
 
         payload: dict[str, Any] = {}
-        for field_name in requested_fields:
+        for field_name in fields:
             if not self._search_field_visible(user, msg, field_name):
                 continue
             value = self._search_field_value(msg, field_name)
@@ -1523,11 +1527,8 @@ class DSLRunner:
         requested_fields: list[str] | None,
     ) -> dict[str, Any]:
         payload = self._search_projection_payload(user, msg, requested_fields)
-        if requested_fields is None:
-            body = msg.body
-        else:
-            body_value = payload.get("body")
-            body = body_value if isinstance(body_value, str) else ""
+        body_value = payload.get("body")
+        body = body_value if isinstance(body_value, str) else ""
         return {
             "type": "message",
             "feed": msg.feed,
