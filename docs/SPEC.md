@@ -403,6 +403,144 @@ Feed — це логічний контекст доставки й упоряд
 
 Між stream і snapshot не гарантується повна консистентність у будь-який момент часу. 
 
+## View Model
+
+Протокол розрізняє окремий шар view поверх canonical state.
+
+View:
+
+- не є джерелом істини
+- не змінює Message або Event state
+- не впливає на replay semantics
+- не є transport-level сутністю
+
+View є результатом Query і може бути:
+
+- snapshot
+- projection
+- derived
+
+---
+
+### View types
+
+У протоколі використовуються три типи view:
+
+#### Snapshot view
+
+- inbox
+- home
+- roster
+
+Властивості:
+
+- представляє агрегований стан на момент запиту
+- може використовуватись як recovery anchor (наприклад home)
+- може мати snapshot boundary
+
+---
+
+#### Projection view
+
+- search
+
+Властивості:
+
+- є ad-hoc projection над існуючим state
+- не має snapshot anchor
+- не використовується для recovery
+- може повертати підмножину payload
+
+---
+
+#### Derived view
+
+- mentions
+- unread aggregates
+- presence-derived state
+
+Властивості:
+
+- виводиться з message/event stream
+- не є частиною canonical state
+- може кешуватись або агрегуватись
+
+---
+
+### View invariants
+
+- Message/Event є єдиним джерелом істини
+- View не змінює state
+- View не впливає на read cursor
+- View не впливає на replay boundary
+
+- різні view можуть одночасно спостерігати різний стан
+- view може бути частково застарілим (stale)
+
+---
+
+### Pagination semantics
+
+View pagination використовує continuation model:
+
+- `limit`
+- `continue`
+
+Інваріанти:
+
+- pagination не створює новий state
+- pagination не гарантує snapshot isolation
+- можливі:
+  - дублікати
+  - пропуски
+  - зміна window між сторінками
+
+---
+
+### Interaction with policy
+
+View завжди проходить через policy layer:
+
+- ABAC
+- visibility
+- moderation
+
+Це означає:
+
+- view не може відкривати inaccessible data
+- filtering застосовується до view результату
+- search, inbox, home повинні мати однакові visibility guarantees
+
+---
+
+### Relation to stream
+
+Stream (`Event`) і View (`Query`) є незалежними шарами:
+
+- stream визначає істину (truth)
+- view є проекцією цієї істини
+
+Жоден view не повинен:
+
+- змінювати event stream
+- змінювати ordering
+- замінювати replay
+
+---
+
+### Summary
+
+View model є окремим шаром поверх protocol:
+
+- не змінює state
+- не є джерелом істини
+- не впливає на replay
+
+але:
+
+- визначає те, що клієнт бачить
+- формує UX через projection і aggregation
+
 ### Feed View Model
 
 FeedViewItem є агрегованою view/snapshot моделлю для:
