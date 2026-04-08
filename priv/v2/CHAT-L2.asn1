@@ -1247,10 +1247,26 @@ BEGIN
        result  [2] EventAnswer
     }
 
-    -- 05 Search (LDAP Search)
-
+    -- 05 Search (LDAP-backed query/view extension)
+    --
+    -- Search у протоколі використовує LDAP-oriented request shape,
+    -- але на chat semantics рівні трактується як read-only query/view layer.
+    --
+    -- Тобто:
+    --   * transport/wire form може лишатися LDAP-shaped
+    --   * semantic model для клієнта є search over visible message/feed scope
+    --
     SearchStatus ::= ENUMERATED { ok (0), ...}
     Criteria ::= ENUMERATED { equal (0), notequal (1), like (2), ...}
+
+    -- Scope визначає backend search domain / object family.
+    --
+    -- Для chat message search базовий executable subset використовує:
+    --   * type = message
+    --
+    -- room/chat/profile/contact/member можуть використовуватись
+    -- як future extension для richer directory / discovery search.
+    --
     Scope ::= ENUMERATED { profile (0), folder (1), contact (2), member (3), room (4), chat (5), message (6), ...}
 
     SearchOp ::= ENUMERATED {
@@ -1261,6 +1277,43 @@ BEGIN
 
     -- execute використовує field/value/criteria/type
     -- list допускає частковий фільтр або перегляд у межах scope/dn
+    --
+    -- Chat-facing canonical forms у DSL є sugar над SearchQuery.
+    --
+    -- Приклади semantic mapping:
+    --
+    --   query search text "draft"
+    --     -> SearchQuery {
+    --          op       = execute,
+    --          field    = "body",
+    --          value    = "draft",
+    --          criteria = like,
+    --          type     = message
+    --        }
+    --
+    --   query search peer alice text "draft"
+    --     -> SearchQuery {
+    --          op       = execute,
+    --          dn       = "private:alice",
+    --          field    = "body",
+    --          value    = "draft",
+    --          criteria = like,
+    --          type     = message
+    --        }
+    --
+    --   query search group room1 text "draft"
+    --     -> SearchQuery {
+    --          op       = execute,
+    --          dn       = "group:room1",
+    --          field    = "body",
+    --          value    = "draft",
+    --          criteria = like,
+    --          type     = message
+    --        }
+    --
+    -- Тобто dn у search semantics є anchor / container scope
+    -- для backend LDAP query, а не обов'язково literal user-facing DN.
+    --
     SearchQuery ::= SEQUENCE {
        op       SearchOp,
        dn       [0] Binary OPTIONAL,
@@ -1287,6 +1340,27 @@ BEGIN
        ...
     }
 
+    -- Search semantics
+    --
+    --   * Search не змінює Message state
+    --   * Search не означає read
+    --   * Search не рухає replay cursor
+    --   * Search не генерує окремих Event
+    --
+    --   * Search result є projection/view над існуючим state
+    --     і не є окремим feed або event stream
+    --
+    --   * Group-scoped search допускається тільки для member / owner
+    --
+    --   * Якщо actor не має доступу до group scope,
+    --     server SHOULD повертати Query error forbidden
+    --
+    --   * Якщо actor має group-scoped moderation restriction,
+    --     server SHOULD повертати Query error forbidden
+    --
+    --   * Global search не повинен leak-ати inaccessible scope
+    --     через result items
+    --
     SearchExtension ::= CHOICE {
        request [1] SearchQuery,
        result  [2] SearchAnswer
