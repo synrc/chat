@@ -1371,6 +1371,20 @@ BEGIN
     --   * якщо field visibility для конкретного field відсутня,
     --     застосовується coarse message-level visibility/classification
     --
+    SearchQuery ::= SEQUENCE {
+       op       SearchOp,
+       dn       [0] Binary OPTIONAL,
+       field    [1] Binary OPTIONAL,
+       value    [2] Binary OPTIONAL,
+       criteria [3] Criteria OPTIONAL,
+       type     [4] Scope OPTIONAL,
+
+       -- requested projection fields for chat-facing search result
+       -- (наприклад body, tag, attachment)
+       fields   [5] SEQUENCE OF field Binary OPTIONAL,
+       ...
+    }
+
     SearchItem ::= SEQUENCE {
        dn        [0] Binary OPTIONAL,
        field     [1] Binary OPTIONAL,
@@ -1384,24 +1398,6 @@ BEGIN
        payload   [7] ContentInfo OPTIONAL,
        ...
     }
-
-    SearchItem ::= SEQUENCE {
-       dn       [0] Binary OPTIONAL,
-       field    [1] Binary OPTIONAL,
-       value    [2] Binary OPTIONAL,
-       criteria [3] Criteria OPTIONAL,
-       type     [4] Scope OPTIONAL
-    }
-    -- TODO:
-    --   * вирішити, чи SearchItem лишається суто LDAP/backend-shaped
-    --     result item
-    --
-    --   * якщо chat clients потребуватимуть richer search result,
-    --     потрібно окремо визначити projection form
-    --     для message-like search item
-    --
-    --   * у такому разі треба явно описати mapping:
-    --       backend LDAP result -> chat-facing search view item
 
     -- result повертає список знайдених елементів (може бути пустим)
     SearchAnswer ::= SEQUENCE {
