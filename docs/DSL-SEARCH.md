@@ -66,6 +66,40 @@ Search result:
 - може повертати projection requested fields only
 - не повинен відкривати hidden fields через projection
 
+## Search ordering and pagination
+
+На цьому етапі search result має stable implementation-defined order.
+
+Це означає:
+
+- сервер сам визначає порядок result items
+- DSL не фіксує explicit `sortBy` або ranking semantics
+- повтор того самого search query над незмінним result set
+  повинен повертати items у тому самому порядку
+- `query search continue` повинен продовжувати той самий order chain,
+  який був встановлений first page того самого search query
+- projection / requested fields не повинні змінювати порядок items,
+  а лише shape result item
+- якщо underlying data змінюються між сторінками,
+  snapshot isolation не гарантується
+- через mutation / visibility / ABAC / moderation change
+  вікно наступної сторінки може змінитися
+- за відсутності snapshot isolation сервер не зобов'язаний
+  зберігати той самий full result set між page 1 і continue
+- stable order визначається server-side evaluation order
+  і не повинен залежати від projection / pagination parameters
+
+Цей шар фіксує тільки stable ordering semantics
+для незмінного result set.
+
+Він поки не фіксує:
+
+- `sortBy`
+- ranking
+- snippets/highlighting
+- fuzzy/stemming relevance order
+- snapshot-pinned search view
+
 ---
 
 ## SEARCH-1. Search finds message in private feed
@@ -779,9 +813,161 @@ query search continue
 expect result items
 expect result items <= 1
 ```
-
 - pagination не повинна скидати projection shape
 - `continue` має продовжувати той самий projected search result
+
+---
+
+## SEARCH-23. Same query keeps stable order on unchanged result set
+```
+scenario same query keeps stable order on unchanged result set
+
+given
+  private feed alice<->bob has messages
+    1 from alice "draft a"
+    2 from alice "draft b"
+    3 from alice "draft c"
+
+session bob
+connect
+auth
+
+query search peer alice text "draft" limit 2
+
+expect result items
+expect more
+expect next
+
+query search peer alice text "draft" limit 2
+
+expect result items
+expect more
+expect next
+```
+
+- той самий search query над незмінним result set
+  повинен зберігати той самий item order
+- DSL тут фіксує stable order semantics,
+  навіть якщо concrete order лишається implementation-defined
+
+---
+
+## SEARCH-24. Continue does not duplicate items in unchanged result set
+```
+scenario search continue does not duplicate items in unchanged result set
+
+given
+  private feed alice<->bob has messages
+    1 from alice "draft a"
+    2 from alice "draft b"
+    3 from alice "draft c"
+    4 from alice "draft d"
+
+session bob
+connect
+auth
+
+query search peer alice text "draft" limit 2
+
+expect result items
+expect more
+expect next
+
+query search continue
+
+expect result items
+expect result items <= 2
+expect not more
+```
+
+- `continue` повинен іти далі по тому самому order chain
+- у незмінному result set already returned items
+  не повинні повторно з'являтися на next page
+
+---
+
+## SEARCH-25. Projection does not affect ordering
+```
+scenario search projection does not affect ordering
+
+given
+  private feed alice<->bob has messages
+    1 from alice {
+      body: "draft a"
+      tag: "release"
+      attachment: "a.pdf"
+    }
+    2 from alice {
+      body: "draft b"
+      tag: "release"
+      attachment: "b.pdf"
+    }
+    3 from alice {
+      body: "draft c"
+      tag: "release"
+      attachment: "c.pdf"
+    }
+
+session bob
+connect
+auth
+
+query search peer alice field tag equal "release" limit 2
+
+expect result items
+expect more
+expect next
+
+query search peer alice field tag equal "release" return body tag limit 2
+
+expect result items
+expect more
+expect next
+```
+- projection змінює only result shape
+- projection не повинна перебудовувати search ordering
+
+---
+
+## SEARCH-26. Pagination after mutation may change result window
+```
+scenario search pagination after mutation may change result window
+
+given
+  private feed alice<->bob has messages
+    1 from alice "draft a"
+    2 from alice "draft b"
+    3 from alice "draft c"
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session bob
+query search peer alice text "draft" limit 2
+
+expect result items
+expect more
+expect next
+
+session alice
+send message to bob "draft d"
+
+session bob
+query search continue
+
+expect result items
+```
+
+- якщо data змінюються між first page і `continue`,
+  snapshot isolation не гарантується
+- через це next page window може змінитися
+- DSL тут фіксує допустимість зміни window,
+  а не pinned search snapshot semantics
 
 ---
 
@@ -792,9 +978,9 @@ Search на цьому етапі не фіксує:
 - ranking
 - stemming
 - fuzzy matching
-- snippets/highlighting
-- sort order beyond stable implementation-defined order
-- richer LDAP/backend result mapping
+- snippets / highlighting
+- явне керування сортуванням поза stable implementation-defined order
+- розширене відображення результатів LDAP/backend
 
 Ці речі можуть бути додані пізніше,
 коли буде погоджено наступний шар protocol/query model для search.
