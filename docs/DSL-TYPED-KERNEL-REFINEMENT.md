@@ -29,12 +29,14 @@
 
 ```ocaml
 module Kernel = struct
+  (* ---------- identity / newtypes ---------- *)
+
   type principal = Principal of string
   type session_id = SessionId of string
   type feed_name = FeedName of string
   type message_id = MessageId of string
   type seq = Seq of int
-  type snapshot = Snapshot of string
+  type snapshot_id = SnapshotId of string
   type continuation = Continuation of string
 
   (* ---------- formation ---------- *)
@@ -50,19 +52,23 @@ module Kernel = struct
     | Bool of bool
     | Atom of string
 
-  type payload = Payload of (string * value) list
-
-  type msg_addr =
-    | ById of message_id
+  (* canonical normalized payload:
+     - body is mandatory
+     - fields are flat only
+     - body should not be duplicated in fields *)
+  type payload = {
+    body : string;
+    fields : (string * value) list;
+  }
 
   type replay_boundary =
     | AfterSeq of seq
-    | AfterSnapshot of snapshot
+    | AfterSnapshot of snapshot_id
 
   type page_boundary =
     | Continue of continuation
 
-  (* ---------- existing resources ---------- *)
+  (* ---------- validated resources ---------- *)
 
   type existing_group =
     | ExistingGroup of feed_name
@@ -85,7 +91,7 @@ module Kernel = struct
     | Owner
     | Member
 
-  type relation =
+  type relation_kind =
     | Roster
     | Subscription
     | Moderation
@@ -110,9 +116,9 @@ module Kernel = struct
       }
     | RelationState of {
         src : principal;
-        rel : relation;
+        kind : relation_kind;
         dst : principal;
-        scope : feed option;
+        scope : feed option;  (* None = global *)
       }
 
   type state = State of fact list
@@ -186,7 +192,7 @@ module Kernel = struct
     | ChangeRelation of {
         session : session_id;
         actor : principal;
-        rel : [ `Roster | `Subscription ];
+        kind : [ `Roster | `Subscription ];
         dst : principal;
         add : bool;
       }
@@ -194,14 +200,14 @@ module Kernel = struct
         session : session_id;
         actor : principal;
         group : existing_group;
-        principal : principal;
+        target : principal;
         role : role;
         add : bool;
       }
     | ChangeModeration of {
         session : session_id;
         actor : principal;
-        dst : principal;
+        target : principal;
         scope : feed option;
         ban : bool;
       }
@@ -243,7 +249,7 @@ module Kernel = struct
 
   (* ---------- observations ---------- *)
 
-  type obs =
+  type observation =
     | MessageObs of {
         feed : feed;
         id : message_id option;
@@ -254,9 +260,9 @@ module Kernel = struct
     | EventObs of event
     | ViewObs of {
         kind : view_kind;
-        snapshot : snapshot option;
+        snapshot : snapshot_id option;
         count : int;
-        more : bool;
+        has_more : bool;
       }
 
   (* ---------- predicates ---------- *)
@@ -273,7 +279,7 @@ module Kernel = struct
 
   type predicate =
     | Holds of fact
-    | Seen of obs
+    | Seen of observation
     | CountIs of metric * cmp
     | HasMore of bool
     | HasSnapshot
@@ -285,11 +291,12 @@ module Kernel = struct
 
   type judgment =
     | WellFormedFeed of feed
+    | WellFormedPayload of payload
     | WellFormedAction of action
     | StateHas of state * fact
     | Permits of state * action * permission
     | Steps of state * action * state
-    | Produces of state * action * obs
+    | Produces of state * action * observation
     | Satisfies of state * predicate
 end
 ```
@@ -324,11 +331,38 @@ end
 
 ### 4. View нормалізовано через `view_kind`
 
-Це прибирає "зоопарк команд" і залишає одну модель
+Усі view-запити (`home`, `inbox`, `roster`, `groups`, `members`, `moderation`, `subscriptions`)
+зводяться до одного конструктора `View`.
+
+Це:
+- прибирає "зоопарк команд";
+- лишає одну канонічну action-form;
+- не губить різницю між самими видами view, бо вона зберігається в `view_kind`.
 
 ### 5. Mutation працює через `existing_message`
 
-Це головний інваріантний апгрейд
+Kernel не допускає mutation за сирим surface-addressing.
+До цього рівня mutation доходить тільки після resolution і validation.
+
+Це означає:
+- `edit/delete` не адресують "будь-що";
+- mutation працює тільки з уже валідованим `existing_message`;
+- elaboration layer відповідає за перетворення surface `id` / `capture id as`
+  у kernel-level `existing_message`.
+
+### 6. Payload канонізовано
+
+Payload у refined kernel вже не є просто списком полів.
+
+Він має форму:
+
+- `body` — обов'язкове canonical поле;
+- `fields` — flat список додаткових normalized полів.
+
+Це зроблено для того, щоб:
+- зафіксувати інваріант `body is mandatory`;
+- уникнути двозначності між short message form і structured form;
+- зробити elaboration результату `send message ...` канонічним.
 
 ---
 
