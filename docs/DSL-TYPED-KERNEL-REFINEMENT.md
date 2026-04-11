@@ -84,7 +84,7 @@ module Kernel = struct
   type view_snapshot =
     | FeedSnapshot of feed_snapshot_id
     | HomeSnapshot of home_snapshot_id
-    
+
   (* ---------- validated resources ---------- *)
 
   type existing_group =
@@ -434,6 +434,411 @@ Payload у refined kernel вже не є просто списком полів.
 
 ---
 
+## Surface-to-kernel elaboration notes
+
+Surface DSL не працює напряму з kernel constructors.
+
+Перед переходом у typed kernel виконується elaboration, яка:
+
+- нормалізує canonical / exact syntax;
+- розв'язує alias і symbolic forms;
+- відновлює explicit actor matching;
+- розрізняє feed-scoped і home-scoped snapshot;
+- зводить surface expectations до kernel `observation` / `predicate`.
+
+Усі surface sugar форми мають зникнути до моменту побудови kernel term.
+
+### 1. Actor elaboration
+
+Surface DSL може опускати actor або задавати його явно.
+
+#### Exact actor form
+
+```text
+expect event read bob up to 12
+expect event offline bob
+```
+
+після elaboration:
+
+- `bob` -> `ExactActor (Principal "bob")`
+
+Наприклад:
+
+```ocaml
+Seen (
+  EventObs (
+    Read {
+      actor = ExactActor (Principal "bob");
+      boundary = ReadBoundary { feed = ...; up_to = Seq 12 };
+    }
+  )
+)
+```
+
+```ocaml
+Seen (
+  EventObs (
+    UserPresence {
+      actor = ExactActor (Principal "bob");
+      kind = Offline;
+    }
+  )
+)
+```
+
+#### Wildcard actor form
+
+```text
+expect event read up to 12
+expect event offline
+```
+
+після elaboration:
+
+- omitted actor -> `AnyActor`
+
+Наприклад:
+
+```ocaml
+Seen (
+  EventObs (
+    Read {
+      actor = AnyActor;
+      boundary = ReadBoundary { feed = ...; up_to = Seq 12 };
+    }
+  )
+)
+```
+
+```ocaml
+Seen (
+  EventObs (
+    UserPresence {
+      actor = AnyActor;
+      kind = Offline;
+    }
+  )
+)
+```
+
+#### Session-scoped presence
+
+```text
+expect event typing bob1
+```
+
+або інша surface форма, яка явно адресує session alias,
+
+повинна elaborates у:
+
+```ocaml
+Seen (
+  EventObs (
+    SessionPresence {
+      actor =
+        ExactActor {
+          session = SessionId "bob1";
+          principal = Principal "bob";
+        };
+      kind = Typing;
+    }
+  )
+)
+```
+
+Тобто:
+
+- `online` / `offline` -> `UserPresence`
+- `typing` -> `SessionPresence`
+
+### 2. Snapshot elaboration
+
+Surface token `snapshot` не переходить у kernel напряму.
+
+Під час elaboration він повинен бути розв'язаний у один з двох explicit kernel forms:
+
+- `FeedSnapshot ...`
+- `HomeSnapshot ...`
+
+#### Feed-scoped snapshot
+
+```text
+query inbox peer bob
+expect snapshot
+
+query events peer bob after snapshot
+```
+
+Якщо `snapshot` походить з `inbox` / `feed view`, elaboration будує:
+
+```ocaml
+AfterFeedSnapshot (FeedSnapshotId "...")
+```
+
+і observation:
+
+```ocaml
+ViewObs {
+  kind = Inbox (...);
+  snapshot = Some (FeedSnapshot (FeedSnapshotId "..."));
+  count = ...;
+  has_more = ...;
+}
+```
+
+#### Home-scoped snapshot
+
+```text
+bootstrap home
+expect shared snapshot
+
+query events peer bob after snapshot
+```
+
+Якщо `snapshot` походить з `home view`, elaboration будує:
+
+```ocaml
+AfterHomeSnapshot (HomeSnapshotId "...")
+```
+
+і observation:
+
+```ocaml
+ViewObs {
+  kind = Home;
+  snapshot = Some (HomeSnapshot (HomeSnapshotId "..."));
+  count = ...;
+  has_more = ...;
+}
+```
+
+Таким чином surface `snapshot` є лише symbolic placeholder,
+а kernel завжди отримує вже disambiguated snapshot kind.
+
+### 3. Session alias elaboration
+
+Surface session context:
+
+```text
+session bob1 as bob
+```
+
+не переходить у kernel як plain string alias.
+
+Elaboration повинна підтримувати environment:
+
+```ocaml
+session_alias -> {
+  session : session_id;
+  principal : principal;
+}
+```
+
+Це environment використовується для:
+
+- побудови `session_actor`;
+- resolution `peer` відносно поточної session;
+- побудови session-scoped presence expectations.
+
+Наприклад:
+
+```text
+session bob1 as bob
+expect event typing
+```
+
+може elaborates у:
+
+```ocaml
+Seen (
+  EventObs (
+    SessionPresence {
+      actor =
+        ExactActor {
+          session = SessionId "bob1";
+          principal = Principal "bob";
+        };
+      kind = Typing;
+    }
+  )
+)
+```
+
+### 4. Feed resolution
+
+Surface forms:
+
+```text
+peer bob
+group room1
+feed private:bob
+```
+
+не зберігаються в kernel.
+
+Після elaboration повинні залишитися лише kernel feeds:
+
+```ocaml
+Private (Principal "...", Principal "...")
+Group (FeedName "...")
+Token "..."
+```
+
+#### Peer resolution
+
+У session context:
+
+```text
+session alice1 as alice
+query events peer bob after 10
+```
+
+`peer bob` elaborates у:
+
+```ocaml
+Private (Principal "alice", Principal "bob")
+```
+
+#### Group resolution
+
+```text
+query inbox group room1
+```
+
+elaborates у:
+
+```ocaml
+Group (FeedName "room1")
+```
+
+#### Explicit token
+
+```text
+query inbox feed private:bob
+```
+
+може або:
+- залишатися `Token "private:bob"`,
+- або, якщо elaboration policy це дозволяє, нормалізуватися у `Private (...)`.
+
+Це рішення має бути єдиним і послідовним для всієї elaboration layer.
+
+### 5. Symbolic forms
+
+Surface symbolic forms типу:
+
+- `last`
+- `cursor`
+- `next`
+- `snapshot`
+
+не належать kernel.
+
+Вони повинні бути повністю resolved до побудови kernel action / predicate.
+
+#### Read sugar
+
+```text
+send read peer alice for last
+```
+
+elaborates у конкретний:
+
+```ocaml
+MarkRead {
+  session = ...;
+  actor = ...;
+  boundary =
+    ReadBoundary {
+      feed = Private (...);
+      up_to = Seq 123;
+    };
+}
+```
+
+#### Pagination sugar
+
+```text
+query home continue
+```
+
+elaborates у:
+
+```ocaml
+View {
+  session = ...;
+  actor = ...;
+  kind = Home;
+  limit = None;
+  preview = None;
+  page = Some (Continue (Continuation "..."));
+}
+```
+
+Kernel не повинен отримувати нерозв'язаних symbolic cursor forms.
+
+### 6. Message identity elaboration
+
+Surface forms:
+
+- `ref ...`
+- `id ...`
+- `capture id as ...`
+
+не входять у typed kernel.
+
+До kernel mutation доходить тільки через:
+
+```ocaml
+existing_message
+```
+
+Тобто elaboration / resolution layer повинна виконати перетворення:
+
+```text
+surface reference -> validated existing_message
+```
+
+Наприклад:
+
+```text
+send message to bob "hi" capture id as m1id
+edit message id m1id body "v2"
+```
+
+після resolution:
+
+```ocaml
+Mutate {
+  session = ...;
+  actor = ...;
+  target =
+    ExistingMessage {
+      feed = Private (...);
+      id = MessageId "...";
+    };
+  op = ReplacePayload ...;
+}
+```
+
+Typed kernel не працює з unresolved aliases або surface references.
+
+### 7. Elaboration invariant
+
+Головний інваріант elaboration layer:
+
+surface DSL може бути неоднозначним, скороченим і context-sensitive,
+але typed kernel не повинен містити:
+
+- omitted actor semantics;
+- overloaded snapshot token;
+- session alias sugar;
+- symbolic cursor sugar;
+- unresolved message references.
+
+Усі такі distinction-и мають бути explicit вже на kernel-рівні.
+
 ## Operational semantics sketch
 
 Позначення:
@@ -454,25 +859,25 @@ Payload у refined kernel вже не є просто списком полів.
 
 ### POST
 
-payload well-formed  
-next_seq(Σ, f) = n  
+payload well-formed
+next_seq(Σ, f) = n
 fresh_id() = m
 
 ──────────────────────────────────────── POST
-Σ ⊢ Post(s, p, f, payload) ⇝ Σ + MessageAt(f, n, m, p, payload)
+Σ ⊢ Post(s, p, f, payload) ⇝ Σ + MessageExists(f, n, m, p, payload)
 
 ──────────────────────────────────────── POST-OBS
-Σ ⊢ Post(s, p, f, payload) ⇓ MsgObs(f, Some m, Some n, p, payload)
+Σ ⊢ Post(s, p, f, payload) ⇓ MessageObs(f, Some m, Some n, p, payload)
 
 ---
 
 ### EDIT
 
-MessageAt(f, n, m, p, old_payload) ∈ Σ
+MessageExists(f, n, m, p, old_payload) ∈ Σ
 
 ──────────────────────────────────────── EDIT
 Σ ⊢ Mutate(s, p, ExistingMessage(f, m), ReplacePayload(new_payload))
-⇝ Σ[MessageAt(f, n, m, p, old_payload) := MessageAt(f, n, m, p, new_payload)]
+⇝ Σ[MessageExists(f, n, m, p, old_payload) := MessageExists(f, n, m, p, new_payload)]
 
 ──────────────────────────────────────── EDIT-OBS
 Σ ⊢ Mutate(s, p, ExistingMessage(f, m), ReplacePayload(new_payload))
@@ -482,11 +887,11 @@ MessageAt(f, n, m, p, old_payload) ∈ Σ
 
 ### DELETE
 
-MessageAt(f, n, m, p0, payload) ∈ Σ
+MessageExists(f, n, m, p0, payload) ∈ Σ
 
 ──────────────────────────────────────── DELETE
 Σ ⊢ Mutate(s, p, ExistingMessage(f, m), Tombstone)
-⇝ Σ - MessageAt(f, n, m, p0, payload)
+⇝ Σ - MessageExists(f, n, m, p0, payload)
 
 ──────────────────────────────────────── DELETE-OBS
 Σ ⊢ Mutate(s, p, ExistingMessage(f, m), Tombstone)
@@ -536,17 +941,17 @@ home_view(Σ, p, limit, preview, page) = hv
 
 ### RELATION
 
-Rel(src = p, rel = r, dst = q, scope = None) ∉ Σ
+RelationState(src = p, rel = r, dst = q, scope = None) ∉ Σ
 
 ──────────────────────────────────────── REL-ADD
 Σ ⊢ ChangeRelation(s, p, r, q, true)
-⇝ Σ + Rel(src = p, rel = r, dst = q, scope = None)
+⇝ Σ + RelationState(src = p, rel = r, dst = q, scope = None)
 
-Rel(src = p, rel = r, dst = q, scope = None) ∈ Σ
+RelationState(src = p, rel = r, dst = q, scope = None) ∈ Σ
 
 ──────────────────────────────────────── REL-REMOVE
 Σ ⊢ ChangeRelation(s, p, r, q, false)
-⇝ Σ - Rel(src = p, rel = r, dst = q, scope = None)
+⇝ Σ - RelationState(src = p, rel = r, dst = q, scope = None)
 
 ---
 
@@ -584,7 +989,7 @@ RelationState(src = p, rel = Moderation, dst = q, scope = scope) ∈ Σ
 
 ### Message observed
 
-o = MsgObs(f, id, pos, author, payload)
+o = MessageObs(f, id, pos, author, payload)
 
 ──────────────────────────────────────── SAT-MSG
 o ⊨ Seen(o)
