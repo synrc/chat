@@ -36,8 +36,20 @@ module Kernel = struct
   type feed_name = FeedName of string
   type message_id = MessageId of string
   type seq = Seq of int
-  type snapshot_id = SnapshotId of string
+  type feed_snapshot_id = FeedSnapshotId of string
+  type home_snapshot_id = HomeSnapshotId of string
   type continuation = Continuation of string
+
+  type user_actor = principal
+
+  type session_actor = {
+    session : session_id;
+    principal : principal;
+  }
+
+  type 'a actor_match =
+    | AnyActor
+    | ExactActor of 'a
 
   (* ---------- formation ---------- *)
 
@@ -63,11 +75,16 @@ module Kernel = struct
 
   type replay_boundary =
     | AfterSeq of seq
-    | AfterSnapshot of snapshot_id
+    | AfterFeedSnapshot of feed_snapshot_id
+    | AfterHomeSnapshot of home_snapshot_id
 
   type page_boundary =
     | Continue of continuation
 
+  type view_snapshot =
+    | FeedSnapshot of feed_snapshot_id
+    | HomeSnapshot of home_snapshot_id
+    
   (* ---------- validated resources ---------- *)
 
   type existing_group =
@@ -214,37 +231,43 @@ module Kernel = struct
 
   (* ---------- events ---------- *)
 
-  type presence_kind =
+  type user_presence_kind =
     | Online
     | Offline
+
+  type session_presence_kind =
     | Typing
 
   type event =
     | Received of {
-        actor : principal option;
+        actor : user_actor actor_match;
         feed : feed;
         target : existing_message option;
       }
     | Delivered of {
-        actor : principal option;
+        actor : user_actor actor_match;
         feed : feed;
         target : existing_message option;
       }
     | Read of {
-        actor : principal option;
+        actor : user_actor actor_match;
         boundary : read_boundary;
       }
     | Edited of {
-        actor : principal option;
+        actor : user_actor actor_match;
         target : existing_message;
       }
     | Deleted of {
-        actor : principal option;
+        actor : user_actor actor_match;
         target : existing_message;
       }
-    | Presence of {
-        actor : principal option;
-        kind : presence_kind;
+    | UserPresence of {
+        actor : user_actor actor_match;
+        kind : user_presence_kind;
+      }
+    | SessionPresence of {
+        actor : session_actor actor_match;
+        kind : session_presence_kind;
       }
 
   (* ---------- observations ---------- *)
@@ -260,7 +283,7 @@ module Kernel = struct
     | EventObs of event
     | ViewObs of {
         kind : view_kind;
-        snapshot : snapshot_id option;
+        snapshot : view_snapshot option;
         count : int;
         has_more : bool;
       }
@@ -364,6 +387,42 @@ Payload у refined kernel вже не є просто списком полів.
 - уникнути двозначності між short message form і structured form;
 - зробити elaboration результату `send message ...` канонічним.
 
+### 7. Розведено user-scoped і session-scoped actor semantics
+
+В kernel додано окремі actor-level типи:
+
+- `user_actor`
+- `session_actor`
+
+Це дозволяє явно розвести:
+- aggregate user-scoped presence (`online` / `offline`);
+- session-scoped transient presence (`typing`).
+
+Також wildcard/exact actor matching більше не кодується через `option`,
+а винесено в окремий тип:
+
+- `AnyActor`
+- `ExactActor ...`
+
+Це прибирає змішування:
+- exact actor equality
+- wildcard / existential actor match
+
+### 8. Snapshot semantics розщеплено
+
+У kernel тепер окремо існують:
+
+- `feed_snapshot_id`
+- `home_snapshot_id`
+
+і окремий `view_snapshot`.
+
+Це фіксує різницю між:
+- feed-scoped recovery anchor;
+- shared home bootstrap anchor.
+
+Таким чином `snapshot` більше не є одним перевантаженим semantic token.
+
 ---
 
 ## Що це дає
@@ -417,7 +476,7 @@ MessageAt(f, n, m, p, old_payload) ∈ Σ
 
 ──────────────────────────────────────── EDIT-OBS
 Σ ⊢ Mutate(s, p, ExistingMessage(f, m), ReplacePayload(new_payload))
-⇓ EventObs(Edited(actor = Some p, target = ExistingMessage(f, m)))
+⇓ EventObs(Edited(actor = ExactActor p, target = ExistingMessage(f, m)))
 
 ---
 
@@ -431,7 +490,7 @@ MessageAt(f, n, m, p0, payload) ∈ Σ
 
 ──────────────────────────────────────── DELETE-OBS
 Σ ⊢ Mutate(s, p, ExistingMessage(f, m), Tombstone)
-⇓ EventObs(Deleted(actor = Some p, target = ExistingMessage(f, m)))
+⇓ EventObs(Deleted(actor = ExactActor p, target = ExistingMessage(f, m)))
 
 ---
 
@@ -445,7 +504,7 @@ ReadBoundary(feed = f, up_to = n) = rb
 
 ──────────────────────────────────────── READ-OBS
 Σ ⊢ MarkRead(s, p, rb)
-⇓ EventObs(Read(actor = Some p, boundary = rb))
+⇓ EventObs(Read(actor = ExactActor p, boundary = rb))
 
 ---
 
@@ -458,7 +517,7 @@ events_after(Σ, f, b, limit) = xs
 
 ──────────────────────────────────────── REPLAY-OBS
 Σ ⊢ Replay(s, p, f, Some b, limit)
-⇓ ViewObs(Inbox f, snapshot, count(xs), more(xs))
+⇓ ViewObs(Inbox f, Some (FeedSnapshot snapshot), count(xs), more(xs))
 
 ---
 
@@ -471,7 +530,7 @@ home_view(Σ, p, limit, preview, page) = hv
 
 ──────────────────────────────────────── HOME-OBS
 Σ ⊢ View(s, p, Home, limit, preview, page)
-⇓ ViewObs(Home, snapshot(hv), count(hv), more(hv))
+⇓ ViewObs(Home, Some (HomeSnapshot (snapshot(hv))), count(hv), more(hv))
 
 ---
 
@@ -552,7 +611,7 @@ o ⊨ HasMore(more)
 
 ### HasSnapshot
 
-o = ViewObs(kind, Some snap, count, more)
+o = ViewObs(kind, Some _, count, more)
 
 ──────────────────────────────────────── SAT-SNAPSHOT
 o ⊨ HasSnapshot
@@ -583,6 +642,15 @@ f ∈ Σ
 
 Це крок у бік більш строгої типізованої семантики,
 але без переходу в повноцінну dependent type систему.
+
+Окремо слід зауважити, що typed kernel тепер фіксує ще три semantic distinction-и:
+
+- user-scoped actor ≠ session-scoped actor;
+- exact actor match ≠ wildcard actor match;
+- feed snapshot ≠ home snapshot.
+
+Ці розрізнення не повинні більше відновлюватися неявно з контексту.
+Вони мають бути явними вже на kernel-рівні.
 
 Його задача — зробити інваріанти явними і обговорюваними.
 
