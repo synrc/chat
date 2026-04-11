@@ -9,7 +9,11 @@ DSL використовується як інструмент проєктув�
 ### Core DSL
 
 - [DSL-CORE](./core/DSL-CORE.md)
-- [DSL-ADVANCED](./core/DSL-ADVANCED.md)
+
+### Advanced DSL
+
+- [DSL-ADVANCED](./advanced/DSL-ADVANCED.md)
+- [DSL-INVARIANTS](./advanced/DSL-INVARIANTS.md)
 
 ### Domain DSL
 
@@ -19,7 +23,6 @@ DSL використовується як інструмент проєктув�
 - [DSL-PAGINATION](./domain/DSL-PAGINATION.md)
 - [DSL-HOME](./domain/DSL-HOME.md)
 - [DSL-VISIBILITY](./domain/DSL-VISIBILITY.md)
-- [DSL-INVARIANTS](./domain/DSL-INVARIANTS.md)
 - [DSL-MENTIONS](./domain/DSL-MENTIONS.md)
 - [DSL-PRESENCE](./domain/DSL-PRESENCE.md)
 - [DSL-GROUP](./domain/DSL-GROUP.md)
