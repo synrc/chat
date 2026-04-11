@@ -864,48 +864,80 @@ next_seq(Σ, f) = n
 fresh_id() = m
 
 ──────────────────────────────────────── POST
-Σ ⊢ Post(s, p, f, payload) ⇝ Σ + MessageExists(f, n, m, p, payload)
+Σ ⊢ Post(s, p, f, payload) ⇝
+  Σ + MessageExists {
+    feed = f;
+    pos = n;
+    id = Some m;
+    author = p;
+    payload = payload;
+  }
 
 ──────────────────────────────────────── POST-OBS
-Σ ⊢ Post(s, p, f, payload) ⇓ MessageObs(f, Some m, Some n, p, payload)
+Σ ⊢ Post(s, p, f, payload) ⇓
+  MessageObs {
+    feed = f;
+    id = Some m;
+    pos = Some n;
+    author = p;
+    payload = payload;
+  }
 
 ---
 
 ### EDIT
 
-MessageExists(f, n, m, p, old_payload) ∈ Σ
+MessageExists { feed = f; pos = n; id = Some m; author = p; payload = old_payload } ∈ Σ
 
 ──────────────────────────────────────── EDIT
-Σ ⊢ Mutate(s, p, ExistingMessage(f, m), ReplacePayload(new_payload))
-⇝ Σ[MessageExists(f, n, m, p, old_payload) := MessageExists(f, n, m, p, new_payload)]
+Σ ⊢ Mutate(
+  s,
+  p,
+  ExistingMessage { feed = f; id = m },
+  ReplacePayload(new_payload)
+) ⇝
+  Σ[
+    MessageExists { feed = f; pos = n; id = Some m; author = p; payload = old_payload }
+    :=
+    MessageExists { feed = f; pos = n; id = Some m; author = p; payload = new_payload }
+  ]
 
 ──────────────────────────────────────── EDIT-OBS
-Σ ⊢ Mutate(s, p, ExistingMessage(f, m), ReplacePayload(new_payload))
-⇓ EventObs(Edited(actor = ExactActor p, target = ExistingMessage(f, m)))
+Σ ⊢ Mutate(
+  s,
+  p,
+  ExistingMessage { feed = f; id = m },
+  ReplacePayload(new_payload)
+) ⇓
+  EventObs(Edited(actor = ExactActor p, target = ExistingMessage { feed = f; id = m }))
 
 ---
 
 ### DELETE
 
-MessageExists(f, n, m, p0, payload) ∈ Σ
+MessageExists { feed = f; pos = n; id = Some m; author = p0; payload = payload } ∈ Σ
 
 ──────────────────────────────────────── DELETE
-Σ ⊢ Mutate(s, p, ExistingMessage(f, m), Tombstone)
-⇝ Σ - MessageExists(f, n, m, p0, payload)
+Σ ⊢ Mutate(s, p, ExistingMessage { feed = f; id = m }, Tombstone)
+⇝ Σ - MessageExists { feed = f; pos = n; id = Some m; author = p0; payload = payload }
 
 ──────────────────────────────────────── DELETE-OBS
-Σ ⊢ Mutate(s, p, ExistingMessage(f, m), Tombstone)
-⇓ EventObs(Deleted(actor = ExactActor p, target = ExistingMessage(f, m)))
+Σ ⊢ Mutate(s, p, ExistingMessage { feed = f; id = m }, Tombstone)
+⇓ EventObs(Deleted(actor = ExactActor p, target = ExistingMessage { feed = f; id = m }))
 
 ---
 
 ### READ
 
-ReadBoundary(feed = f, up_to = n) = rb
+ReadBoundary { feed = f; up_to = n } = rb
 
 ──────────────────────────────────────── READ
 Σ ⊢ MarkRead(s, p, rb)
-⇝ Σ[ReadState(p, f, _) := ReadState(p, f, n)]
+⇝ Σ[
+  ReadState { principal = p; boundary = ReadBoundary { feed = f; up_to = _ } }
+  :=
+  ReadState { principal = p; boundary = rb }
+]
 
 ──────────────────────────────────────── READ-OBS
 Σ ⊢ MarkRead(s, p, rb)
@@ -961,13 +993,13 @@ GroupExists(g) ∈ Σ
 
 ──────────────────────────────────────── ROLE-ADD
 Σ ⊢ ChangeRole(s, p0, g, p, role, true)
-⇝ Σ + RoleState(principal = p, group = g, role = role)
+⇝ Σ + RoleState { principal = p; group = g; role = role }
 
-RoleState(principal = p, group = g, role = role) ∈ Σ
+RoleState { principal = p; group = g; role = role } ∈ Σ
 
 ──────────────────────────────────────── ROLE-REMOVE
 Σ ⊢ ChangeRole(s, p0, g, p, role, false)
-⇝ Σ - RoleState(principal = p, group = g, role = role)
+⇝ Σ - RoleState { principal = p; group = g; role = role }
 
 ---
 
@@ -975,13 +1007,13 @@ RoleState(principal = p, group = g, role = role) ∈ Σ
 
 ──────────────────────────────────────── MOD-BAN
 Σ ⊢ ChangeModeration(s, p, q, scope, true)
-⇝ Σ + RelationState(src = p, rel = Moderation, dst = q, scope = scope)
+⇝ Σ + RelationState { src = p; kind = Moderation; dst = q; scope = scope }
 
-RelationState(src = p, rel = Moderation, dst = q, scope = scope) ∈ Σ
+RelationState { src = p; kind = Moderation; dst = q; scope = scope } ∈ Σ
 
 ──────────────────────────────────────── MOD-UNBAN
 Σ ⊢ ChangeModeration(s, p, q, scope, false)
-⇝ Σ - RelationState(src = p, rel = Moderation, dst = q, scope = scope)
+⇝ Σ - RelationState { src = p; kind = Moderation; dst = q; scope = scope }
 
 ---
 
@@ -989,7 +1021,7 @@ RelationState(src = p, rel = Moderation, dst = q, scope = scope) ∈ Σ
 
 ### Message observed
 
-o = MessageObs(f, id, pos, author, payload)
+o = MessageObs { feed = f; id = id; pos = pos; author = author; payload = payload }
 
 ──────────────────────────────────────── SAT-MSG
 o ⊨ Seen(o)
@@ -1007,7 +1039,7 @@ o ⊨ Seen(o)
 
 ### HasMore
 
-o = ViewObs(kind, snap, count, more)
+o = ViewObs { kind = kind; snapshot = snap; count = count; has_more = more }
 
 ──────────────────────────────────────── SAT-MORE
 o ⊨ HasMore(more)
@@ -1016,7 +1048,7 @@ o ⊨ HasMore(more)
 
 ### HasSnapshot
 
-o = ViewObs(kind, Some _, count, more)
+o = ViewObs { kind = kind; snapshot = Some _; count = count; has_more = more }
 
 ──────────────────────────────────────── SAT-SNAPSHOT
 o ⊨ HasSnapshot
