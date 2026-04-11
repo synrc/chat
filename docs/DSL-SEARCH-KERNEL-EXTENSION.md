@@ -466,7 +466,6 @@ page(P, limit(q), page(q)) = R
 
 ──────────────────────────────────────── SEARCH-STATE
 (Σ, Π) ⊢ Search(session, actor, q) ⇝ Σ
-```
 
 Тобто search result породжується як observation,
 але state не змінюється.
