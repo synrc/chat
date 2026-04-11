@@ -464,7 +464,6 @@ cur < req
 
 ──────────────────────────────────────── ABAC-FIELD-HIDDEN
 (Σ, Π) ⊢ VisibleField(m, field, Hidden)
-```
 
 ---
 
