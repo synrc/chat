@@ -433,6 +433,15 @@ BEGIN
 
     InboxMethod ::= ENUMERATED { get (1), erase (2), ...}
 
+    -- Legacy transport envelope.
+    --
+    --   * Inbox збережений тільки для backward compatibility з існуючим кодом.
+    --
+    --   * Canonical wire-path для inbox semantics у v2:
+    --       Query.payload.inbox -> InboxQuery / InboxAnswer
+    --
+    --   * Нові реалізації не повинні вводити окрему top-level semantics
+    --     через цей тип.
     Inbox ::= SEQUENCE {
        id Binary,
        vsn Version,
@@ -1214,8 +1223,17 @@ BEGIN
 
 
     EventQuery ::= SEQUENCE {
-       after [0] INTEGER OPTIONAL,
-       limit [1] INTEGER OPTIONAL,
+       after    [0] INTEGER OPTIONAL,
+       limit    [1] INTEGER OPTIONAL,
+       -- snapshot:
+       --
+       --   * opaque replay boundary після Inbox/Home snapshot recovery.
+       --
+       --   * after і snapshot є альтернативними replay anchor.
+       --
+       --   * after використовується для seq-based replay continuation.
+       --   * snapshot використовується для snapshot-based recovery boundary.
+       snapshot [2] Binary OPTIONAL,
        ...
     }
 
@@ -1256,20 +1274,18 @@ BEGIN
     --   * transport/wire form може лишатися LDAP-shaped
     --   * semantic model для клієнта є search over visible message/feed scope
     --
-    SearchStatus ::= ENUMERATED { ok (0), ...}
-
-    -- TODO:
-    --   * вирішити, чи SearchStatus справді потрібен як окремий тип
-    --     у протоколі
+    -- Legacy backend status type.
     --
-    --   * якщо success/error повністю кодуються через:
+    --   * У preferred v2 model success/error для search кодується через:
     --       Query(type=result)
     --       Query(type=error, code=...)
-    --     тоді SearchStatus можна прибрати як зайвий
     --
-    --   * якщо потрібен окремий backend/service status,
-    --     треба явно визначити, де саме він повертається
-    --     (наприклад у SearchAnswer)
+    --   * SearchStatus збережений тільки для backward compatibility
+    --     з існуючими generated/client bindings.
+    --
+    --   * Нові protocol flows не повинні покладатися на нього
+    --     як на окремий status channel.
+    SearchStatus ::= ENUMERATED { ok (0), ...}
 
     Criteria ::= ENUMERATED { equal (0), notequal (1), like (2), ...}
 
@@ -1882,10 +1898,20 @@ BEGIN
     --
     --   * ban/unban не повинні змінювати Subscription або Roster напряму.
     --
+    -- Scope:
+    --
+    --   * Якщо feed відсутній, restriction є глобальною.
+    --
+    --   * Якщо feed=group/chan/... заданий,
+    --     restriction застосовується в межах цього scope.
+    --
+    --   * Для group-scoped moderation canonical case є feed=group.
+    --
     ModerationQuery ::= SEQUENCE {
        op     ModerationOp,
        actor  [0] Binary OPTIONAL,
        target [1] Binary OPTIONAL,
+       feed   [2] MessageFeed OPTIONAL,
        ...
     }
 
@@ -2032,7 +2058,7 @@ BEGIN
     --
     --   * MessageFeed.group є message stream цієї conference.
     --
-    --   * Membership і доступ до group feed не є implicit полями Conference,
+    --   * Membership і доступ до group feed не є canonical implicit полями Conference,
     --     а визначаються через Member relation і server-side authorization.
     --
     --   * unread / mention-derived дані належать до feed view layer,
@@ -2048,6 +2074,15 @@ BEGIN
        links SEQUENCE OF link Binary,
        description Binary,
        settings SEQUENCE OF feature Feature,
+       -- Deprecated derived projections.
+       --
+       --   * members/admins збережені для backward compatibility
+       --     з існуючими bindings і legacy read-model.
+       --
+       --   * Вони не є джерелом істини для membership.
+       --
+       --   * Canonical source of truth для membership:
+       --       MemberQuery / MemberAnswer
        members SEQUENCE OF member Member,
        admins SEQUENCE OF member Member,
        data SEQUENCE OF fileId Binary OPTIONAL,
