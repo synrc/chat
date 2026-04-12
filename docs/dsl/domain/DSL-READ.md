@@ -89,7 +89,7 @@ expect read cursor updated
 
 - цей сценарій перевіряє cursor semantics
 - `send read for last` означає cursor update для read до seq останнього отриманого повідомлення
-- повторний read з меншим seq повинен ігноруватись
+- якщо explicit read boundary менша за поточну, це означає rewind cursor
 
 ---
 
