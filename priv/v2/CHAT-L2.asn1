@@ -1007,8 +1007,15 @@ BEGIN
     --   * Home НЕ замінює:
     --       - Inbox (per-feed snapshot)
     --       - Roster (relation view)
+    --       - Member list / role directory для group
     --
     --   * Home є агрегованим bootstrap/view ресурсом.
+    --
+    --   * Home повинен нести тільки мінімальний обсяг даних,
+    --     потрібний для першого рендеру і робочого UI context.
+    --
+    --   * Детальний roster/member/conference state клієнт має
+    --     дозавантажувати окремими Query у міру потреби.
     --
     -- Home Query Model
     --
@@ -2034,6 +2041,10 @@ BEGIN
     --   * owner Conference також вважається валідним member
     --     для доступу до group feed.
     --
+    --   * Детальний склад учасників group і їхні ролі
+    --     клієнт повинен отримувати через MemberQuery,
+    --     а не як вкладені списки всередині Conference.
+    --
     --   * Timing semantics для add/remove визначається загальними
     --     правилами Query / Command Evaluation Semantics.
     --
@@ -2104,6 +2115,11 @@ BEGIN
     --
     --   * lastmsg також не є частиною Conference state.
     --
+    --   * Conference не повинен нести повні members/admins списки:
+    --       - це роздуває bootstrap/view payload
+    --       - дублює Member source of truth
+    --       - не потрібне для першого UI render
+    --
     Conference ::= SEQUENCE {
        id Binary,
        vsn Version,
@@ -2112,17 +2128,6 @@ BEGIN
        links SEQUENCE OF link Binary,
        description Binary,
        settings SEQUENCE OF feature Feature,
-       -- Deprecated derived projections.
-       --
-       --   * members/admins збережені для backward compatibility
-       --     з існуючими bindings і legacy read-model.
-       --
-       --   * Вони не є джерелом істини для membership.
-       --
-       --   * Canonical source of truth для membership:
-       --       MemberQuery / MemberAnswer
-       members SEQUENCE OF member Member,
-       admins SEQUENCE OF member Member,
        data SEQUENCE OF fileId Binary OPTIONAL,
        type ConferenceType,
        tos Binary,
