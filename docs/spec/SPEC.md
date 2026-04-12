@@ -103,6 +103,23 @@ Query є єдиним механізмом для:
 - result
 - error. 
 
+### Transport batching
+
+Transport framing може нести або один packet, або batch із кількох packet.
+
+Batch:
+- є transport/coalescing optimization
+- зберігає порядок packet усередині batch
+- не є atomic transaction
+- не створює shared snapshot або shared command context
+
+Практично це використовується для:
+- client-side pipelining кількох request
+- server-side coalescing кількох event/result packet
+
+Якщо потрібна compound або atomic semantics, вона повинна бути змодельована
+окремою protocol feature, а не самим batch envelope.
+
 ### Authority
 
 Authority відповідає за:

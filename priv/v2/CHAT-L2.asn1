@@ -2328,6 +2328,22 @@ BEGIN
     --
     --   * Batch є transport-оптимізацією і не змінює семантику
     --     окремих Message/Event/Query.
+    --
+    --   * Batch не є atomic transaction:
+    --       - failure одного packet не скасовує інші packet у batch
+    --       - batch не створює shared snapshot або shared command context
+    --
+    --   * Client MAY використовувати batch для:
+    --       - pipelined Query request
+    --       - coalesced Message / Query send
+    --
+    --   * Server MAY використовувати batch для:
+    --       - кількох Event у одному transport frame
+    --       - кількох Query(result|error) у одному transport frame
+    --
+    --   * Якщо потрібна атомарність або compound semantics,
+    --     це повинно моделюватись окремою protocol feature,
+    --     а не самим batch framing.
     CHATBody ::= CHOICE {
        single [1] CHATProtocol,
        batch  [2] SEQUENCE OF packet CHATProtocol
