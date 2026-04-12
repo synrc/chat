@@ -1859,6 +1859,9 @@ BEGIN
     --
     --   * Moderation не повинна неявно змінювати Subscription або Roster.
     --
+    --   * Group-scoped moderation також не повинна неявно створювати
+    --     або видаляти Member relation.
+    --
     --   * Timing semantics для ban/unban визначається загальними
     --     правилами Query / Command Evaluation Semantics.
     --
@@ -1900,13 +1903,16 @@ BEGIN
 
     ModerationItem ::= SEQUENCE {
        actor   Binary,
-       target  Binary
+       target  Binary,
+       feed    [0] MessageFeed OPTIONAL,
+       ...
     }
 
     -- ban/unban зазвичай повертають item
     -- list повертає items
     --
     --   * item означає конкретну moderation restriction
+    --     разом із її optional scope
     --   * items означає snapshot/list moderation restrictions
     --     у межах поточного query context
     --
