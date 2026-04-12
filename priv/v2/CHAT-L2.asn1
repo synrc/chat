@@ -904,11 +904,12 @@ BEGIN
     --   * Cursor update є client-originated command через Query,
     --     а server застосовує його до effective cursor state.
     --
-    --   * Для read використовується монотонне правило:
+    --   * Для read використовується explicit cursor boundary:
     --
-    --       effective_cursor(user, feed, read) = max(current, seq)
+    --       effective_cursor(user, feed, read) = seq
     --
-    --   * update з меншим seq не повинен зменшувати поточний cursor.
+    --   * Сервер MAY дозволяти rewind/read-backward
+    --     як явне переміщення cursor на менший boundary.
     --
     --   * Після успішного застосування server MAY згенерувати
     --     MessageEvent(type=read) як факт уже застосованого стану.
@@ -925,13 +926,11 @@ BEGIN
     --
     --   * CursorCore не є replay API; replay event stream лишається в EventCore.
     --
-    --   * cursor rewind / mark unread не входить до базової моделі.
+    --   * cursor rewind / mark unread входить до базової моделі
+    --     як explicit CursorCore update на менший seq boundary.
     --
-    --   TODO:
-    --     визначити semantics для unread / cursor rewind:
-    --       - чи дозволяється backward move effective cursor
-    --       - як взаємодіє з read (монотонність vs rewind)
-    --       - чи генерується окремий Event
+    --   * Після rewind server MAY згенерувати MessageEvent(type=read)
+    --     з новим effective readSeq як фактом already-applied state.
     --
     CursorKind ::= ENUMERATED {
        read (1),

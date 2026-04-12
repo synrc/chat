@@ -1760,7 +1760,7 @@ class DSLRunner:
 
         key = (session.user, feed)
         prev = self.world.read_cursors.get(key, 0)
-        self.world.read_cursors[key] = max(prev, seq)
+        self.world.read_cursors[key] = seq
         updated = self.world.read_cursors[key] != prev
         self.world.recent_event_fact = {
             "family": "message",
@@ -2015,7 +2015,7 @@ class DSLRunner:
     def _update_read_cursor(self, user: str, feed: str, seq: int) -> None:
         key = (user, feed)
         current = self.world.read_cursors.get(key, 0)
-        self.world.read_cursors[key] = max(current, seq)
+        self.world.read_cursors[key] = seq
         updated = self.world.read_cursors[key] != current
 
         for session in self.world.sessions.values():

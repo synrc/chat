@@ -124,10 +124,10 @@ expect read cursor updated
 - read cursor синхронізується між усіма session користувача
 - unread є user-scoped і не повинен відрізнятись між session
 ---
-## READ-5. Read backward ignored
+## READ-5. Read backward rewinds cursor
 
 ```
-scenario read backward ignored
+scenario read backward rewinds cursor
 
 session alice
 connect
@@ -155,10 +155,11 @@ session bob
 query cursor read feed private:alice up to 1
 
 session bob
-expect read cursor unchanged
+expect read cursor updated
 ```
 
-- update з меншим seq не повинен зменшувати read cursor
+- explicit read update з меншим seq може відмотати read cursor назад
+- unread boundary відповідно теж повертається назад
 
 
 ## READ-6. Read after reconnect

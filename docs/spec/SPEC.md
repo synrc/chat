@@ -923,9 +923,9 @@ read_cursor(user, feed) = N
 
 Read:
 
-- є монотонним (не зменшується)
 - не залежить від повноти delivery або replay
 - може обганяти фактичну доставку повідомлень у конкретну session
+- може бути явно відмотаний назад через cursor rewind
 
 Unread:
 - є derived view відносно user-level read cursor
@@ -938,10 +938,9 @@ Unread:
 
 ### Read invariants
 
-- read cursor є монотонним:
-  нове значення не може бути меншим за попереднє
+- read cursor є explicit user-controlled boundary, а не незворотним ack
 
-- повторний read з меншим seq ігнорується
+- повторний read з меншим seq є валідним rewind cursor state
 
 - read cursor не повинен ламатись через:
     - reorder event delivery
@@ -966,7 +965,7 @@ Read cursor відображає лише observed boundary, а не повни�
 
 Якщо клієнт отримав лише частину подій:
 
-- read cursor оновлюється до максимально спостереженого `seq`
+- read cursor може оновлюватись до будь-якого explicit observed `seq`
 - події з більшим `seq`, які ще не були доставлені, лишаються unread
 
 Формально:
