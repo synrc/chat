@@ -431,26 +431,6 @@ BEGIN
     Groupbox ::= SEQUENCE { channel Binary }
     Mailbox ::= SEQUENCE { channel Binary }
 
-    InboxMethod ::= ENUMERATED { get (1), erase (2), ...}
-
-    -- Legacy transport envelope.
-    --
-    --   * Inbox збережений тільки для backward compatibility з існуючим кодом.
-    --
-    --   * Canonical wire-path для inbox semantics у v2:
-    --       Query.payload.inbox -> InboxQuery / InboxAnswer
-    --
-    --   * Нові реалізації не повинні вводити окрему top-level semantics
-    --     через цей тип.
-    Inbox ::= SEQUENCE {
-       id Binary,
-       vsn Version,
-       session Binary,
-       type InboxMethod,
-       feed MessageFeed,
-       messages [0] SEQUENCE OF message Message OPTIONAL,
-        ... }
-
     InboxOp ::= ENUMERATED {
        get   (1),
        erase (2),
@@ -1299,27 +1279,13 @@ BEGIN
        result  [2] EventAnswer
     }
 
-    -- 05 Search (LDAP-backed query/view extension)
+    -- 05 Search (query / view extension)
     --
-    -- Search у протоколі використовує LDAP-oriented request shape,
-    -- але на chat semantics рівні трактується як read-only query/view layer.
+    -- Search у протоколі є read-only query/view layer для visible
+    -- message/feed scope.
     --
-    -- Тобто:
-    --   * transport/wire form може лишатися LDAP-shaped
-    --   * semantic model для клієнта є search over visible message/feed scope
-    --
-    -- Legacy backend status type.
-    --
-    --   * У preferred v2 model success/error для search кодується через:
-    --       Query(type=result)
-    --       Query(type=error, code=...)
-    --
-    --   * SearchStatus збережений тільки для backward compatibility
-    --     з існуючими generated/client bindings.
-    --
-    --   * Нові protocol flows не повинні покладатися на нього
-    --     як на окремий status channel.
-    SearchStatus ::= ENUMERATED { ok (0), ...}
+    -- LDAP або інший backend MAY використовуватись для реалізації search,
+    -- але їхня request/result shape не є частиною зовнішнього wire-контракту.
 
     Criteria ::= ENUMERATED { equal (0), notequal (1), like (2), ...}
 
@@ -1743,8 +1709,9 @@ BEGIN
        nonexistent (3), ...
     }
 
-    -- lastmsg не є частиною Person state.
-    -- View-дані повинні передаватися через Query (Inbox/Search) або Event.
+    -- lastmsg і presence не є частиною Person state.
+    -- View-дані повинні передаватися через Query (Inbox/Search/Presence)
+    -- або Event.
     Person ::= SEQUENCE {
        id Binary,
        nickname Binary,
@@ -1752,7 +1719,6 @@ BEGIN
        names SEQUENCE OF name Binary,
        phone Binary,
        surnames SEQUENCE OF name Binary,
-       presence Presence,
        update INTEGER,
        created INTEGER,
        settings SEQUENCE OF feature Feature OPTIONAL,
@@ -1782,8 +1748,9 @@ BEGIN
     PersonItem ::= SEQUENCE {
        id       Binary,
        nickname Binary,
-       presence Presence,
-       status   PersonStatus
+       presence [0] Presence OPTIONAL,
+       status   [1] PersonStatus OPTIONAL,
+       ...
     }
 
     -- get/update зазвичай повертають item
@@ -1984,7 +1951,6 @@ BEGIN
        alias Binary,
        update INTEGER,
        settings SEQUENCE OF feature Feature,
-       presence Presence,
        status MemberStatus, ... }
 
     MemberOp ::= ENUMERATED {
@@ -2027,10 +1993,11 @@ BEGIN
     }
 
     MemberItem ::= SEQUENCE {
-       actor   Binary,
-       feed    MessageFeed,
-       status  MemberStatus,
-       presence Presence OPTIONAL
+       actor    Binary,
+       feed     MessageFeed,
+       status   MemberStatus,
+       presence [0] Presence OPTIONAL,
+       ...
     }
 
     -- get/add/update зазвичай повертають item
