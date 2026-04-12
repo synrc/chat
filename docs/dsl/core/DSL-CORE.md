@@ -715,7 +715,7 @@ DSL зазвичай використовує коротку форму `seq`,
 - `expect not error unauthorized` означає, що запит не завершується auth-відмовою
 - `expect more` означає `expect hasMore true`
 - `expect not more` означає `expect hasMore false`
-- `expect snapshot` означає, що inbox result містить recovery anchor (`snapshotSeq`)
+- `expect snapshot` означає, що inbox result містить recovery anchor (`snapshot`)
 - `expect empty replay` означає, що replay result не містить подій (`events = 0`)
 - `expect no duplicates` означає, що результат не містить елементів, уже покритих попереднім snapshot або попередньою сторінкою replay
 - `expect no gaps` означає, що між попереднім recovery/snapshot boundary і поточним result немає втраченої ділянки історії

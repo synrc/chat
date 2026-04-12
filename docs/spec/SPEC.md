@@ -426,32 +426,36 @@ View є результатом Query і може бути:
 
 ### View types
 
-У протоколі використовуються три типи view:
+У протоколі використовуються два типи view:
 
 #### Snapshot view
 
 - inbox
 - home
-- roster
 
 Властивості:
 
 - представляє агрегований стан на момент запиту
-- може використовуватись як recovery anchor (наприклад home)
+- може використовуватись як recovery anchor (наприклад inbox або home)
 - може мати snapshot boundary
 
 ---
 
-#### Projection view
+#### Projection / List view
 
+- roster
 - search
+- members
+- moderation
+- subscriptions
+- conference list/get
 
 Властивості:
 
-- є ad-hoc projection над існуючим state
+- є projection або list/view над існуючим state
 - не має snapshot anchor
 - не використовується для recovery
-- може повертати підмножину payload
+- може повертати підмножину payload або paginated items
 
 ---
 
@@ -587,7 +591,7 @@ Home повертає `shared snapshot`, який є recovery anchor
 
 - є узгодженим зрізом (consistent cut) стану
 - покриває всі feed, включені в home result
-- використовується як boundary для replay (`after = snapshot`)
+- використовується як opaque boundary для replay (`snapshot = anchor`)
 
 ---
 
@@ -878,7 +882,7 @@ Replay (`after + nextAfter`):
 Для консистентного recovery:
 
 - клієнт повинен використовувати snapshot як anchor
-- і переходити до replay (`after = snapshot`)
+- і переходити до replay (`snapshot = anchor`)
 
 ---
 
@@ -1178,7 +1182,13 @@ Presence і typing передаються через Event.
 - debounce presence
 - aggregate read/delivered events
 
-Ці оптимізації не змінюють семантику стану, а лише оптимізують доставку. 
+`typing` є transient runtime event, а не stable state snapshot.
+
+Тобто:
+- `typing` не повинен зберігатися в home або інших stable view
+- `typing` не повинен повторно з'являтися в replay без нового runtime source
+
+Ці оптимізації не змінюють семантику стану, а лише оптимізують доставку.
 
 ## Federation and Routing
 
