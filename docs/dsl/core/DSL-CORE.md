@@ -588,6 +588,7 @@ Protocol source of truth для identity лишається окремим ві�
 - Message = intent / payload
 - Event = runtime truth для mutation (edit/delete)
 - Query.payload.mutation = canonical command form для edit/delete над існуючим `Message.id`
+  з field-level `patch`, придатним для ABAC/policy evaluation
 
 При цьому DSL вже фіксує protocol-observable semantics:
 - mutation адресує існуюче message state;

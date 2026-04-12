@@ -435,10 +435,22 @@ BEGIN
        delete (2), ...
     }
 
+    FieldPatch ::= SEQUENCE {
+       name  [0] Binary,
+       value [1] Binary OPTIONAL,
+       clear [2] BOOLEAN OPTIONAL,
+       ...
+    }
+
+    MessagePatch ::= SEQUENCE {
+       fields [0] SEQUENCE OF field FieldPatch OPTIONAL,
+       ...
+    }
+
     MessageMutationQuery ::= SEQUENCE {
        op        MessageMutationOp,
        messageId [0] Binary,
-       payload   [1] ContentInfo OPTIONAL,
+       patch     [1] MessagePatch OPTIONAL,
        ...
     }
 
@@ -446,15 +458,18 @@ BEGIN
     --
     --   * edit:
     --       - messageId обов'язковий
-    --       - payload обов'язковий
+    --       - patch обов'язковий
     --
     --   * delete:
     --       - messageId обов'язковий
-    --       - payload повинен бути відсутній
+    --       - patch повинен бути відсутній
+    --
+    --   * patch описує field-level mutation intent і може оцінюватись
+    --     через field-aware ABAC / visibility policy.
     --
     MessageMutationAnswer ::= SEQUENCE {
        messageId [0] Binary OPTIONAL,
-       ...
+        ...
     }
 
     MessageMutationExtension ::= CHOICE {
