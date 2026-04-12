@@ -1,4 +1,6 @@
-# DSL Payload
+> See DSL-CORE.md for language definition
+
+# DSL-PAYLOAD
 
 ## Structured message payload
 ```

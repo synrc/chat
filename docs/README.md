@@ -40,6 +40,9 @@
 - [DSL-ADVANCED](./dsl/advanced/DSL-ADVANCED.md)
 - [DSL-INVARIANTS](./dsl/advanced/DSL-INVARIANTS.md)
 
+Примітка:
+- version negotiation і federation routing зараз описані в `DSL-ADVANCED`
+
 ### Domain
 
 - [DSL-ROSTER](./dsl/domain/DSL-ROSTER.md)
@@ -70,8 +73,8 @@
 - group
 - moderation
 - cross-layer invariants
-- version
-- federation
+- version negotiation
+- federation routing
 
 ---
 

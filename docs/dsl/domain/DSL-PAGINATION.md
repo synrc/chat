@@ -1,4 +1,7 @@
 > See DSL-CORE.md for language definition
+
+# DSL-PAGINATION
+
 ## PAGE-1. Pagination
 
 ```
@@ -296,4 +299,3 @@ expect not more
 ```
 - коли немає нових подій, replay повертає пустий результат
 ---
-

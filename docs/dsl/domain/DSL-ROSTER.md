@@ -1,6 +1,6 @@
-# DSL Roster / Relation Scenarios
-
 > See DSL-CORE.md for language definition
+
+# DSL-ROSTER
 
 ## ROSTER-1. Add to roster
 

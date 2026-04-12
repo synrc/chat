@@ -1,6 +1,6 @@
 > See DSL-CORE.md for language definition
 
-# DSL: ABAC / Access Policy
+# DSL-ABAC
 
 Цей файл описує сценарії перевірки policy layer (ABAC),
 який працює поверх protocol model.

@@ -1,4 +1,4 @@
-# DSL Scenarios
+# DSL-CORE
 
 ## Purpose
 

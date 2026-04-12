@@ -1,4 +1,7 @@
 > See DSL-CORE.md for language definition
+
+# DSL-AUTH
+
 ## AUTH-1. Basic authenticate
 
 ```
@@ -246,4 +249,3 @@ expect not more
 
 - після `auth resume` session повинна бачити той самий read/replay boundary
 - reconnect/resume не повинні скидати read cursor semantics
-

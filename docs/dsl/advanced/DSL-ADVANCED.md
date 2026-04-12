@@ -1,4 +1,7 @@
 > See DSL-CORE.md for language definition
+
+# DSL-ADVANCED
+
 ## Conflict semantics
 
 - authorization / policy / membership перевіряються за поточним server state
