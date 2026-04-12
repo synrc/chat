@@ -460,11 +460,11 @@ BEGIN
     --       - дані можуть змінюватись між запитами
     --       - можливі дублікати або пропуски
     --
-    --   * snapshotSeq є feed-scoped snapshot boundary
+    --   * snapshot є opaque feed-scoped replay boundary
     --     для цього InboxAnswer.
     --
     --   * Якщо snapshot повертається у кількох сторінках,
-    --     snapshotSeq визначається на першій сторінці і лишається
+    --     він визначається на першій сторінці і лишається
     --     спільним для всіх continue у межах цього snapshot.
     --
     --   * Recovery / replay semantics для after / nextAfter
@@ -472,7 +472,7 @@ BEGIN
     --
     -- Snapshot vs Read Cursor
     --
-    --   * snapshotSeq не є read cursor.
+    --   * snapshot не є read cursor.
     --
     --   * Inbox snapshot не повинен автоматично оновлювати read state.
     --
@@ -482,7 +482,7 @@ BEGIN
        items       [0] SEQUENCE OF item InboxItem OPTIONAL,
        continue    [1] Continuation OPTIONAL,
        hasMore     [2] BOOLEAN OPTIONAL,
-       snapshotSeq [3] INTEGER OPTIONAL,
+       snapshot    [3] Binary OPTIONAL,
        ...
     }
 
@@ -582,7 +582,18 @@ BEGIN
     --   typing:
     --     → XEP-0085 (Chat State Notifications)
     --
-
+    -- Presence Event Semantics
+    --
+    --   * online/offline є aggregate presence observations.
+    --
+    --   * typing є transient runtime event, а не stable presence state.
+    --
+    --   * typing не повинен зберігатися в Home або інших stable snapshot/view
+    --     як поточний стан.
+    --
+    --   * typing не повинен повторно з'являтися в replay без нового
+    --     runtime source event.
+    --
     PresenceEventType ::= ENUMERATED {
        online   (1),
        offline  (2),
@@ -714,9 +725,9 @@ BEGIN
     --       - Inbox Query
     --       - або інші view-запити
     --
-    --   * Якщо InboxAnswer містить snapshotSeq,
+    --   * Якщо InboxAnswer містить snapshot,
     --     клієнт MAY продовжити recovery через Event replay
-    --     з after = snapshotSeq.
+    --     з snapshot = snapshot.
     --
     --   * Клієнт НЕ повинен припускати повноту даних,
     --     якщо seq має розрив.
