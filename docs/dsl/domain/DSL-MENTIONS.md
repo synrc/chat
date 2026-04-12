@@ -66,9 +66,9 @@ Mention вважається active only if:
 
 ---
 
-## MENT-1. Mention appears in home after incoming mentioned message
+## MENT-1. Mention appears in home after incoming mention message
 ```
-scenario mention appears in home after incoming mentioned message
+scenario mention appears in home after incoming mention message
 
 session alice
 connect

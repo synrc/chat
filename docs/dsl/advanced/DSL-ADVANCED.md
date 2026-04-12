@@ -156,7 +156,7 @@ edit message id m1id body "m1 edited"
 
 - `id` є protocol-level identity
 - `id` не дорівнює `ref`
-- exact mutation form буде визначена окремо
+- exact mutation form узгоджується з canonical `Query.payload.mutation`
 - цей сценарій фіксує semantic distinction між `ref` і captured protocol identity
 - runner підтримує цей canonical flow через `capture id as`
 ---

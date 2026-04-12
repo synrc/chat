@@ -594,9 +594,8 @@ BEGIN
     --   * MessageEvent(type=read) є server-emitted фактом
     --     уже застосованого read state.
     --
-    --   * readSeq є джерелом істини для read cursor у feed:
-    --
-    --         effective_read_cursor(user, feed) = max(current, readSeq)
+    --   * readSeq відображає already-applied effective read cursor у feed,
+    --     включно з можливим rewind.
     --
     --   * messageId для read є тільки optional auxiliary reference.
     --
