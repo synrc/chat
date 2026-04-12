@@ -1748,8 +1748,9 @@ BEGIN
     PersonItem ::= SEQUENCE {
        id       Binary,
        nickname Binary,
-       presence [0] Presence OPTIONAL,
-       status   [1] PersonStatus OPTIONAL,
+       avatar   [0] Binary OPTIONAL,
+       presence [1] Presence OPTIONAL,
+       status   [2] PersonStatus OPTIONAL,
        ...
     }
 
@@ -2131,10 +2132,12 @@ BEGIN
     }
 
     ConferenceItem ::= SEQUENCE {
-       id    Binary,
-       name  Binary,
-       type  ConferenceType,
-       status ConferenceStatus
+       id          Binary,
+       name        Binary,
+       description [0] Binary OPTIONAL,
+       type        ConferenceType,
+       status      ConferenceStatus,
+       ...
     }
 
     ConferenceExtension ::= CHOICE {
