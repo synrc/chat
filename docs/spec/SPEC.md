@@ -1,5 +1,7 @@
 # SPEC
 
+CHAT v2 Specification
+
 ## Overview
 
 CHAT v2 — це messaging/pub-sub протокол з чітким розділенням між transport-пакетами, runtime-подіями, state/view моделлю та auth/session management. Протокол побудований так, щоб одна семантика не мала кількох паралельних wire-шляхів. 

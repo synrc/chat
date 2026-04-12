@@ -1,5 +1,7 @@
 # DSL-TYPED-KERNEL-REFINEMENT
 
+Typed refinement семантичного ядра DSL
+
 ## Навіщо цей варіант
 
 Цей документ є уточненням до DSL-SEMANTIC-KERNEL.
