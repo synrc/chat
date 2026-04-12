@@ -1,4 +1,4 @@
-# Семантичне ядро DSL
+# DSL-SEMANTIC-KERNEL
 
 ## Навіщо це потрібно
 
@@ -618,4 +618,3 @@ Satisfies ([], HasSnapshot)
 - що тут ще лишилось занадто surface-like;
 - що треба винести на elaboration layer;
 - що, навпаки, бракує у самому kernel.
-

@@ -1,4 +1,4 @@
-# CHAT v2 Specification
+# SPEC
 
 ## Overview
 
