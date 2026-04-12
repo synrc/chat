@@ -2,7 +2,7 @@
 
 # DSL-PAGINATION
 
-Pagination semantics для inbox, home і replay queries
+Сценарії для pagination у inbox, home, event stream і replay queries
 
 ## PAGE-1. Pagination
 

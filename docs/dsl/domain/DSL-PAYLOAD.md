@@ -2,7 +2,7 @@
 
 # DSL-PAYLOAD
 
-Structured payload semantics для send, expect, replay і home views
+Сценарії для structured payload, validation, replay, identity і home propagation
 
 ## Structured message payload
 ```

@@ -1,7 +1,7 @@
 > See DSL-CORE.md for language definition
 # DSL-GROUP
 
-Group semantics: lifecycle, membership і доступ до group feed
+Сценарії для group lifecycle, membership, queries і доступу до group feed
 
 ## GROUP-1. Create group
 ```

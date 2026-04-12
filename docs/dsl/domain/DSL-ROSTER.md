@@ -2,7 +2,7 @@
 
 # DSL-ROSTER
 
-Roster і relation semantics для direct communication flows
+Сценарії для roster/relation state і direct messaging flows
 
 ## ROSTER-1. Add to roster
 

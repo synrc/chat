@@ -2,7 +2,7 @@
 
 # DSL-HOME
 
-Home/bootstrap view semantics і shared snapshot boundary
+Сценарії для home bootstrap, feed previews, shared snapshot і policy interactions
 
 Цей файл описує view semantics для home/bootstrap layer:
 

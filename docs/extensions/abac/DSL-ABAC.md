@@ -2,7 +2,7 @@
 
 # DSL-ABAC
 
-Сценарії перевірки policy layer для access control і visibility
+Сценарії для ABAC access control, visibility filtering і precedence rules
 
 Цей файл описує сценарії перевірки policy layer (ABAC),
 який працює поверх protocol model.

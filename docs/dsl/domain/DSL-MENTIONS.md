@@ -2,7 +2,7 @@
 
 # DSL-MENTIONS
 
-Mention-derived view semantics у home, feed і unread model
+Сценарії для mention-derived state у home/feed view і relation до unread/read boundary
 
 Цей файл описує mention-derived view semantics:
 

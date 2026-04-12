@@ -1,6 +1,6 @@
 # DSL-CORE
 
-Базова модель сценарного DSL для опису протоколу
+Базова сценарна мова: canonical/exact syntax, session context і reference model
 
 ## Purpose
 

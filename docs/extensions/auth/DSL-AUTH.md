@@ -2,7 +2,7 @@
 
 # DSL-AUTH
 
-Сценарії authentication, session lifecycle і token semantics
+Сценарії для authenticate, resume, renew, revoke і session continuity semantics
 
 ## AUTH-1. Basic authenticate
 

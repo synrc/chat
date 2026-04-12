@@ -2,7 +2,7 @@
 
 # DSL-INVARIANTS
 
-Cross-layer invariants між protocol state, view semantics і policy layer
+Сценарні cross-layer invariants для read, replay, moderation і ABAC visibility
 
 Цей файл описує cross-layer invariants між:
 

@@ -2,7 +2,7 @@
 
 # DSL-ADVANCED
 
-Складні сценарії, edge cases і додаткові семантичні уточнення
+Сценарії для mutation ordering, moderation edge cases, version negotiation і federation semantics
 
 ## Conflict semantics
 
