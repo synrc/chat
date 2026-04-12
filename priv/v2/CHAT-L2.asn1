@@ -1697,7 +1697,7 @@ BEGIN
        ...
     }
 
-    -- 07 Roster (LDAP /People, /Channels, /Topics and /Servers user sub-folders)
+    -- 07 Roster (contact / relation view)
 
     -- Presence як snapshot-стан для roster/member.
     -- Runtime presence-події (online/offline/typing) передаються через Event.
@@ -1797,18 +1797,7 @@ BEGIN
 
     Server ::= SEQUENCE { service Binary, port INTEGER, host Binary }
 
-    -- RosterStatus описує лише стан roster як ресурсу.
-    -- Command, mutation і lookup більше не живуть у Roster:
-    --   get/create/del/remove/add/update/list/patch -> Query
-    --   nick/search/contact/lastmsg                 -> Query / view
-
-    RosterStatus ::= ENUMERATED {
-       active   (1),
-       archived (2),
-       deleted  (3), ...
-    }
-
-    -- Roster є агрегованим snapshot/view ресурсом.
+    -- Roster є contact-oriented snapshot/view.
     -- Операції над roster передаються через Query.
     -- Runtime-події не живуть у Roster як моделі.
     --
@@ -1834,17 +1823,9 @@ BEGIN
     --   * Якщо сервер підтримує relation-gated messaging,
     --     ця policy повинна бути явно зафіксована окремо.
     --
-    -- TODO (roster vs directory boundary):
-    --
-    --   Поточна форма Roster успадковує directory-style projection
-    --   (people/topics/channels/servers), що зручно для LDAP-backed backend.
-    --
-    --   Обговорити, чи повинен зовнішній CHAT protocol:
-    --     * лишити roster як багатосекційний directory snapshot
-    --     * чи звузити його до більш chat-native roster/contact view
-    --
-    --   Якщо LDAP лишається внутрішнім backend сервера,
-    --   клієнтський контракт може бути простішим за backend structure.
+    --   * LDAP або інший directory backend MAY використовуватись
+    --     для побудови roster view на сервері, але їхня структура
+    --     не є частиною зовнішнього CHAT wire-контракту.
 
     -- XMPP відповідність:
     --
@@ -1857,44 +1838,15 @@ BEGIN
     --   а не джерелом runtime-подій.
     --
 
-    Roster ::= SEQUENCE {
-       id Binary,
-       vsn Version,
-       session Binary,
-       nickname Binary,
-       keys SEQUENCE OF key Binary,
-       people SEQUENCE OF contact Person,
-       topics SEQUENCE OF room Conference,
-       channels SEQUENCE OF room Conference,
-       servers SEQUENCE OF server Server,
-       update INTEGER,
-       status RosterStatus, ... }
-
     RosterOp ::= ENUMERATED {
        get  (1),
        list (2), ...
     }
-    -- TODO:
-    --   Уточнити, чи roster має власні mutation operations
-    --   (add/remove/update), чи ці дії є лише projection
-    --   над relation model (наприклад Subscription).
-    --
-    --   Поточна preferred model:
-    --     - relation state живе окремо
-    --     - roster є snapshot/view цього state
+    -- RosterQuery повертає contact-oriented view над relation model
+    -- (наприклад Subscription), а не raw directory snapshot.
 
     -- get зазвичай очікує id
     -- list допускає частковий фільтр
-    --
-    -- TODO:
-    --   Якщо буде підтримано явні roster mutations,
-    --   потрібно визначити:
-    --
-    --     * чи це локальна address-book дія
-    --     * чи це зміна directed relation
-    --     * чи впливає вона на visibility для іншої сторони
-    --
-    --   До цього моменту roster слід трактувати як view/query layer.
     --
     RosterQuery ::= SEQUENCE {
        op   RosterOp,
@@ -1904,9 +1856,11 @@ BEGIN
     }
 
     RosterItem ::= SEQUENCE {
-       id       Binary,
-       nickname Binary,
-       status   RosterStatus
+       id        Binary,
+       nickname  [0] Binary OPTIONAL,
+       avatar    [1] Binary OPTIONAL,
+       presence  [2] Presence OPTIONAL,
+       ...
     }
 
     -- get зазвичай повертає item
