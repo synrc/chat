@@ -2,7 +2,7 @@
 
 # DSL-ADVANCED
 
-Сценарії для mutation ordering, moderation edge cases, version negotiation і federation semantics
+Сценарії для mutation ordering, складних випадків у moderation, version negotiation і federation
 
 ## Conflict semantics
 

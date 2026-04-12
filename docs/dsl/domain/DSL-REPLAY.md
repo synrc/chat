@@ -2,7 +2,7 @@
 
 # DSL-REPLAY
 
-Сценарії для replay, recovery, gap handling і home/snapshot-based відновлення
+Сценарії для replay, recovery, gap handling і відновлення на основі home/snapshot
 
 ## REPLAY-1. Replay
 

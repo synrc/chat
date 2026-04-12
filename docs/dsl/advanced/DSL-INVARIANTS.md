@@ -2,7 +2,7 @@
 
 # DSL-INVARIANTS
 
-Сценарні cross-layer invariants для read, replay, moderation і ABAC visibility
+Сценарні міжшарові invariants для read, replay, moderation і ABAC visibility
 
 Цей файл описує cross-layer invariants між:
 

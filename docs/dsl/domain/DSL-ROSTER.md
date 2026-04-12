@@ -2,7 +2,7 @@
 
 # DSL-ROSTER
 
-Сценарії для roster/relation state і direct messaging flows
+Сценарії для стану roster/relation і прямого обміну повідомленнями
 
 ## ROSTER-1. Add to roster
 

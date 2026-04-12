@@ -1,7 +1,7 @@
 > See DSL-CORE.md for language definition
 # DSL-MODERATION
 
-Сценарії для global і group-scoped moderation поверх protocol truth
+Сценарії для глобальної і group-scoped moderation поверх protocol truth
 
 ## Semantics
 

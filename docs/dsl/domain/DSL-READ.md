@@ -2,7 +2,7 @@
 
 # DSL-READ
 
-Сценарії для delivery/read flow, cursor semantics, unread model і multi-session consistency
+Сценарії для delivery/read flow, cursor semantics, unread model і узгодженості в multi-session
 
 ## READ-1. Basic delivery
 

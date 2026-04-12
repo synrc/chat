@@ -7,7 +7,7 @@
 ## Spec
 
 - [SPEC](./spec/SPEC.md)
-  Загальна transport, state, view, replay, auth і federation модель CHAT v2.
+  Загальна модель CHAT v2: transport, state, view, replay, auth і federation.
 - [ARCH-AUTH](./spec/ARCH-AUTH.md)
   IAM / PKI / ABAC архітектура і модель subject/action/resource/context.
 
@@ -16,9 +16,9 @@
 ## Kernel
 
 - [DSL-SEMANTIC-KERNEL](./kernel/DSL-SEMANTIC-KERNEL.md)
-  Базове semantic core: facts, actions, observations, predicates, judgments.
+  Базове semantic core: facts, actions, observations, predicates і judgments.
 - [DSL-TYPED-KERNEL-REFINEMENT](./kernel/DSL-TYPED-KERNEL-REFINEMENT.md)
-  Typed refinement kernel з явнішими інваріантами і resource-level distinction.
+  Typed refinement kernel з явнішими інваріантами і чіткішим розрізненням на рівні resource.
 
 ---
 
@@ -27,39 +27,39 @@
 ### Core
 
 - [DSL-CORE](./dsl/core/DSL-CORE.md)
-  Surface DSL: canonical/exact форми, session context, references і scenario model.
+  Поверхневий DSL: canonical/exact форми, session context, references і сценарна модель.
 
 ### Advanced
 
 - [DSL-ADVANCED](./dsl/advanced/DSL-ADVANCED.md)
-  Edge cases: mutation, ordering, moderation interactions, version negotiation і federation routing.
+  Складні випадки: mutation, ordering, взаємодія з moderation, version negotiation і federation routing.
 - [DSL-INVARIANTS](./dsl/advanced/DSL-INVARIANTS.md)
-  Cross-layer invariants між protocol truth, replay/read semantics і policy layer.
+  Міжшарові invariants між protocol truth, replay/read semantics і policy layer.
 
 ### Domain
 
 - [DSL-ROSTER](./dsl/domain/DSL-ROSTER.md)
-  Roster / relation semantics для direct communication flows.
+  Семантика roster/relation для сценаріїв прямого обміну повідомленнями.
 - [DSL-READ](./dsl/domain/DSL-READ.md)
-  Read / unread semantics: read cursor, unread boundary і multi-session read behavior.
+  Семантика read/unread: read cursor, unread boundary і узгоджена поведінка в multi-session.
 - [DSL-REPLAY](./dsl/domain/DSL-REPLAY.md)
-  Replay / recovery semantics, snapshot anchor і gap handling.
+  Семантика replay/recovery, snapshot-якір і gap handling.
 - [DSL-PAGINATION](./dsl/domain/DSL-PAGINATION.md)
-  Pagination semantics для inbox, home і replay/event queries.
+  Семантика pagination для inbox, home і replay/event query.
 - [DSL-HOME](./dsl/domain/DSL-HOME.md)
-  Home bootstrap / view semantics: feed list, previews і shared snapshot.
+  Семантика home bootstrap/view: перелік feed, previews і shared snapshot.
 - [DSL-VISIBILITY](./dsl/domain/DSL-VISIBILITY.md)
-  Visibility / filtering semantics: visible/hidden state і field-level filtering.
+  Семантика visibility/filtering: visible/hidden state і field-level filtering.
 - [DSL-MENTIONS](./dsl/domain/DSL-MENTIONS.md)
-  Mention-derived view semantics у home/feed/unread model.
+  Семантика mention-derived view у home/feed/unread моделі.
 - [DSL-PRESENCE](./dsl/domain/DSL-PRESENCE.md)
   Presence і typing як protocol-observable event layer.
 - [DSL-GROUP](./dsl/domain/DSL-GROUP.md)
-  Group lifecycle, membership і group feed access semantics.
+  Життєвий цикл group, membership і семантика доступу до group feed.
 - [DSL-MODERATION](./dsl/domain/DSL-MODERATION.md)
-  Global і group-scoped moderation як policy layer.
+  Глобальна і group-scoped moderation як policy layer.
 - [DSL-PAYLOAD](./dsl/domain/DSL-PAYLOAD.md)
-  Payload / mutation semantics для structured send, expect, replay і home views.
+  Семантика payload/mutation для structured send, expect, replay і home view.
 
 ### Coverage
 
@@ -89,7 +89,7 @@
 - [DSL-AUTH-KERNEL-EXTENSION](./extensions/auth/DSL-AUTH-KERNEL-EXTENSION.md)
   Typed auth/session extension поверх semantic kernel.
 - [DSL-AUTH](./extensions/auth/DSL-AUTH.md)
-  Surface DSL сценарії для authenticate, resume, renew і revoke flows.
+  Сценарії поверхневого DSL для authenticate, resume, renew і revoke.
 
 ---
 
@@ -98,7 +98,7 @@
 - [DSL-ABAC-KERNEL-EXTENSION](./extensions/abac/DSL-ABAC-KERNEL-EXTENSION.md)
   Typed policy extension для access control, visibility і precedence rules.
 - [DSL-ABAC](./extensions/abac/DSL-ABAC.md)
-  Surface DSL сценарії для ABAC access/visibility behavior.
+  Сценарії поверхневого DSL для ABAC access/visibility.
 
 ---
 
@@ -107,7 +107,7 @@
 - [DSL-SEARCH-KERNEL-EXTENSION](./extensions/search/DSL-SEARCH-KERNEL-EXTENSION.md)
   Typed query/view extension для search semantics поверх kernel.
 - [DSL-SEARCH](./extensions/search/DSL-SEARCH.md)
-  Surface DSL сценарії для query, projection, ordering і search pagination.
+  Сценарії поверхневого DSL для query, projection, ordering і search pagination.
 
 ---
 

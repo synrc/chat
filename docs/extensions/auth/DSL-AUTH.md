@@ -2,7 +2,7 @@
 
 # DSL-AUTH
 
-Сценарії для authenticate, resume, renew, revoke і session continuity semantics
+Сценарії для authenticate, resume, renew, revoke і неперервності session
 
 ## AUTH-1. Basic authenticate
 

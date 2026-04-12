@@ -2,7 +2,7 @@
 
 # DSL-PAYLOAD
 
-Сценарії для structured payload, validation, replay, identity і home propagation
+Сценарії для structured payload, validation, replay, identity і відображення в home
 
 ## Structured message payload
 ```

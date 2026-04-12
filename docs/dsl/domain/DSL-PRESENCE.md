@@ -2,7 +2,7 @@
 
 # DSL-PRESENCE
 
-Сценарії для presence, typing, multi-session status і federation-aware observations
+Сценарії для presence, typing, multi-session status і спостережень з урахуванням federation
 
 Цей файл описує presence semantics як protocol-observable event layer:
 
