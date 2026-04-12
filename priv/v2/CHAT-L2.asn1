@@ -1103,6 +1103,30 @@ BEGIN
        ...
     }
 
+    -- Group View Model
+    --
+    --   * GroupView є derived bootstrap/view projection для group feed.
+    --
+    --   * GroupView не є джерелом істини для:
+    --       - Conference state
+    --       - Member relation
+    --
+    --   * Джерелами істини лишаються:
+    --       - ConferenceQuery / ConferenceAnswer
+    --       - MemberQuery / MemberAnswer
+    --
+    --   * GroupView призначений тільки для Home/bootstrap UI context.
+    --
+    --   * Поля GroupView повинні бути достатніми для:
+    --       - першого рендеру group tile / dialog item
+    --       - базових role-aware UI affordances
+    --
+    GroupView ::= SEQUENCE {
+       myRole      [0] MemberStatus OPTIONAL,
+       memberCount [1] INTEGER OPTIONAL,
+       ...
+    }
+
     FeedViewItem ::= SEQUENCE {
        feed      MessageFeed,
        message   [0] Message OPTIONAL,
@@ -1130,6 +1154,9 @@ BEGIN
         --   latestSeq  = jump anchor до останнього mention
         --   messageId  = stable reference до останнього mention message
        mentions   [4] MentionView OPTIONAL,
+
+        -- optional derived group-specific bootstrap/view info
+       groupView [5] GroupView OPTIONAL,
        ...
     }
 
