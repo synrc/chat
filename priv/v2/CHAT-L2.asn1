@@ -1323,7 +1323,7 @@ BEGIN
 
     Criteria ::= ENUMERATED { equal (0), notequal (1), like (2), ...}
 
-    -- Scope визначає backend search domain / object family.
+    -- Scope визначає search domain / object family.
     --
     -- Для chat message search базовий executable subset використовує:
     --   * type = message
@@ -1333,6 +1333,21 @@ BEGIN
     --
     Scope ::= ENUMERATED { profile (0), folder (1), contact (2), member (3), room (4), chat (5), message (6), ...}
 
+    -- SearchScope є CHAT-facing search scope reference.
+    --
+    --   * Клієнт передає logical chat scope,
+    --     а не backend-specific identifier.
+    --
+    --   * Мапінг у LDAP DN / subtree / index anchor
+    --     виконується всередині server implementation.
+    --
+    SearchScope ::= CHOICE {
+       all    [0] NULL,
+       peer   [1] Binary,
+       group  [2] Binary,
+       ...
+    }
+
     SearchOp ::= ENUMERATED {
        execute (1),
        list    (2),
@@ -1340,7 +1355,7 @@ BEGIN
     }
 
     -- execute використовує field/value/criteria/type
-    -- list допускає частковий фільтр або перегляд у межах scope/dn
+    -- list допускає частковий фільтр або перегляд у межах chat scope
     --
     -- Chat-facing canonical forms у DSL є sugar над SearchQuery.
     --
@@ -1358,7 +1373,7 @@ BEGIN
     --   query search peer alice text "draft"
     --     -> SearchQuery {
     --          op       = execute,
-    --          dn       = "private:alice",
+    --          scope    = peer:alice,
     --          field    = "body",
     --          value    = "draft",
     --          criteria = like,
@@ -1368,15 +1383,20 @@ BEGIN
     --   query search group room1 text "draft"
     --     -> SearchQuery {
     --          op       = execute,
-    --          dn       = "group:room1",
+    --          scope    = group:room1,
     --          field    = "body",
     --          value    = "draft",
     --          criteria = like,
     --          type     = message
     --        }
     --
-    -- Тобто dn у search semantics є anchor / container scope
-    -- для backend LDAP query, а не обов'язково literal user-facing DN.
+    -- Тобто scope у search semantics є CHAT-facing anchor/container scope.
+    --
+    -- Конкретний backend mapping може бути, наприклад:
+    --   * peer:alice  -> LDAP DN / private container anchor
+    --   * group:room1 -> LDAP DN / group subtree anchor
+    --
+    -- Але цей mapping не є частиною зовнішнього client contract.
     --
     --   query search field tag equal "release"
     --     -> SearchQuery {
@@ -1390,27 +1410,13 @@ BEGIN
     --   query search peer alice field body like "draft" return body tag
     --     -> SearchQuery {
     --          op       = execute,
-    --          dn       = "private:alice",
+    --          scope    = peer:alice,
     --          field    = "body",
     --          value    = "draft",
     --          criteria = like,
     --          type     = message,
     --          fields   = { "body", "tag" }
     --        }
-    --
-    -- TODO (protocol/backend boundary):
-    --
-    --   Поточне поле dn є зручним для LDAP-backed реалізації,
-    --   але може бути занадто backend-shaped для зовнішнього CHAT контракту.
-    --
-    --   Обговорити, чи не слід у майбутньому замінити/звузити його до
-    --   більш CHAT-native scope reference:
-    --     * peer
-    --     * group
-    --     * feed
-    --     * all
-    --
-    --   а LDAP DN будувати вже всередині server implementation.
     --
     -- Projection / pagination:
     --
@@ -1426,7 +1432,7 @@ BEGIN
     --
     SearchQuery ::= SEQUENCE {
        op       SearchOp,
-       dn       [0] Binary OPTIONAL,
+       scope    [0] SearchScope OPTIONAL,
        field    [1] Binary OPTIONAL,
        value    [2] Binary OPTIONAL,
        criteria [3] Criteria OPTIONAL,
@@ -1438,10 +1444,13 @@ BEGIN
        ...
     }
 
-    -- SearchItem зберігає LDAP/backend shape,
-    -- але може також нести chat-facing projected message view.
+    -- SearchResultItem є CHAT-facing search result projection.
     --
-    -- Якщо type = message:
+    --   * preferred executable subset для current protocol model:
+    --       type = message
+    --
+    --   * LDAP/backend result shape не є частиною зовнішнього
+    --     client contract і мапиться server implementation internally.
     --
     --   * payload MAY містити тільки requested visible fields
     --   * hidden fields MUST NOT з'являтися у payload
@@ -1452,36 +1461,17 @@ BEGIN
     --   * якщо field visibility для конкретного field відсутня,
     --     застосовується coarse message-level visibility/classification
     --
-    -- TODO (result shape boundary):
-    --
-    --   SearchItem зараз змішує:
-    --     * LDAP/backend-oriented shape (dn/field/value/criteria/type)
-    --     * CHAT-facing message projection (messageId/feed/payload)
-    --
-    --   Обговорити, чи не слід розділити ці два рівні:
-    --     * backend/internal search representation
-    --     * зовнішній CHAT search result item
-    --
-    --   щоб клієнтський wire contract не залежав від форми backend індексу.
-    --
-    SearchItem ::= SEQUENCE {
-       dn        [0] Binary OPTIONAL,
-       field     [1] Binary OPTIONAL,
-       value     [2] Binary OPTIONAL,
-       criteria  [3] Criteria OPTIONAL,
-       type      [4] Scope OPTIONAL,
-
-       -- optional chat-facing projection for message search
-       messageId [5] Binary OPTIONAL,
-       feed      [6] MessageFeed OPTIONAL,
-       payload   [7] ContentInfo OPTIONAL,
+    SearchResultItem ::= SEQUENCE {
+       messageId [0] Binary OPTIONAL,
+       feed      [1] MessageFeed OPTIONAL,
+       payload   [2] ContentInfo OPTIONAL,
        ...
     }
 
     -- result повертає список знайдених елементів (може бути пустим)
     -- у stable implementation-defined order
     SearchAnswer ::= SEQUENCE {
-       items     [0] SEQUENCE OF item SearchItem OPTIONAL,
+       items     [0] SEQUENCE OF item SearchResultItem OPTIONAL,
        continue  [1] Continuation OPTIONAL,
        hasMore   [2] BOOLEAN OPTIONAL,
        ...
