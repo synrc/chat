@@ -414,6 +414,54 @@ BEGIN
        ...
     }
 
+    -- Message Mutation Command Semantics
+    --
+    --   * send/create нового повідомлення відбувається через Message.
+    --
+    --   * edit/delete існуючого повідомлення відбувається через Query,
+    --     а не через створення нового Message transport object.
+    --
+    --   * messageId є єдиною canonical identity для mutation target.
+    --
+    --   * Mutation command описує client request.
+    --
+    --   * MessageEvent(type=edited|deleted|updated) описує вже
+    --     застосований runtime факт над тим самим Message.id.
+    --
+    --   * Replay визначається event history, а не самим mutation command.
+    --
+    MessageMutationOp ::= ENUMERATED {
+       edit   (1),
+       delete (2), ...
+    }
+
+    MessageMutationQuery ::= SEQUENCE {
+       op        MessageMutationOp,
+       messageId [0] Binary,
+       payload   [1] ContentInfo OPTIONAL,
+       ...
+    }
+
+    -- Mutation command constraints
+    --
+    --   * edit:
+    --       - messageId обов'язковий
+    --       - payload обов'язковий
+    --
+    --   * delete:
+    --       - messageId обов'язковий
+    --       - payload повинен бути відсутній
+    --
+    MessageMutationAnswer ::= SEQUENCE {
+       messageId [0] Binary OPTIONAL,
+       ...
+    }
+
+    MessageMutationExtension ::= CHOICE {
+       request [1] MessageMutationQuery,
+       result  [2] MessageMutationAnswer
+    }
+
     -- 03 Inbox Folder Queue (MNESIA, SQLite) /Mail /Chat
     -- XMPP відповідність:
     --
@@ -863,6 +911,7 @@ BEGIN
        event        [13] EventCore,
        cursor       [14] CursorCore,
        home         [15] HomeCore,
+       mutation     [16] MessageMutationExtension,
        ...
     }
 

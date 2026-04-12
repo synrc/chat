@@ -587,9 +587,7 @@ Protocol source of truth для identity лишається окремим ві�
 Тобто:
 - Message = intent / payload
 - Event = runtime truth для mutation (edit/delete)
-
-Остаточна wire / ASN.1 форма mutation command і mutation event
-буде визначена окремо.
+- Query.payload.mutation = canonical command form для edit/delete над існуючим `Message.id`
 
 При цьому DSL вже фіксує protocol-observable semantics:
 - mutation адресує існуюче message state;
@@ -930,7 +928,9 @@ protocol-observable addressing semantics, а не остаточно зафік�
 Тобто duality тут фіксує:
 - який identity/addressing mode використовується;
 - що саме спостерігається на protocol level;
-- але не нав'язує остаточну ASN.1 форму mutation command/event.
+- і узгоджується з canonical ASN.1 формою:
+  `Query.payload.mutation` для command
+  та `MessageEvent(edited|deleted|updated)` для applied fact.
 
 Structured message form є розширенням canonical DSL,
 а не заміною short form.
