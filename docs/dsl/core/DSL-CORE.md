@@ -776,7 +776,7 @@ ABAC у DSL:
 
 - не змінює Message/Event/Query semantics
 - не впливає на replay, ordering або read cursor
-- визначає лише доступ до дій і view
+- визначає доступ до дій, view і field-level mutation intent
 
 ---
 
@@ -840,6 +840,7 @@ ABAC DSL використовується виключно для:
 - command authorization
 - query authorization
 - view filtering
+- field-level mutation authorization
 
 ABAC DSL не є повною policy language
 і не фіксує спосіб реалізації policy engine.
