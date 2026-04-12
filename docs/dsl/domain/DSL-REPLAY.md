@@ -363,7 +363,7 @@ query events peer alice after snapshot
 
 - після gap recovery через inbox клієнт отримує snapshot anchor
 - `snapshot` використовується для безшовного переходу назад у event replay
-- replay після snapshot повинен починатися з `seq > snapshot`
+- replay після snapshot повинен починатися після відповідного snapshot boundary
 
 ## REPLAY-12. Gap recovery with concurrent message
 
