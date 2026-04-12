@@ -354,6 +354,10 @@ end
 - message identity
 - feed cursor
 
+При цьому `read_boundary` сам по собі не кодує forward-only progress:
+це просто explicit cursor boundary, який може бути і меншим за попередній
+effective read state, якщо модель дозволяє rewind.
+
 ### 4. View нормалізовано через `view_kind`
 
 Усі view-запити (`home`, `inbox`, `roster`, `groups`, `members`, `moderation`, `subscriptions`)

@@ -338,7 +338,7 @@ end
 `fact` описує, що є істинним про state:
 - існує group resource;
 - повідомлення існує в feed на певній позиції;
-- read cursor стоїть на певному `seq`;
+- read cursor стоїть на explicit boundary `seq`;
 - користувач має роль у group/feed;
 - між двома principals існує relation.
 
@@ -482,6 +482,10 @@ FormedAction (
   }
 )
 ```
+
+`MarkRead` у kernel означає explicit assignment read boundary.
+Тобто `up_to` не зобов'язаний бути більшим за попередній cursor:
+rewind на менший `seq` є валідною семантикою, якщо це дозволяє протокол.
 
 ### Replay / View
 
