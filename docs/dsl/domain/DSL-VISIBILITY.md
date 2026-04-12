@@ -2,6 +2,8 @@
 
 # DSL-VISIBILITY
 
+Visibility semantics поверх protocol truth і field-level filtering
+
 Цей файл описує visibility semantics поверх protocol truth:
 
 - visible / hidden

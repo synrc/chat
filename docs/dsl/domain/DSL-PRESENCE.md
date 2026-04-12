@@ -2,6 +2,8 @@
 
 # DSL-PRESENCE
 
+Presence і typing як protocol-observable event layer
+
 Цей файл описує presence semantics як protocol-observable event layer:
 
 - presence event є окремим від message replay

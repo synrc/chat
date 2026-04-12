@@ -2,6 +2,8 @@
 
 # DSL-ADVANCED
 
+Складні сценарії, edge cases і додаткові семантичні уточнення
+
 ## Conflict semantics
 
 - authorization / policy / membership перевіряються за поточним server state

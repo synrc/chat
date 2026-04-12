@@ -1,5 +1,7 @@
 # DSL-ABAC-KERNEL-EXTENSION
 
+Typed ABAC/policy extension поверх semantic kernel
+
 ## Навіщо це потрібно
 
 Цей документ фіксує policy-level extension поверх typed semantic kernel DSL.

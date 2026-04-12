@@ -2,6 +2,8 @@
 
 # DSL-INVARIANTS
 
+Cross-layer invariants між protocol state, view semantics і policy layer
+
 Цей файл описує cross-layer invariants між:
 
 - protocol state

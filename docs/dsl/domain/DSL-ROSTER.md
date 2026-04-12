@@ -2,6 +2,8 @@
 
 # DSL-ROSTER
 
+Roster і relation semantics для direct communication flows
+
 ## ROSTER-1. Add to roster
 
 ```

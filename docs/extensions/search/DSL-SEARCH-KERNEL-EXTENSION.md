@@ -1,5 +1,7 @@
 # DSL-SEARCH-KERNEL-EXTENSION
 
+Typed query/view extension для search semantics поверх kernel
+
 ## Навіщо це потрібно
 
 Цей документ фіксує search як typed query/view extension поверх core semantic kernel.

@@ -2,6 +2,8 @@
 
 # DSL-HOME
 
+Home/bootstrap view semantics і shared snapshot boundary
+
 Цей файл описує view semantics для home/bootstrap layer:
 
 - unread/view boundary

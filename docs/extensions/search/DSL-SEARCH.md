@@ -2,6 +2,8 @@
 
 # DSL-SEARCH
 
+Search semantics як query/view layer поверх protocol model
+
 Цей файл описує search semantics як query/view extension поверх protocol model.
 
 Search у DSL:

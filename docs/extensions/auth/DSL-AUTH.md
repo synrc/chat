@@ -2,6 +2,8 @@
 
 # DSL-AUTH
 
+Сценарії authentication, session lifecycle і token semantics
+
 ## AUTH-1. Basic authenticate
 
 ```

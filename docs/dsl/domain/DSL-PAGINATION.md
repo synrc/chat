@@ -2,6 +2,8 @@
 
 # DSL-PAGINATION
 
+Pagination semantics для inbox, home і replay queries
+
 ## PAGE-1. Pagination
 
 ```

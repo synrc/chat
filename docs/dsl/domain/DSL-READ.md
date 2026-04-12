@@ -2,6 +2,8 @@
 
 # DSL-READ
 
+Read cursor, unread boundary і delivery/read semantics
+
 ## READ-1. Basic delivery
 
 ```

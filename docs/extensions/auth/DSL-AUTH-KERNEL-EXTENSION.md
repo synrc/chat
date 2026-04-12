@@ -1,5 +1,7 @@
 # DSL-AUTH-KERNEL-EXTENSION
 
+Typed auth/session extension поверх semantic kernel
+
 ## Навіщо це потрібно
 
 Цей документ фіксує auth/session extension поверх typed semantic kernel DSL.

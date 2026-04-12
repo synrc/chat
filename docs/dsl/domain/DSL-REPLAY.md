@@ -2,6 +2,8 @@
 
 # DSL-REPLAY
 
+Replay, recovery, gap handling і snapshot-based відновлення
+
 ## REPLAY-1. Replay
 
 ```
