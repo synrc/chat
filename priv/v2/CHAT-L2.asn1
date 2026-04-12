@@ -410,7 +410,7 @@ BEGIN
        type MessageType OPTIONAL,
        link Binary OPTIONAL,
        files [0] SEQUENCE OF file File OPTIONAL,
-       mentioned [1] SEQUENCE OF name Binary OPTIONAL,
+       mentions [1] SEQUENCE OF name Binary OPTIONAL,
        ...
     }
 
@@ -1142,7 +1142,7 @@ BEGIN
     --
     --   * count і latestSeq НЕ є canonical state,
     --     а обчислюються сервером на основі:
-    --       - mention flags у Message
+    --       - mentions у Message payload/state
     --       - read cursor(user, feed)
     --
     --   * messageId є stable reference до останнього mention message,

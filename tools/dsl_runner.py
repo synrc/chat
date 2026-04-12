@@ -2700,7 +2700,9 @@ class DSLRunner:
                     continue
                 if msg.seq <= read_cursor:
                     continue
-                if msg.payload.get("mention") == session.user:
+                mention_value = msg.payload.get("mention")
+                mentions_value = msg.payload.get("mentions")
+                if mention_value == session.user or mentions_value == session.user:
                     return True
         return False
 

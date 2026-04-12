@@ -1077,7 +1077,10 @@ Mention визначається виключно payload + context.
 Mention виникає, якщо payload повідомлення містить посилання на user:
 
 - explicit (наприклад `@user`)
-- або через structured payload (наприклад поле `mentions`)
+- або через structured payload (canonical field `mentions`)
+
+У DSL short form для цього може використовуватись `mention: <user>`
+як sugar над canonical payload shape.
 
 Сервер може інтерпретувати mention:
 

@@ -14,14 +14,17 @@
 На цьому етапі mention у DSL трактується як view-derived state,
 а не як окремий protocol object.
 
-Для явної сценарної форми використовується structured payload field:
+Для явної сценарної форми використовується DSL short form:
 
 - `mention: <user>`
 
 Це мінімальна explicit form для mention-carrying message.
 
+Canonical structured payload form при цьому мислиться як `mentions`.
+
 Примітка:
 
+- `mention: <user>` у DSL є sugar над canonical payload shape `mentions`
 - exact payload mapping для multiple mentions може бути розширена пізніше
 - на цьому етапі важлива саме semantics, а не остаточний wire form
 
