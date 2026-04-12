@@ -5,227 +5,53 @@
 
 CHAT-L2 DEFINITIONS IMPLICIT TAGS ::=
 BEGIN
-    -- CHAT-v2 design direction
-    --
-    -- Архітектурна мета:
-    --   1. CHATProtocol містить тільки transport-level packet types.
-    --   2. Message описує тільки контент повідомлення.
-    --   3. Event є єдиним каналом runtime-подій (ack/activity/state updates).
-    --   4. Query є єдиним request/response механізмом.
-    --   5. Domain сутності (Subscription, Person, Member, Conference, Roster, Inbox view)
-    --      не повинні бути top-level packet types.
-    --
-    -- Тобто одна семантика не повинна мати кілька паралельних wire-шляхів.
+    -- CHAT-v2 design direction:
+    --   * CHATProtocol містить тільки transport-level packet types
+    --   * Message описує тільки контент повідомлення
+    --   * Event є єдиним каналом runtime-подій
+    --   * Query є єдиним request/response механізмом
+    --   * Domain сутності не повинні бути top-level packet types
 
     -- IMPORTS ContentInfo FROM CryptographicMessageSyntax-2009
             -- CertificationRequest FROM PKCS-10
             -- Certificate FROM PKIX1Explicit-2009 ;
 
-    -- NOTE:
-    --   PKIX / PKCS ASN.1 модулі (Certificate, CertificationRequest)
-    --   навмисно не імпортуються.
-    --
-    --   Причина:
-    --     протокол не виконує parsing або валідацію сертифікатів,
-    --     а лише транспортує їх як opaque binary payload.
-    --
-    --   Повний PKIX стек має глибокі залежності
-    --   (PKIX-CommonTypes, AlgorithmInformation і т.д.),
-    --   які не резолвляться erlc без повного набору модулів.
-    --
-    --   Тому сертифікати і CSR представлені як OCTET STRING,
-    --   а їх інтерпретація є поза межами цього протоколу
-    --   (crypto / application layer).
+    -- PKIX / PKCS модулі навмисно не імпортуються:
+    -- протокол лише транспортує certificate/CSR як opaque binary.
 
     CertificationRequest ::= OCTET STRING
     Certificate ::= OCTET STRING -- DER encoded X.509
 
     Version ::= INTEGER  { v0(0), v1(1), v2(2), v3(3) }
 
-    -- Version Semantics
-    --
-    --   * vsn визначає wire-версію конкретного повідомлення.
-    --
-    --   * Клієнт і сервер MAY підтримувати кілька версій протоколу.
-    --
-    -- Compatibility:
-    --
-    --   * Якщо отримана версія підтримується, повідомлення
-    --     обробляється за правилами цієї версії.
-    --
-    --   * Якщо версія не підтримується, сервер SHOULD повертати:
-    --
-    --       Query(type=error, code=unsupported)
-    --
-    -- Forward compatibility:
-    --
-    --   * Невідомі extension-поля SHOULD ігноруватись.
-    --
-    --   * Розширення через "..." не повинні ламати сумісність
-    --     зі старішими реалізаціями.
+    -- vsn визначає wire-версію повідомлення.
+    -- Unsupported version -> Query(type=error, code=unsupported).
+    -- Невідомі extension-поля SHOULD ігноруватись.
 
     Flavour ::= ENUMERATED { apple (1), microsoft (2), google (3), ericsson (4), nokia (5), cisco (6) }
     Binary  ::= OCTET STRING
     Continuation ::= OCTET STRING
 
-    -- NOTE:
-    --   ContentInfo (CMS / PKCS#7) не використовується як структурований тип.
-    --
-    --   Протокол не виконує parsing або валідацію CMS payload,
-    --   а лише транспортує дані як opaque binary.
-    --
-    --   Тому ContentInfo представлено як OCTET STRING.
+    -- ContentInfo транспортується як opaque binary.
     ContentInfo ::= OCTET STRING
 
-    -- Session Semantics
-    --
-    -- Протокол розрізняє три рівні:
-    --
-    --   Identity: користувач
-    --   Device: пристрій (телефон, браузер, десктоп)
-    --   Session: runtime-екземпляр клієнта (запуск застосунку або вкладка)
-    --
-    -- Session представляє конкретний клієнтський інстанс.
-    --
-    -- Властивості:
-    --
-    --   * Один користувач MAY мати кілька device.
-    --   * Один device MAY мати кілька session.
-    --   * Session є незалежними одна від одної.
-    --
-    -- Важливо:
-    --
-    --   * Session НЕ є транспортним з'єднанням.
-    --   * Session НЕ є користувачем.
-    --   * Session переживає reconnect.
-    --
-    -- Життєвий цикл:
-    --
-    --   * Session створюється під час authenticate.
-    --   * Session ідентифікується через session_id.
-    --   * Session MAY бути відновлена після reconnect.
-    --
-    -- Використання:
-    --
-    --   * Поле session у Message/Event/Query/Authority означає
-    --     контекст конкретного клієнтського інстансу.
-    --
-    -- Session Lifecycle Policy
-    --
-    --   * Session створюється тільки через Authority.authenticate.
-    --
-    --   * Session має життєвий цикл:
-    --       - active
-    --       - expired
-    --       - revoked
-    --
-    --   * reconnect не створює нову session,
-    --     а відновлює існуючу session за умови, що:
-    --       - session існує
-    --       - accessToken валідний
-    --       - session не expired і не revoked
-    --
-    --   * renew не створює session,
-    --     а лише перевидає accessToken через refreshToken.
-    --
-    --   * authenticate з refreshToken MAY:
-    --       - відновити існуючу session
-    --       - або створити нову session,
-    --         якщо попередня session втрачена або expired
-    --
-    --   * revoke accessToken інвалідує конкретну session.
-    --
-    --   * revoke refreshToken MAY інвалідувати всі session,
-    --     пов'язані з device/client.
-    --
-    --   * Session MAY мати server-side TTL і завершуватись
-    --     після періоду неактивності.
+    -- Session:
+    --   * не є transport connection і не є користувачем
+    --   * переживає reconnect
+    --   * створюється через Authority.authenticate
+    --   * може бути active / expired / revoked
 
     -- 01 Authority (CA)
 
     Feature ::= SEQUENCE { id Binary, key Binary, value Binary, group Binary }
-    -- Feature / Capability Negotiation
-    --
-    --   * Feature використовується для опису можливостей клієнта і сервера.
-    --
-    --   * Feature.id визначає тип capability.
-    --
-    --   * key/value можуть використовуватись для параметризації feature.
-    --
-    -- Usage:
-    --
-    --   * Сервер MAY передавати список підтримуваних feature
-    --     через Authority.settings (announce / authenticate).
-    --
-    --   * Клієнт MAY передавати підтримувані feature
-    --     через AuthRequest (через settings або окреме поле).
-    --
-    -- Negotiation:
-    --
-    --   * Клієнт і сервер повинні використовувати тільки
-    --     перетин підтримуваних feature.
-    --
-    --   * Невідомі feature повинні ігноруватись.
-    --
-    -- Приклади:
-    --
-    --   * typingOptimized
-    --   * readCursor
-    --   * batchTransport
-    --   * federationRouting
+    -- Feature описує capability; невідомі feature ігноруються.
 
     AuthorityMethod ::= ENUMERATED { announce (0), enroll (1), authenticate (2), revoke (3), renew (4), ... }
-    -- Authority Method Semantics
-    --
-    -- announce:
-    --   * server capabilities / bootstrap metadata
-    --
-    -- enroll:
-    --   * первинна реєстрація device/client або сертифіката
-    --
-    -- authenticate:
-    --   * створює нову session
-    --   * або відновлює існуючу session через session + accessToken
-    --
-    -- renew:
-    --   * перевидає accessToken через refreshToken
-    --   * може також повертати новий refreshToken
-    --
-    -- revoke:
-    --   * інвалідує accessToken конкретної session
-    --   * або всі session, пов'язані з device/client
-
-    -- AuthRequest використовується для:
-    --   - первинної аутентифікації
-    --   - reconnect існуючої session
-    --   - renew access token через refresh token
-    -- Token Scope
-    --
-    --   * accessToken прив'язаний до конкретної session
-    --     і використовується для transport authorization / reconnect.
-    --
-    --   * refreshToken прив'язаний до device/client
-    --     і використовується для перевидачі accessToken.
-    --
-    --   * Один device MAY мати кілька session.
-    --
-    --   * Відкликання accessToken повинно впливати тільки
-    --     на відповідну session.
-    --
-    --   * Відкликання refreshToken може інвалідовувати
-    --     всі session, пов'язані з device/client.
-    --
-    -- Version Negotiation
-    --
-    --   * Під час authenticate клієнт MAY передати supportedVsn:
-    --     перелік підтримуваних wire-версій.
-    --
-    --   * Сервер MAY вибрати сумісну версію і повернути її
-    --     в AuthAnswer.selectedVsn.
-    --
-    --   * Якщо спільної версії немає, сервер SHOULD повертати:
-    --
-    --       Query(type=error, code=unsupported)
+    -- announce -> capabilities / bootstrap metadata
+    -- enroll -> первинна реєстрація
+    -- authenticate -> нова або відновлена session
+    -- renew -> перевидача accessToken
+    -- revoke -> інвалідація session/token/device binding
     AuthRequest ::= SEQUENCE {
        accessToken  [0] Binary OPTIONAL,
        refreshToken [1] Binary OPTIONAL,
@@ -254,54 +80,8 @@ BEGIN
        ...
     }
 
-    -- Authority / Certificate Trust Model
-    --
-    --   * Authority є trust endpoint для:
-    --       - enroll
-    --       - authenticate
-    --       - renew
-    --       - revoke
-    --
-    --   * Authority MAY виступати як:
-    --       - certification authority
-    --       - registration authority
-    --       - auth/session authority
-    --
-    -- Trust Root:
-    --
-    --   * Клієнт повинен мати довіру до Authority поза межами
-    --     самого transport протоколу.
-    --
-    --   * TLS захищає transport channel, але не замінює
-    --     довіру до Authority як issuer / validator.
-    --
-    -- Certificates:
-    --
-    --   * cert використовується для:
-    --       - certificate request під час enroll
-    --       - certificate delivery / renewal
-    --       - certificate validation context
-    --
-    --   * Точний формат cert визначається контекстом AuthorityMethod.
-    --
-    -- Enroll:
-    --
-    --   * enroll MAY приймати CertificationRequest
-    --     і повертати Certificate.
-    --
-    -- Authenticate:
-    --
-    --   * authenticate MAY використовувати:
-    --       - token-based auth
-    --       - certificate-based auth
-    --       - або комбінований режим
-    --
-    -- Revoke:
-    --
-    --   * revoke MAY інвалідовувати:
-    --       - session / token
-    --       - certificate
-    --       - або device/client binding
+    -- Authority є trust endpoint для enroll/authenticate/renew/revoke.
+    -- Certificate/CSR payload лишається opaque і тлумачиться поза протоколом.
 
     AuthorityCert ::= CHOICE {
        request     [1] CertificationRequest,
@@ -310,12 +90,8 @@ BEGIN
        ...
     }
 
-    -- Session / Read Note
-    --
-    --   * last_seq лишається session-scoped replay position.
-    --
-    --   * read cursor не належить session:
-    --     canonical semantics і source of truth визначаються в CursorCore.
+    -- last_seq лишається session-scoped replay position.
+    -- read cursor не належить session і визначається в CursorCore.
     --
     Authority ::= SEQUENCE {
        id Binary,
@@ -325,60 +101,21 @@ BEGIN
        request [0] AuthRequest OPTIONAL,
        result  [1] AuthAnswer OPTIONAL,
 
-       -- cert містить certificate-related payload:
-       --   - request     (CertificationRequest) для enroll
-       --   - certificate (Certificate) для delivery / renew
-       --   - chain       (Certificate chain) для trust bootstrap
-       --   - CertificationRequest для enroll
-       --   - Certificate для renew / delivery
-       --   - validation context для authenticate
+       -- cert містить request/certificate/chain залежно від AuthorityMethod
        cert [2] AuthorityCert OPTIONAL,
        settings SEQUENCE OF feature Feature OPTIONAL,
         ... }
 
     -- 02 Message (MNESIA, SQLite)
 
-    -- Message описує тільки саме повідомлення і його вміст.
-    -- Event є уніфікованим типом для всіх подій (Ack + Activity).
-    -- Такий поділ мінімізує розмір базових повідомлень і не змішує семантику.
-    --
-    -- Message Payload Semantics
-    --
-    --   * payload може бути структурованим.
-    --
-    --   * body не є єдиним полем payload.
-    --
-    --   * повідомлення може містити document-like дані
-    --     з семантикою field / value.
-    --
-    --   * така модель використовується для сценаріїв
-    --     з документами і ABAC policy evaluation.
+    -- Message описує тільки повідомлення і його payload.
 
     MessageType ::= ENUMERATED { normal (0), sys (1), reply (2), forward (3), ... }
 
     MessageFeed ::= CHOICE { private [1] Privatebox, chan [2] Streambox, mailbox [4] Mailbox, group [8] Groupbox, ... }
 
-    -- Group Feed Semantics
-    --
-    --   * MessageFeed.group посилається на існуючий Conference ресурс
-    --     типу group.
-    --
-    --   * group feed не є окремою автономною сутністю поза Conference.
-    --
-    --   * Доступ до group feed визначається membership state:
-    --       - member / owner MAY читати і писати в group feed
-    --       - non-member не повинен мати доступу до group feed
-    --
-    --   * Для non-member доступ до:
-    --       - Message send
-    --       - InboxQuery
-    --       - Event replay
-    --     повинен завершуватись Query(type=error, code=forbidden).
-    --
-    --   * Якщо відповідний Conference видалений або не існує,
-    --     group feed повинен вважатись недоступним:
-    --
-    --       Query(type=error, code=notFound)
+    -- MessageFeed.group посилається на існуючий Conference(type=group).
+    -- Доступ до group feed визначається membership і authorization.
 
     File ::= SEQUENCE {
        id Binary,
@@ -386,20 +123,8 @@ BEGIN
        payload ContentInfo,
        parentid Binary }
 
-    -- Message Identity and Payload Semantics
-    --
-    --   * Message описує тільки intent/content повідомлення.
-    --
-    --   * Message.id є єдиною protocol-level identity
-    --     повідомлення.
-    --
-    --   * Message.id є глобально унікальним і стабільним
-    --     протягом усього lifecycle повідомлення.
-    --
-    --   * payload є частиною message state,
-    --     а body є лише одним із можливих полів payload.
-    --
-    --   * runtime mutation semantics визначаються через MessageEvent.
+    -- Message.id є єдиною protocol-level identity повідомлення.
+    -- payload є частиною message state; runtime mutation іде через MessageEvent.
     --
     Message ::= SEQUENCE {
        id Binary,
@@ -414,21 +139,8 @@ BEGIN
        ...
     }
 
-    -- Message Mutation Command Semantics
-    --
-    --   * send/create нового повідомлення відбувається через Message.
-    --
-    --   * edit/delete існуючого повідомлення відбувається через Query,
-    --     а не через створення нового Message transport object.
-    --
-    --   * messageId є єдиною canonical identity для mutation target.
-    --
-    --   * Mutation command описує client request.
-    --
-    --   * MessageEvent(type=edited|deleted|updated) описує вже
-    --     застосований runtime факт над тим самим Message.id.
-    --
-    --   * Replay визначається event history, а не самим mutation command.
+    -- send/create нового повідомлення йде через Message.
+    -- edit/delete існуючого повідомлення йде через Query.payload.mutation.
     --
     MessageMutationOp ::= ENUMERATED {
        edit   (1),
@@ -454,18 +166,9 @@ BEGIN
        ...
     }
 
-    -- Mutation command constraints
-    --
-    --   * edit:
-    --       - messageId обов'язковий
-    --       - patch обов'язковий
-    --
-    --   * delete:
-    --       - messageId обов'язковий
-    --       - patch повинен бути відсутній
-    --
-    --   * patch описує field-level mutation intent і може оцінюватись
-    --     через field-aware ABAC / visibility policy.
+    -- edit: messageId + patch
+    -- delete: messageId, без patch
+    -- patch описує field-level mutation intent для ABAC / visibility policy
     --
     MessageMutationAnswer ::= SEQUENCE {
        messageId [0] Binary OPTIONAL,
@@ -478,15 +181,6 @@ BEGIN
     }
 
     -- 03 Inbox Folder Queue (MNESIA, SQLite) /Mail /Chat
-    -- XMPP відповідність:
-    --
-    --   inbox / message retrieval:
-    --     → XEP-0313 (Message Archive Management)
-    --
-    -- Зауваження:
-    --
-    --   У XMPP це окремий extension.
-    --   Тут це частина core Query моделі.
     --
 
     Privatebox ::= SEQUENCE { address Binary }
@@ -512,34 +206,8 @@ BEGIN
        message Message
     }
 
-    -- Inbox pagination semantics
-    --
-    --   * continue є opaque cursor для отримання наступної сторінки.
-    --
-    --   * hasMore є hint, що на момент формування відповіді можуть існувати
-    --     додаткові елементи.
-    --
-    --   * hasMore НЕ гарантує повноту або стабільність snapshot:
-    --       - дані можуть змінюватись між запитами
-    --       - можливі дублікати або пропуски
-    --
-    --   * snapshot є opaque feed-scoped replay boundary
-    --     для цього InboxAnswer.
-    --
-    --   * Якщо snapshot повертається у кількох сторінках,
-    --     він визначається на першій сторінці і лишається
-    --     спільним для всіх continue у межах цього snapshot.
-    --
-    --   * Recovery / replay semantics для after / nextAfter
-    --     визначаються в EventCore.
-    --
-    -- Snapshot vs Read Cursor
-    --
-    --   * snapshot не є read cursor.
-    --
-    --   * Inbox snapshot не повинен автоматично оновлювати read state.
-    --
-    --   * Canonical read semantics визначаються в CursorCore.
+    -- continue є opaque cursor; hasMore є лише hint.
+    -- snapshot є opaque feed-scoped replay boundary і не є read cursor.
     --
     InboxAnswer ::= SEQUENCE {
        items       [0] SEQUENCE OF item InboxItem OPTIONAL,
@@ -550,22 +218,7 @@ BEGIN
     }
 
     -- 04 Event (Ack + Activity fusion)
-    --
     -- Event є єдиним каналом runtime-подій.
-    -- Події групуються за family payload, без глобального плаского enum.
-    -- Для простих family тип події задається локальним enum усередині payload.
-
-    -- XMPP відповідність:
-    --
-    --   delivered / received / read:
-    --     → XEP-0184 (Message Delivery Receipts)
-    --
-    --   deleted (message retraction):
-    --     → XEP-0425 (Message Retraction)
-    --
-    --   edited / updated:
-    --     → XEP-0308 (Last Message Correction)
-    --
 
     MessageEventType ::= ENUMERATED {
        received  (1),
@@ -575,59 +228,14 @@ BEGIN
        deleted   (5),
        updated   (6), ...}
 
-    -- Message Event Semantics
-    --
-    --   * MessageEvent є canonical runtime-моделлю для:
-    --       - delivered / read / received
-    --       - edited / deleted / updated
-    --
-    -- Delivery / read:
-    --
-    --   * delivered і read є різними подіями і не повинні
-    --     зливатися в одну семантику.
-    --
-    --   * delivered означає доставку конкретній session,
-    --     але не означає фактичне відображення або прочитання.
-    --
-    --   * client-originated read update передається через Query / CursorCore.
-    --
-    --   * MessageEvent(type=read) є server-emitted фактом
-    --     уже застосованого read state.
-    --
-    --   * readSeq відображає already-applied effective read cursor у feed,
-    --     включно з можливим rewind.
-    --
-    --   * messageId для read є тільки optional auxiliary reference.
-    --
-    --   * Детальна semantics read cursor, replay і projection-виглядів
-    --     визначається в CursorCore та FeedViewItem.readSeq.
-    --
-    -- Mutation:
-    --
-    --   * MessageEvent(type=edited|deleted|updated) адресує
-    --     існуючий message state через messageId.
-    --
-    --   * Такі event-и не створюють новий Message,
-    --     а змінюють current state уже існуючого Message.id.
-    --
-    --   * messageId є stable reference для mutation target.
-    --
-    --   * delete має пріоритет над edited/updated.
-    --
-    --   * replay і звичайна online-обробка повинні
-    --     конвергувати до однакового final state.
+    -- delivered і read є різними подіями.
+    -- client-originated read update передається через CursorCore.
+    -- edited/deleted/updated адресують наявний Message.id.
     --
     MessageEvent ::= SEQUENCE {
        type       MessageEventType,
        messageId  [0] Binary OPTIONAL,
-       -- messageId:
-       --
-       --   * stable reference до Message.id,
-       --     над яким виконується lifecycle/mutation event.
-       --
-       --   * для read може бути optional auxiliary reference,
-       --     але для edited/deleted/updated саме messageId
-       --     визначає target message state.
+       -- для edited/deleted/updated messageId визначає target message state
 
        feed       [1] MessageFeed OPTIONAL,
        actor      [2] Binary OPTIONAL,
@@ -636,25 +244,7 @@ BEGIN
        ...
     }
 
-    -- XMPP відповідність:
-    --
-    --   online / offline:
-    --     → RFC 3921 (Presence)
-    --
-    --   typing:
-    --     → XEP-0085 (Chat State Notifications)
-    --
-    -- Presence Event Semantics
-    --
-    --   * online/offline є aggregate presence observations.
-    --
-    --   * typing є transient runtime event, а не stable presence state.
-    --
-    --   * typing не повинен зберігатися в Home або інших stable snapshot/view
-    --     як поточний стан.
-    --
-    --   * typing не повинен повторно з'являтися в replay без нового
-    --     runtime source event.
+    -- typing є transient runtime event і не є stable presence state.
     --
     PresenceEventType ::= ENUMERATED {
        online   (1),
@@ -674,28 +264,8 @@ BEGIN
        presence  [2] PresenceEvent
     }
 
-    -- Event Sequencing and Consistency
-    --
-    --   * Event є єдиним transport-level каналом runtime-подій.
-    --
-    --   * seq є feed-scoped порядковою позицією
-    --     і монотонно зростає в межах feed.
-    --
-    --   * seq не є глобальним і використовується для replay,
-    --     recovery та виявлення пропусків.
-    --
-    --   * last_seq є session-local replay cursor.
-    --
-    --   * Події можуть приходити поза порядком, дублюватись
-    --     або приходити із затримкою.
-    --
-    --   * Протокол не гарантує causal ordering між подіями.
-    --
-    --   * Для state-changing events застосовується
-    --     базова conflict resolution модель протоколу.
-    --
-    --   * Локальна semantics mutation/read визначається
-    --     відповідними payload family (MessageEvent, CursorCore).
+    -- seq є feed-scoped і монотонно зростає в межах feed.
+    -- Події можуть дублюватись, приходити поза порядком або із затримкою.
     --
     Event ::= SEQUENCE {
        id Binary,
@@ -707,136 +277,8 @@ BEGIN
     }
 
     -- Query є єдиним request/response шаром протоколу.
-    -- Усі commands і state-запити повинні йти через Query.
-    -- Payload уже розбитий на доменні family envelope.
-    -- Внутрішні request/result payload типи тимчасово залишаються opaque
-    -- до поступової типізації кожної family окремо.
-    --
-    -- Query / Command Evaluation Semantics
-    --
-    --   * Кожна command/query оцінюється за поточним server state
-    --     на момент її обробки.
-    --
-    --   * Authorization, moderation policy, membership і existence resource
-    --     не фіксуються наперед transport-пакетом або snapshot boundary,
-    --     а перевіряються під час фактичного виконання.
-    --
-    --   * already accepted command не повинна відкочуватись ретроактивно
-    --     через пізнішу зміну policy/resource state
-    --     (наприклад ban, remove member, delete conference).
-    --
-    --   * Нова command після зміни policy/resource state
-    --     повинна оцінюватись уже за новим state.
-    --
-    -- Reconnect Semantics
-    --
-    -- Транспортне зєднання може перериватись і відновлюватись.
-    --
-    -- Session:
-    --
-    --   - Session залишається валідною при reconnect.
-    --   - Клієнт SHOULD повторно використовувати існуючу session.
-    --
-    -- Доставка подій:
-    --
-    --   - Після reconnect клієнт MAY отримати пропущені події.
-    --   - Механізм відновлення (replay / fetch) реалізується через Query.
-    --
-    -- Важливо:
-    --
-    --   - Протокол не гарантує доставку всіх подій без повторного запиту.
-    --   - Клієнт повинен бути готовий до втрати частини історії подій.
-    --
-    -- Recovery:
-    --
-    --   - Клієнт повинен зберігати останній отриманий seq.
-    --
-    --   - Після reconnect клієнт виконує Query для отримання подій
-    --     починаючи з відомого seq.
-    --
-    --   - Сервер повертає події з seq > last_seq.
-    --
-    --   - Пропущені події відновлюються через цей механізм.
-    --
-    -- Offline:
-    --
-    --   - Офлайн режим не є окремою концепцією протоколу.
-    --
-    --   - Пропущені події відновлюються через seq (Event replay).
-    --
-    --   - У випадку втрати історії (gap) використовується Query (Inbox).
-    --
-    -- Retention and Gap Handling
-    --
-    --   * Сервер може обмежувати збереження подій у feed (retention).
-    --
-    --   * Якщо клієнт запитує after, який менший за мінімальний
-    --     доступний seq, виникає gap (втрата частини історії).
-    --
-    -- Gap Detection:
-    --
-    --   * У випадку gap сервер SHOULD повертати:
-    --
-    --       Query(type=error, code=gap)
-    --
-    --   * Це означає, що частина історії подій недоступна.
-    --
-    -- Client Behavior:
-    --
-    --   * Клієнт повинен виконати повний sync через:
-    --       - Inbox Query
-    --       - або інші view-запити
-    --
-    --   * Якщо InboxAnswer містить snapshot,
-    --     клієнт MAY продовжити recovery через Event replay
-    --     з snapshot = snapshot.
-    --
-    --   * Клієнт НЕ повинен припускати повноту даних,
-    --     якщо seq має розрив.
-    --
-    -- Важливо:
-    --
-    --   * Event replay гарантує тільки partial recovery.
-    --
-    --   * Повна консистентність відновлюється через snapshot (Inbox).
-    --
-    -- Delivery Guarantees
-    --
-    --   * Базова модель доставки для Message і Event є at-least-once.
-    --
-    --   * Протокол допускає повторну доставку пакетів після retry
-    --     або reconnect.
-    --
-    --   * Message і Event повинні бути ідемпотентними:
-    --       - Message: через унікальний Message.id
-    --       - Event: через Event.id і/або seq у межах feed
-    --
-    --   * received / delivered / read є application-level подіями
-    --     і не означають exact-once гарантії transport-рівня.
-    --
-    --   * Exactly-once не є ціллю базової моделі протоколу.
-    --
-    -- Preview Semantics
-    --
-    --   * клієнт може використовувати Event replay з limit
-    --     для отримання лише останніх подій (preview mode).
-    --
-    --   * preview mode не означає повного відновлення історії.
-    --
-    --   * preview mode не повинен автоматично оновлювати read cursor.
-    --
-    --   * read cursor оновлюється тільки через явний CursorCore update.
-
-    -- XMPP відповідність:
-    --
-    --   Query (request/response):
-    --     → XEP-0004 (Data Forms)
-    --     → XEP-0030 (Service Discovery)
-    --
-    -- Зауваження:
-    --
-    --   У XMPP request/response розподілений по різних stanza.
-    --   У даному протоколі він уніфікований через Query.
+    -- Authorization, membership і existence перевіряються під час виконання.
+    -- Replay і gap recovery також проходять через Query.
     --
 
 
@@ -860,39 +302,11 @@ BEGIN
        ...
     }
 
-    -- Query Error Semantics
-    --
-    --   * Query(type=error) використовується для повернення
-    --     типізованої помилки request/response рівня.
-    --
-    --   * code визначає категорію помилки.
-    --
-    -- Retryable:
-    --
-    --   * unavailable
-    --   * rateLimited
-    --
-    -- Recoverable with client action:
-    --
-    --   * unauthorized       -> renew / authenticate
-    --   * unsupported -> fallback version
-    --   * gap        -> full sync через Inbox / view Query
-    --
-    -- Fatal for request:
-    --
-    --   * badRequest
-    --   * forbidden
-    --   * notFound
-    --   * conflict
-    --
-    -- Group / Moderation-specific usage:
-    --
-    --   * forbidden:
-    --       - non-member access до group feed / group membership protected operation
-    --       - actor або target заблокований moderation policy для цієї операції
-    --
-    --   * notFound:
-    --       group/conference resource не існує або вже видалений
+    -- unauthorized -> renew / authenticate
+    -- unsupported  -> fallback version
+    -- gap          -> full sync через Inbox / view Query
+    -- forbidden    -> policy/member/moderation denial
+    -- notFound     -> resource не існує або вже видалений
     --
     Query ::= SEQUENCE {
        id Binary,
@@ -958,42 +372,10 @@ BEGIN
        result  [2] InboxAnswer
     }
 
-    -- Cursor Core (user/feed position state)
-    --
-    --   * CursorCore є canonical protocol-level моделлю для cursor state у feed.
-    --
-    --   * У базовій моделі підтримується тільки cursor kind = read.
-    --
-    --   * Cursor update є client-originated command через Query,
-    --     а server застосовує його до effective cursor state.
-    --
-    --   * Для read використовується explicit cursor boundary:
-    --
-    --       effective_cursor(user, feed, read) = seq
-    --
-    --   * Сервер MAY дозволяти rewind/read-backward
-    --     як явне переміщення cursor на менший boundary.
-    --
-    --   * Після успішного застосування server MAY згенерувати
-    --     MessageEvent(type=read) як факт уже застосованого стану.
-    --
-    -- Source of truth:
-    --
-    --   * CursorCore є єдиним джерелом істини для read cursor state.
-    --
-    --   * FeedViewItem.readSeq і MessageEvent.readSeq є похідними представленнями.
-    --
-    --   * Event і View не повинні використовуватись для оновлення cursor.
-    --
-    -- Scope / limits:
-    --
-    --   * CursorCore не є replay API; replay event stream лишається в EventCore.
-    --
-    --   * cursor rewind / mark unread входить до базової моделі
-    --     як explicit CursorCore update на менший seq boundary.
-    --
-    --   * Після rewind server MAY згенерувати MessageEvent(type=read)
-    --     з новим effective readSeq як фактом already-applied state.
+    -- CursorCore є єдиним джерелом істини для read cursor state.
+    -- У базовій моделі підтримується тільки cursor kind = read.
+    -- Cursor update є client-originated command; server MAY дозволяти rewind.
+    -- FeedViewItem.readSeq і MessageEvent.readSeq є похідними представленнями.
     --
     CursorKind ::= ENUMERATED {
        read (1),
@@ -1026,92 +408,11 @@ BEGIN
        result  [2] CursorAnswer
     }
 
-    -- Home Core (bootstrap / home view)
-    --
-    -- HomeCore використовується для отримання агрегованого snapshot/view
-    -- після connect/reconnect або для побудови home screen.
-    --
-    -- Семантика:
-    --
-    --   * Home є multi-feed view:
-    --       - список feed (діалоги / конференції)
-    --       - preview (останні повідомлення)
-    --       - unread/read-derived стан
-    --       - mention-derived стан
-    --
-    --   * HomeAnswer.items повертає FeedViewItem,
-    --     а не canonical domain state ресурсу.
-    --
-    --   * Home НЕ є джерелом істини:
-    --       - це snapshot/view, подібний до Inbox або Roster
-    --
-    --   * Home snapshot може використовуватись як anchor
-    --     для подальшого Event replay у кількох feed.
-    --
-    --   * Home snapshot є shared:
-    --       - один anchor для кількох feed
-    --       - boundary визначається для кожного feed окремо
-    --
-    --   * Home pagination використовує continuation token,
-    --     аналогічно іншим view query.
-    --
-    -- Важливо:
-    --
-    --   * Home НЕ замінює:
-    --       - Inbox (per-feed snapshot)
-    --       - Roster (relation view)
-    --       - Member list / role directory для group
-    --
-    --   * Home є агрегованим bootstrap/view ресурсом.
-    --
-    --   * Home повинен нести тільки мінімальний обсяг даних,
-    --     потрібний для першого рендеру і робочого UI context.
-    --
-    --   * Детальний roster/member/conference state клієнт має
-    --     дозавантажувати окремими Query у міру потреби.
-    --
-    -- Home Query Model
-    --
-    --   * Home є єдиним bootstrap/view query.
-    --
-    --   * Окремий op для Home не використовується:
-    --       - сам факт QueryPayload.home означає home bootstrap request
-    --
-    --   * previewLimit обмежує кількість preview data на feed.
-    --
-    --   * includeRoster дозволяє клієнту явно запросити
-    --     optional roster view у складі HomeAnswer.
-    --
-    -- Home vs Inbox
-    --
-    --   * Home використовується для:
-    --       - reconnect bootstrap
-    --       - home screen / dialog list
-    --       - multi-feed preview
-    --
-    --   * Inbox використовується для:
-    --       - точного per-feed snapshot
-    --       - gap recovery
-    --       - message retrieval у межах одного feed
-    --
-    --   * Home не замінює Inbox:
-    --       - Home є агрегованим multi-feed view
-    --       - Inbox є точним feed-scoped snapshot
-    --
-    --   * Для повного recovery окремого feed клієнт повинен
-    --     використовувати InboxQuery або Event replay,
-    --     залежно від recovery context.
-    --
-    -- includeRoster semantics
-    --
-    --   * Якщо includeRoster = true,
-    --     сервер MAY включити roster view у HomeAnswer.
-    --
-    --   * Якщо includeRoster відсутній або false,
-    --     сервер MAY опустити roster для зменшення обсягу bootstrap result.
-    --
-    --   * includeRoster не змінює relation state
-    --     і не впливає на messaging semantics.
+    -- HomeCore є multi-feed bootstrap/view query.
+    -- HomeAnswer.items повертає FeedViewItem, а не canonical state ресурсу.
+    -- Home snapshot є shared replay anchor для feed, покритих цим HomeAnswer.
+    -- Home не замінює Inbox/Roster/MemberQuery і має нести лише дані
+    -- для першого рендеру та робочого UI context.
     --
     HomeQuery ::= SEQUENCE {
        previewLimit  [0] INTEGER OPTIONAL,
@@ -1119,35 +420,8 @@ BEGIN
        ...
     }
 
-    -- Feed View Model
-    --
-    --   * FeedViewItem є агрегованим snapshot/view item
-    --     для bootstrap/home/feed list.
-    --
-    --   * FeedViewItem є спільною projection-моделлю
-    --     для private/group/channel/mailbox feed.
-    --
-    --   * FeedViewItem не є джерелом істини для:
-    --       - Message state
-    --       - Conference state
-    --       - Subscription state
-    --
-    --   * unread / mentions / preview належать до view layer,
-    --     а не до canonical domain state feed ресурсу.
-    --
-    -- Mention View Semantics
-    --
-    --   * MentionView є user-scoped derived view.
-    --
-    --   * count і latestSeq НЕ є canonical state,
-    --     а обчислюються сервером на основі:
-    --       - mentions у Message payload/state
-    --       - read cursor(user, feed)
-    --
-    --   * messageId є stable reference до останнього mention message,
-    --     але не є частиною read або cursor state.
-    --
-    --   * MentionView не впливає на delivery, ordering або replay semantics.
+    -- FeedViewItem є агрегованим snapshot/view item для home/feed list.
+    -- unread / mentions / preview належать до view layer, а не до canonical state.
     --
     MentionView ::= SEQUENCE {
        count      [0] INTEGER OPTIONAL,
@@ -1156,23 +430,8 @@ BEGIN
        ...
     }
 
-    -- Group View Model
-    --
-    --   * GroupView є derived bootstrap/view projection для group feed.
-    --
-    --   * GroupView не є джерелом істини для:
-    --       - Conference state
-    --       - Member relation
-    --
-    --   * Джерелами істини лишаються:
-    --       - ConferenceQuery / ConferenceAnswer
-    --       - MemberQuery / MemberAnswer
-    --
-    --   * GroupView призначений тільки для Home/bootstrap UI context.
-    --
-    --   * Поля GroupView повинні бути достатніми для:
-    --       - першого рендеру group tile / dialog item
-    --       - базових role-aware UI affordances
+    -- GroupView є derived bootstrap/view projection для group feed.
+    -- Джерелами істини лишаються ConferenceQuery і MemberQuery.
     --
     GroupView ::= SEQUENCE {
        myRole      [0] MemberStatus OPTIONAL,
@@ -1187,25 +446,14 @@ BEGIN
         -- headSeq — останній відомий seq у feed на момент snapshot
        headSeq   [1] INTEGER OPTIONAL,
 
-        -- readSeq — projection effective read cursor(user, feed)
-        --   у view layer.
-        --
-        --   * Джерелом істини лишається CursorCore.
-        --
-        --   * FeedViewItem.readSeq є derived value і не використовується
-        --     для оновлення read state.
+        -- readSeq є derived projection effective read cursor(user, feed)
+        -- джерелом істини лишається CursorCore
        readSeq   [2] INTEGER OPTIONAL,
 
-        -- unread є derived/cached значенням:
-        --   unread = max(0, headSeq - readSeq)
-        --
-        -- unread не є джерелом істини
+        -- unread є derived/cached значенням і не є джерелом істини
        unread    [3] INTEGER OPTIONAL,
 
-        -- mentions є user-scoped snapshot/view state:
-        --   count      = кількість unread mention для цього user у feed
-        --   latestSeq  = jump anchor до останнього mention
-        --   messageId  = stable reference до останнього mention message
+        -- mentions є user-scoped derived view state
        mentions   [4] MentionView OPTIONAL,
 
         -- optional derived group-specific bootstrap/view info
@@ -1213,26 +461,9 @@ BEGIN
        ...
     }
 
-    -- Home pagination і snapshot semantics
-    --
-    --   * continue є opaque cursor для pagination home view.
-    --
-    --   * hasMore є hint про наявність додаткових feed.
-    --
-    --   * snapshot є shared opaque anchor для цього HomeAnswer.
-    --
-    --   * snapshot може використовуватись як bootstrap boundary
-    --     для replay тільки у feed, покритих цим HomeAnswer.
-    --
-    --   * replay semantics для boundary / no-duplicates / no-gaps
-    --     визначаються в EventCore.
-    --
-    -- Consistency:
-    --
-    --   * Home не гарантує snapshot isolation.
-    --
-    --   * Home snapshot не заморожує authorization, moderation,
-    --     membership або existence resource.
+    -- continue є opaque cursor для home pagination; hasMore є hint.
+    -- snapshot є shared opaque anchor для цього HomeAnswer.
+    -- Home не гарантує snapshot isolation.
     --
     HomeAnswer ::= SEQUENCE {
        items     [0] SEQUENCE OF item FeedViewItem OPTIONAL,
@@ -1242,21 +473,8 @@ BEGIN
        -- shared home snapshot anchor
        snapshot  [3] Binary OPTIONAL,
 
-        -- optional roster snapshot (view)
-        --
-        --   * roster використовується як допоміжний view для home screen
-        --     (наприклад contact list / metadata для feed)
-        --
-        --   * roster НЕ є джерелом істини для relation
-        --     і не впливає на messaging semantics
-        --
-        --   * сервер MAY повертати:
-        --       - повний roster snapshot
-        --       - або скорочений (condensed) subset
-        --
-        --   * клієнт не повинен припускати повноту roster у HomeAnswer
-        --
-        --   * для повного roster клієнт повинен використовувати RosterQuery
+       -- optional roster snapshot/view; для повного roster слід
+       -- використовувати RosterQuery
        roster    [4] RosterAnswer OPTIONAL,
        ...
     }
@@ -1266,47 +484,8 @@ BEGIN
        result  [2] HomeAnswer
     }
 
-    -- Pagination / Streaming (view queries)
-    --
-    --   * Для snapshot/view даних (roster, members, search, conference)
-    --     використовується continuation-based pagination.
-    --
-    --   * limit задає максимальний розмір сторінки.
-    --
-    --   * continue є opaque token, який визначає позицію
-    --     у результаті запиту.
-    --
-    --   * Сервер MAY повертати:
-    --       - continue: token для наступної сторінки
-    --       - hasMore: ознаку наявності додаткових даних
-    --
-    --   * Клієнт не повинен інтерпретувати continuation token.
-    --
-    --   * Pagination не гарантує snapshot isolation:
-    --       - дані можуть змінюватись між сторінками
-    --       - можливі дублікати або пропуски
-    --
-    --   * Для повної консистентності клієнт може виконати
-    --     повторний повний запит.
-
-    -- Event Core (recovery / replay)
-    --
-    --   * EventCore є canonical API для replay / recovery event stream.
-    --
-    --   * Підтримуються три режими використання:
-    --       - recovery mode
-    --       - preview mode
-    --       - streaming mode
-    --
-    --   * Client-originated cursor/state updates не входять до EventCore
-    --     і передаються через CursorCore.
-    --
-    --   * Події є спільним stream у межах feed.
-    --
-    --   * seq є feed-scoped і монотонно зростаючим.
-    --
-    --   * Recovery виконується від імені конкретної session
-    --     через її local replay position (last_seq).
+    -- View query використовують continuation-based pagination.
+    -- EventCore є canonical API для replay/recovery event stream.
 
 
     EventQuery ::= SEQUENCE {
@@ -1324,21 +503,8 @@ BEGIN
        ...
     }
 
-    -- Event Pagination / Streaming
-    --
-    --   * after задає нижню межу replay:
-    --       сервер повертає події з seq > after.
-    --
-    --   * limit задає максимальну кількість подій у відповіді.
-    --
-    --   * Якщо відповідь обрізана, сервер MAY повернути:
-    --       - nextAfter: останній seq у поточній сторінці
-    --       - hasMore: ознаку наявності наступної сторінки
-    --
-    --   * Продовження replay через after = nextAfter
-    --     утворює lossless continuation boundary:
-    --       - без повторного повернення вже покритих подій
-    --       - без втрати подій з seq > nextAfter
+    -- after задає нижню межу replay: сервер повертає події з seq > after.
+    -- nextAfter/hasMore використовуються для продовження replay.
     --
     EventAnswer ::= SEQUENCE {
        events     [0] SEQUENCE OF event Event OPTIONAL,
@@ -1353,33 +519,17 @@ BEGIN
     }
 
     -- 05 Search (query / view extension)
-    --
-    -- Search у протоколі є read-only query/view layer для visible
-    -- message/feed scope.
-    --
-    -- LDAP або інший backend MAY використовуватись для реалізації search,
-    -- але їхня request/result shape не є частиною зовнішнього wire-контракту.
+    -- Search є read-only query/view layer для visible message/feed scope.
+    -- LDAP або інший backend може використовуватись лише як server-side mapping.
 
     Criteria ::= ENUMERATED { equal (0), notequal (1), like (2), ...}
 
     -- Scope визначає search domain / object family.
     --
-    -- Для chat message search базовий executable subset використовує:
-    --   * type = message
-    --
-    -- room/chat/profile/contact/member можуть використовуватись
-    -- як future extension для richer directory / discovery search.
-    --
     Scope ::= ENUMERATED { profile (0), folder (1), contact (2), member (3), room (4), chat (5), message (6), ...}
 
-    -- SearchScope є CHAT-facing search scope reference.
-    --
-    --   * Клієнт передає logical chat scope,
-    --     а не backend-specific identifier.
-    --
-    --   * Мапінг у LDAP DN / subtree / index anchor
-    --     виконується всередині server implementation.
-    --
+    -- SearchScope є CHAT-facing scope reference.
+    -- Backend mapping лишається всередині server implementation.
     SearchScope ::= CHOICE {
        all    [0] NULL,
        peer   [1] Binary,
@@ -1393,81 +543,8 @@ BEGIN
        ...
     }
 
-    -- execute використовує field/value/criteria/type
-    -- list допускає частковий фільтр або перегляд у межах chat scope
-    --
-    -- Chat-facing canonical forms у DSL є sugar над SearchQuery.
-    --
-    -- Приклади semantic mapping:
-    --
-    --   query search text "draft"
-    --     -> SearchQuery {
-    --          op       = execute,
-    --          field    = "body",
-    --          value    = "draft",
-    --          criteria = like,
-    --          type     = message
-    --        }
-    --
-    --   query search peer alice text "draft"
-    --     -> SearchQuery {
-    --          op       = execute,
-    --          scope    = peer:alice,
-    --          field    = "body",
-    --          value    = "draft",
-    --          criteria = like,
-    --          type     = message
-    --        }
-    --
-    --   query search group room1 text "draft"
-    --     -> SearchQuery {
-    --          op       = execute,
-    --          scope    = group:room1,
-    --          field    = "body",
-    --          value    = "draft",
-    --          criteria = like,
-    --          type     = message
-    --        }
-    --
-    -- Тобто scope у search semantics є CHAT-facing anchor/container scope.
-    --
-    -- Конкретний backend mapping може бути, наприклад:
-    --   * peer:alice  -> LDAP DN / private container anchor
-    --   * group:room1 -> LDAP DN / group subtree anchor
-    --
-    -- Але цей mapping не є частиною зовнішнього client contract.
-    --
-    --   query search field tag equal "release"
-    --     -> SearchQuery {
-    --          op       = execute,
-    --          field    = "tag",
-    --          value    = "release",
-    --          criteria = equal,
-    --          type     = message
-    --        }
-    --
-    --   query search peer alice field body like "draft" return body tag
-    --     -> SearchQuery {
-    --          op       = execute,
-    --          scope    = peer:alice,
-    --          field    = "body",
-    --          value    = "draft",
-    --          criteria = like,
-    --          type     = message,
-    --          fields   = { "body", "tag" }
-    --        }
-    --
-    -- Projection / pagination:
-    --
-    --   * Query.limit задає розмір search page.
-    --
-    --   * SearchAnswer.continue повертає opaque continuation token
-    --     для наступної сторінки.
-    --
-    --   * Query.continue використовується клієнтом
-    --     для запиту наступної сторінки.
-    --
-    --   * requested projection fields задаються в SearchQuery.fields.
+    -- execute використовує field/value/criteria/type.
+    -- list допускає частковий фільтр або перегляд у межах scope.
     --
     SearchQuery ::= SEQUENCE {
        op       SearchOp,
@@ -1478,27 +555,12 @@ BEGIN
        type     [4] Scope OPTIONAL,
 
        -- requested projection fields for chat-facing search result
-       -- (наприклад body, tag, attachment)
        fields   [5] SEQUENCE OF field Binary OPTIONAL,
        ...
     }
 
     -- SearchResultItem є CHAT-facing search result projection.
-    --
-    --   * preferred executable subset для current protocol model:
-    --       type = message
-    --
-    --   * LDAP/backend result shape не є частиною зовнішнього
-    --     client contract і мапиться server implementation internally.
-    --
-    --   * payload MAY містити тільки requested visible fields
-    --   * hidden fields MUST NOT з'являтися у payload
-    --   * requested hidden fields повинні silently omitted
-    --
-    --   * field-level visibility має пріоритет для searchable/projection fields
-    --
-    --   * якщо field visibility для конкретного field відсутня,
-    --     застосовується coarse message-level visibility/classification
+    -- payload містить тільки requested visible fields.
     --
     SearchResultItem ::= SEQUENCE {
        messageId [0] Binary OPTIONAL,
@@ -1507,8 +569,7 @@ BEGIN
        ...
     }
 
-    -- result повертає список знайдених елементів (може бути пустим)
-    -- у stable implementation-defined order
+    -- result повертає список знайдених елементів у stable implementation-defined order
     SearchAnswer ::= SEQUENCE {
        items     [0] SEQUENCE OF item SearchResultItem OPTIONAL,
        continue  [1] Continuation OPTIONAL,
@@ -1516,84 +577,11 @@ BEGIN
        ...
     }
 
-    -- Search semantics
-    --
-    --   * Search не змінює Message state
-    --   * Search не означає read
-    --   * Search не рухає replay cursor
-    --   * Search не генерує окремих Event
-    --
-    --   * Search result є projection/view над існуючим state
-    --     і не є окремим feed або event stream
-    --
-    --   * Group-scoped search допускається тільки для member / owner
-    --
-    --   * Якщо actor не має доступу до group scope,
-    --     server SHOULD повертати Query error forbidden
-    --
-    --   * Якщо actor має group-scoped moderation restriction,
-    --     server SHOULD повертати Query error forbidden
-    --
-    --   * Global search не повинен leak-ати inaccessible scope
-    --     через result items
-    --
-    -- Field / visibility semantics:
-    --
-    --   * hidden field => not searchable
-    --
-    --   * requested hidden field => omitted from projected result
-    --
-    --   * field-level visibility MAY бути точнішою,
-    --     ніж coarse message classification
-    --
-    --   * якщо для field задано explicit visibility policy,
-    --     саме вона визначає searchable / projected visibility цього field
-    --
-    --   * якщо explicit field visibility відсутня,
-    --     використовується message-level visibility/classification
-    --
-    -- Projection semantics:
-    --
-    --   * SearchQuery.fields MAY обмежувати projected result fields
-    --
-    --   * Якщо SearchQuery.fields відсутній,
-    --     server MAY повернути default visible payload projection
-    --
-    -- Pagination semantics:
-    --
-    --   * Query.limit задає page size для SearchAnswer.items
-    --
-    --   * continue / hasMore працюють так само,
-    --     як для інших snapshot/view query
-    --
-    --   * Search pagination не змінює read state
-    --     і не впливає на replay boundary
-    --
-    -- Search ordering semantics:
-    --
-    --   * SearchAnswer.items повертаються у stable implementation-defined order.
-    --
-    --   * Протокол на цьому етапі не визначає explicit sortBy,
-    --     ranking або relevance order policy.
-    --
-    --   * Якщо той самий SearchQuery виконується над незмінним result set,
-    --     server SHOULD повертати items у тому самому порядку.
-    --
-    --   * Query.continue для search SHOULD продовжувати той самий
-    --     order chain, який був встановлений першою сторінкою
-    --     відповідного search result.
-    --
-    --   * Projection через SearchQuery.fields не повинна змінювати
-    --     порядок SearchAnswer.items, а лише форму projected payload.
-    --
-    --   * Snapshot isolation для search pagination не гарантується:
-    --       - underlying data можуть змінюватись між сторінками
-    --       - visibility / moderation / membership / mutation
-    --         можуть змінити наступне page window
-    --
-    --   * За відсутності explicit snapshot binding server не зобов'язаний
-    --     зберігати той самий full result set між першою сторінкою
-    --     і наступним Query.continue.
+    -- Search не змінює Message state, не означає read і не рухає replay cursor.
+    -- Search result є projection/view над наявним state.
+    -- Group-scoped search допускається тільки для authorized member/owner.
+    -- hidden field не є searchable і не повертається у projection.
+    -- Pagination не має snapshot binding і не гарантує isolation між сторінками.
     --
     SearchExtension ::= CHOICE {
        request [1] SearchQuery,
@@ -1601,90 +589,8 @@ BEGIN
     }
 
     -- 06 Subscription (зв'язок підписки між суб'єктом і ціллю)
-    --
-    -- Модель спрощена до факту зв'язку (actor -> target).
-    -- Жодних статусів або presence тут більше немає.
-    --
-    -- Перенесення семантики:
-    --
-    -- Presence (online/offline/typing):
-    --   → перенесено в Event
-    --
-    -- Lifecycle дії (request/confirm/ignore/ban/unban):
-    --   → передаються через Event (як події)
-    --   → або ініціюються через Query (type=set)
-    --
-    -- Бан:
-    --   → не є частиною Subscription
-    --   → є server-side policy (обмеження доступу)
-    --   → встановлюється через Query і сигналізується через Event
-    --
-    -- Таким чином:
-    --   Subscription = state (факт зв'язку)
-    --   Event        = що сталося (події)
-    --   Query        = як це змінити / отримати
-    --
-    -- P2P Relation Semantics
-    --
-    --   * Subscription описує directed relation:
-    --
-    --       actor -> target
-    --
-    --   * Це базова relation model для p2p / contact semantics.
-    --
-    --   * Subscription не є самим roster, а є джерелом relation state,
-    --     який MAY відображатись у roster/view.
-    --
-    --   * Mutual relation виникає як дві незалежні directed relation:
-    --
-    --       alice -> bob
-    --       bob   -> alice
-    --
-    --   * Протокол не вимагає, щоб relation була mutual.
-    --
-    --   * One-way relation є валідною і не повинна автоматично
-    --     створювати зворотний зв'язок.
-    --
-    -- Usage:
-    --
-    --   * Subscription MAY використовуватись для:
-    --       - roster inclusion / contact visibility
-    --       - presence visibility
-    --       - optional trust / encryption policy
-    --
-    --   * Точна policy семантика relation не є частиною базового протоколу
-    --     і визначається серверною реалізацією.
-    --
-    -- Direct Messaging:
-    --
-    --   * У базовій моделі direct private messaging не залежить
-    --     від наявності Subscription або roster entry.
-    --
-    --   * Сервер MAY додати relation-gated messaging policy у майбутньому,
-    --     але така policy повинна бути явно оголошена,
-    --     а не випливати неявно з roster model.
-    --
-    -- Moderation interaction:
-    --
-    --   * Moderation policy є окремою від Subscription.
-    --
-    --   * Наявність Subscription не скасовує moderation restriction.
-    --
-    --   * Наявність moderation restriction не означає автоматичне
-    --     видалення Subscription relation.
-
-    -- XMPP відповідність:
-    --
-    --   subscription (actor → target):
-    --     → RFC 3921 (Roster + Presence Subscriptions)
-    --
-    -- Зауваження:
-    --
-    --   У XMPP subscription і presence lifecycle змішані.
-    --   У даному протоколі:
-    --     - Subscription = лише факт зв'язку
-    --     - Lifecycle події → Event
-    --     - Команди → Query
+    -- Subscription описує directed relation actor -> target.
+    -- Presence/lifecycle/moderation більше не живуть у Subscription.
     --
 
     Subscription ::= SEQUENCE {
@@ -1838,45 +744,8 @@ BEGIN
 
     Server ::= SEQUENCE { service Binary, port INTEGER, host Binary }
 
-    -- Roster є contact-oriented snapshot/view.
-    -- Операції над roster передаються через Query.
-    -- Runtime-події не живуть у Roster як моделі.
-    --
-    -- Roster / Relation Semantics
-    --
-    --   * Roster є snapshot/view ресурсом, а не джерелом істини
-    --     для p2p relation або messaging authorization.
-    --
-    --   * Видимість contact у roster SHOULD походити з relation state
-    --     (наприклад Subscription), а не навпаки.
-    --
-    --   * Add/remove у roster semantics слід інтерпретувати як зміну
-    --     roster-visible relation state, а не як transport-level дозвіл
-    --     або заборону direct messaging.
-    --
-    --   * Direct private messaging у базовій моделі MAY існувати
-    --     без roster entry.
-    --
-    --   * Видалення contact з roster саме по собі не повинно
-    --     автоматично блокувати direct messaging, якщо окрема server policy
-    --     не визначає інше.
-    --
-    --   * Якщо сервер підтримує relation-gated messaging,
-    --     ця policy повинна бути явно зафіксована окремо.
-    --
-    --   * LDAP або інший directory backend MAY використовуватись
-    --     для побудови roster view на сервері, але їхня структура
-    --     не є частиною зовнішнього CHAT wire-контракту.
-
-    -- XMPP відповідність:
-    --
-    --   roster:
-    --     → RFC 3921 (Roster Management)
-    --
-    -- Зауваження:
-    --
-    --   У даному протоколі roster є snapshot/view ресурсом,
-    --   а не джерелом runtime-подій.
+    -- Roster є contact-oriented snapshot/view і не є джерелом істини.
+    -- LDAP або інший backend може використовуватись лише як server-side mapping.
     --
 
     RosterOp ::= ENUMERATED {
@@ -1919,25 +788,8 @@ BEGIN
        result  [2] RosterAnswer
     }
 
-    -- Moderation / Policy Semantics
-    --
-    --   * Moderation є окремим policy layer,
-    --     а не relation state і не roster view.
-    --
-    --   * ban створює policy restriction для actor -> target.
-    --
-    --   * unban видаляє цю policy restriction.
-    --
-    --   * list повертає moderation restrictions для поточного actor
-    --     або для явно заданого actor filter.
-    --
-    --   * Moderation не повинна неявно змінювати Subscription або Roster.
-    --
-    --   * Group-scoped moderation також не повинна неявно створювати
-    --     або видаляти Member relation.
-    --
-    --   * Timing semantics для ban/unban визначається загальними
-    --     правилами Query / Command Evaluation Semantics.
+    -- Moderation є окремим policy layer, а не relation state і не roster view.
+    -- Group-scoped moderation не повинна неявно змінювати Member relation.
     --
     ModerationOp ::= ENUMERATED {
        ban    (1),
@@ -2004,20 +856,12 @@ BEGIN
     -- 08 Conference (RocksDB, Multi-user Conferences)
 
     -- MemberStatus описує лише роль учасника в конференції.
-    -- Lifecycle і mutation більше не живуть у Member:
-    --   removed        -> Event / Query
-    --   patch/update   -> Query
     MemberStatus ::= ENUMERATED {
        member (1),
        admin  (2),
        owner  (3), ...}
 
-    -- Role Semantics
-    --
-    --   * owner має всі права member щодо доступу до group feed.
-    --
-    --   * admin/member policy може деталізуватись сервером,
-    --     але базовий доступ до group feed дозволяється всім valid members.
+    -- owner має всі права member щодо доступу до group feed.
 
     Member ::= SEQUENCE {
        id Binary,
@@ -2041,29 +885,8 @@ BEGIN
        update (5)
     }
 
-    -- get/remove/update очікують actor + feed
-    -- add використовує actor + feed
-    -- list допускає фільтр за feed
-    --
-    -- Group Membership Semantics
-    --
-    --   * Member є джерелом істини для membership у Conference/group feed.
-    --
-    --   * add створює membership relation:
-    --
-    --       actor -> group feed
-    --
-    --   * remove видаляє membership relation.
-    --
-    --   * owner Conference також вважається валідним member
-    --     для доступу до group feed.
-    --
-    --   * Детальний склад учасників group і їхні ролі
-    --     клієнт повинен отримувати через MemberQuery,
-    --     а не як вкладені списки всередині Conference.
-    --
-    --   * Timing semantics для add/remove визначається загальними
-    --     правилами Query / Command Evaluation Semantics.
+    -- Member є джерелом істини для membership у Conference/group feed.
+    -- Детальний склад учасників слід отримувати через MemberQuery.
     --
     MemberQuery ::= SEQUENCE {
        op    MemberOp,
@@ -2093,24 +916,6 @@ BEGIN
     ConferenceType ::= ENUMERATED { group (1), channel (2), call (3) }
 
     -- ConferenceStatus описує лише стан конференції як ресурсу.
-    -- Command, lifecycle і події більше не живуть у Conference:
-    --   create/add/remove/patch/get/delete -> Query
-    --   join/leave/joined/removed          -> Event
-    --   mute/unmute                        -> Query / Event
-    --   lastmsg                            -> Query (Inbox/Search) або Event
-
-    -- XMPP відповідність:
-    --
-    --   conference / group / channel:
-    --     → XEP-0045 (Multi-User Chat)
-    --
-    -- Зауваження:
-    --
-    --   У XMPP багато логіки зашито в stanza.
-    --   Тут модель розділена:
-    --     - Conference = state
-    --     - Event = runtime події
-    --     - Query = команди
     --
 
     ConferenceStatus ::= ENUMERATED {
@@ -2119,24 +924,8 @@ BEGIN
        deleted  (3), ...
     }
 
-    -- Conference / Group Model
-    --
-    --   * Conference описує існування і стан group ресурсу.
-    --
-    --   * MessageFeed.group є message stream цієї conference.
-    --
-    --   * Membership і доступ до group feed не є canonical implicit полями Conference,
-    --     а визначаються через Member relation і server-side authorization.
-    --
-    --   * unread / mention-derived дані належать до feed view layer,
-    --     а не до canonical Conference state.
-    --
-    --   * lastmsg також не є частиною Conference state.
-    --
-    --   * Conference не повинен нести повні members/admins списки:
-    --       - це роздуває bootstrap/view payload
-    --       - дублює Member source of truth
-    --       - не потрібне для першого UI render
+    -- Conference описує існування і стан group ресурсу.
+    -- Membership і доступ до group feed визначаються через Member relation.
     --
     Conference ::= SEQUENCE {
        id Binary,
@@ -2162,28 +951,8 @@ BEGIN
        remove  (5), ...
     }
 
-    -- get/remove очікують id
-    -- create/update використовують поля конференції
-    -- list допускає частковий фільтр
-    --
-    -- Group Lifecycle Semantics
-    --
-    --   * Conference є canonical state ресурсом для group.
-    --
-    --   * Conference(type=group) створює group resource,
-    --     з яким пов'язаний MessageFeed.group.
-    --
-    --   * Creator Conference автоматично стає:
-    --       - owner
-    --       - і валідним member цієї group
-    --
-    --   * Membership інших користувачів керується через MemberQuery.add/remove,
-    --     а не через окрему mutation semantics усередині Conference.
-    --
-    --   * Видалення Conference робить відповідний group feed недоступним.
-    --
-    --   * Timing semantics для create/update/remove визначається
-    --     загальними правилами Query / Command Evaluation Semantics.
+    -- Conference(type=group) створює group resource, пов'язаний з MessageFeed.group.
+    -- Membership інших користувачів керується через MemberQuery.
     --
     ConferenceQuery ::= SEQUENCE {
        op    ConferenceOp,
@@ -2219,93 +988,9 @@ BEGIN
     }
 
     -- 09 CHAT-v2 Protocol Entities
-    -- Server Invariants / Guarantees
-    --
-    -- Delivery Model:
-    --
-    --   * Message і Event доставляються за моделлю at-least-once.
-    --
-    --   * Повторна доставка можлива після retry або reconnect.
-    --
-    --   * Клієнт повинен бути ідемпотентним.
-    --
-    -- Ordering:
-    --
-    --   * Порядок гарантується тільки в межах одного feed.
-    --
-    --   * seq є монотонно зростаючим у межах feed.
-    --
-    --   * Глобальний порядок між feed не гарантується.
-    --
-    -- Replay:
-    --
-    --   * Сервер може відтворювати події через EventQuery (after).
-    --
-    --   * Replay гарантує тільки часткове відновлення (partial recovery).
-    --
-    -- Retention:
-    --
-    --   * Сервер може обмежувати історію подій (retention policy).
-    --
-    --   * Події можуть бути втрачені (gap).
-    --
-    -- Gap Handling:
-    --
-    --   * У випадку gap сервер сигналізує через:
-    --
-    --       Query(type=error, code=gap)
-    --
-    --   * Клієнт повинен виконати повний sync через snapshot (Inbox).
-    --
-    -- Consistency:
-    --
-    --   * causal ordering не гарантується.
-    --
-    --   * Conflict resolution:
-    --       - last-write-wins (timestamp)
-    --       - delete має пріоритет над edit/update
-    --
-    -- Session:
-    --
-    --   * Session є незалежною одиницею доставки.
-    --
-    --   * Кожна session має власний:
-    --      - last_seq
-    --
-    --   * read cursor є логічно user-scoped:
-    --      - server підтримує effective read cursor(user, feed)
-    --
-    --   * session може мати локальний технічний стан,
-    --     але не є джерелом істини для read/unread
-    --
-    --   * Сервер не веде окремі event-черги на session.
-    --
-    -- Federation:
-    --
-    --   * Authoritative broker відповідає за порядок і seq у feed.
-    --
-    --   * Проміжні broker не змінюють payload.
-    --
-    -- Conflict / Race Semantics
-    --
-    --   * Protocol не гарантує serializable snapshot між commands і view queries.
-    --
-    --   * Policy/resource changes (ban, membership remove, conference delete)
-    --     можуть відбуватись між snapshot і наступною command.
-    --
-    --   * already accepted command зберігає свій ефект,
-    --     якщо інше явно не визначено окремою policy.
-    --
-    --   * new command після зміни state оцінюється
-    --     за актуальним server state.
-    --
-    -- Snapshot vs Stream:
-    --
-    --   * Event (seq) → streaming модель (log).
-    --
-    --   * Query (continuation) → snapshot/view модель.
-    --
-    --   * Консистентність між ними не гарантується.
+    -- Delivery є at-least-once; порядок гарантується тільки в межах feed.
+    -- Replay гарантує лише partial recovery; gap сигналізується через Query error.
+    -- Protocol не гарантує serializable snapshot між commands і view queries.
 
     CHATProtocol ::= CHOICE {
        authority [1] Authority,
@@ -2314,94 +999,17 @@ BEGIN
        query     [5] Query
     }
 
-    -- Transport Batching / Framing
-    --
-    --   * Транспортний контейнер може нести:
-    --       - один пакет протоколу
-    --       - або batch з кількох пакетів
-    --
-    --   * Batching використовується для:
-    --       - зменшення transport overhead
-    --       - групування дрібних Event/Query/Message
-    --
-    --   * Порядок елементів у batch зберігається.
-    --
-    --   * Batch є transport-оптимізацією і не змінює семантику
-    --     окремих Message/Event/Query.
-    --
-    --   * Batch не є atomic transaction:
-    --       - failure одного packet не скасовує інші packet у batch
-    --       - batch не створює shared snapshot або shared command context
-    --
-    --   * Client MAY використовувати batch для:
-    --       - pipelined Query request
-    --       - coalesced Message / Query send
-    --
-    --   * Server MAY використовувати batch для:
-    --       - кількох Event у одному transport frame
-    --       - кількох Query(result|error) у одному transport frame
-    --
-    --   * Якщо потрібна атомарність або compound semantics,
-    --     це повинно моделюватись окремою protocol feature,
-    --     а не самим batch framing.
+    -- batch є transport-оптимізацією і не змінює семантику packet.
+    -- Порядок packet у batch зберігається.
+    -- batch не є atomic transaction і не створює shared snapshot/context.
     CHATBody ::= CHOICE {
        single [1] CHATProtocol,
        batch  [2] SEQUENCE OF packet CHATProtocol
     }
 
-    -- Security / Trust Boundaries
-    --
-    --   * TLS захищає transport channel між сусідніми вузлами,
-    --     але не гарантує end-to-end недоторканність payload.
-    --
-    -- Trust Model:
-    --
-    --   * Клієнт довіряє authoritative broker/server тільки в межах:
-    --       - routing
-    --       - auth/session validation
-    --       - replay / retention policy
-    --
-    --   * Проміжні broker в federation вважаються transport-trusted,
-    --     але не payload-trusted.
-    --
-    -- Mutable by broker:
-    --
-    --   * headers
-    --   * routing metadata
-    --   * tracing metadata
-    --
-    -- Not mutable by broker:
-    --
-    --   * Message.payload
-    --   * Event.payload
-    --   * Query.payload
-    --
-    --   * Проміжні broker не повинні змінювати domain payload,
-    --     навіть якщо вони форвардять пакет.
-    --
-    -- Token Handling:
-    --
-    --   * accessToken є transport credential і може перевірятись
-    --     broker/server вузлом, який термінує transport session.
-    --
-    --   * refreshToken не повинен передаватись поза auth flow
-    --     (Authority.authenticate / Authority.renew).
-    --
-    -- End-to-End Security:
-    --
-    --   * Якщо потрібна end-to-end цілісність або конфіденційність,
-    --     вона повинна забезпечуватись на рівні payload
-    --     (поза межами базового transport протоколу).
-    --
-    -- Transport headers
-    --
-    --   * headers можуть містити:
-    --       - accessToken
-    --       - routing metadata
-    --       - tracing / delivery metadata
-    --
-    --   * accessToken використовується для авторизації конкретної session
-    --     на transport рівні.
+    -- TLS захищає transport channel, але не гарантує end-to-end payload integrity.
+    -- Проміжні broker можуть змінювати headers/metadata, але не payload.
+    -- accessToken є transport credential; refreshToken не виходить за auth flow.
     Header ::= CHOICE {
        auth      [1] AuthHeader,
        routing   [2] RoutingHeader,
@@ -2413,46 +1021,9 @@ BEGIN
        accessToken Binary
     }
 
-    -- Routing / Federation Semantics
-    --
-    --   * RoutingHeader використовується для transport-level маршрутизації
-    --     між broker/server вузлами.
-    --
-    --   * target є optional routing hint для адресації кінцевого ресурсу
-    --     або вузла призначення.
-    --
-    --   * feed задає логічний контекст маршрутизації повідомлення.
-    --
-    -- Authority:
-    --
-    --   * Для кожного feed існує authoritative broker/server,
-    --     який відповідає за:
-    --       - порядок подій у feed
-    --       - seq у межах feed
-    --       - retention / replay policy
-    --
-    -- Federation:
-    --
-    --   * Проміжні broker MAY форвардити пакети до authoritative вузла
-    --     або до наступного маршруту.
-    --
-    --   * Проміжні broker не повинні змінювати семантику payload.
-    --
-    --   * Проміжні broker MAY додавати transport metadata у headers,
-    --     але не повинні змінювати Message/Event/Query payload.
-    --
-    -- Ordering:
-    --
-    --   * Порядок подій гарантується тільки authoritative вузлом feed.
-    --
-    --   * Federation не гарантує глобальний порядок між різними feed
-    --     або різними маршрутами.
-    --
-    -- Error Handling:
-    --
-    --   * Якщо маршрут невідомий або недоступний,
-    --     сервер SHOULD повертати Query(type=error, code=notFound)
-    --     або Query(type=error, code=unavailable).
+    -- RoutingHeader використовується для transport-level маршрутизації.
+    -- Порядок подій гарантується тільки authoritative вузлом feed.
+    -- Невідомий або недоступний маршрут -> Query error notFound/unavailable.
 
     RoutingHeader ::= SEQUENCE {
        target [0] Binary OPTIONAL,
