@@ -15,6 +15,11 @@
 Це не surface DSL і не runner-oriented AST.
 Це спроба описати мінімальне ядро, в яке surface DSL може зводитися після elaboration.
 
+Статус цього документа:
+- це проміжне semantic ядро між surface DSL і більш строгим typed kernel;
+- він ближчий до normalization / elaboration / lowering;
+- його варто читати як місток від parsing/surface semantics до глибшої kernel-моделі.
+
 ---
 
 ## Що не входить у ядро
