@@ -4,9 +4,9 @@ CHAT v2 Specification
 
 ## Overview
 
-CHAT v2 — це messaging/pub-sub протокол з чітким розділенням між transport-пакетами, runtime-подіями, state/view моделлю та auth/session management. Протокол побудований так, щоб одна семантика не мала кількох паралельних wire-шляхів. 
+CHAT v2 — це messaging/pub-sub протокол з чітким розділенням між transport-пакетами, runtime-подіями, моделлю state/view та керуванням auth/session. Протокол побудований так, щоб одна семантика не мала кількох паралельних шляхів на wire-рівні. 
 
-Основні transport-level сутності:
+Основні transport-рівневі сутності:
 - Message — тільки контент повідомлення
 - Event — всі runtime події
 - Query — єдиний request/response механізм
@@ -15,10 +15,10 @@ CHAT v2 — це messaging/pub-sub протокол з чітким розділ
 ## Design Principles
 
 1. Одна семантика — один wire-шлях.
-2. Message не містить lifecycle/runtime semantics.
+2. Message не містить lifecycle/runtime-семантики.
 3. Event є єдиним каналом runtime-подій.
-4. Query є єдиним control/state request-response шаром.
-5. Domain state і view не є top-level packet types. 
+4. Query є єдиним request/response шаром для control/state.
+5. Domain state і view не є top-level типами packet. 
 
 ## Core Transport Model
 
@@ -56,7 +56,7 @@ Event є єдиним каналом runtime-подій:
 - receipts
 - presence
 - edits / deletes / updates
-- інші runtime state changes
+- інші runtime-зміни стану
 
 Події мають `seq`, який:
 - монотонно зростає
@@ -70,9 +70,9 @@ Event delivery model:
 
 ### Event as runtime truth
 
-Event є єдиним джерелом runtime truth.
+Event є єдиним джерелом runtime-істини.
 
-Message state не є окремим persisted truth,
+Message state не є окремо збереженою істиною,
 а виводиться як:
 
 message_state = fold(events)
@@ -80,18 +80,18 @@ message_state = fold(events)
 Це означає:
 
 - edit/delete не створюють новий message
-- вони змінюють state існуючого message
+- вони змінюють стан існуючого message
 - replay повинен конвергувати до того самого фінального стану
 
 Ця модель узгоджується з DSL сценаріями:
 - delete overrides edit
-- replay returns final state
-- event ordering може бути некаузальним, але state має бути узгодженим
+- replay повертає фінальний стан
+- event ordering може бути некаузальним, але стан має бути узгодженим
 
 ### Query
 
 Query є єдиним механізмом для:
-- state retrieval
+- отримання стану
 - commands
 - recovery
 - paging
@@ -108,7 +108,7 @@ Query є єдиним механізмом для:
 Transport framing може нести або один packet, або batch із кількох packet.
 
 Batch:
-- є transport/coalescing optimization
+- є transport/coalescing-оптимізацією
 - зберігає порядок packet усередині batch
 - не є atomic transaction
 - не створює shared snapshot або shared command context
@@ -127,14 +127,14 @@ Authority відповідає за:
 - renew
 - revoke
 - enroll
-- trust/bootstrap semantics
+- trust/bootstrap-семантику
 
 Authority може виступати як:
 - auth/session authority
 - registration authority
 - certification authority
 
-Протокол не виконує parsing або validation PKIX/CMS payload на своєму рівні; certificate-related дані передаються як opaque binary. 
+Протокол не виконує розбір або перевірку PKIX/CMS payload на своєму рівні; дані, пов'язані з сертифікатами, передаються як opaque binary.
 
 ### Access policy and ABAC
 
@@ -159,7 +159,7 @@ ABAC не змінює:
 
 Тобто:
 
-- протокол визначає істину (truth)
+- протокол визначає істину
 - policy layer визначає доступ до цієї істини
 
 Деталі моделі доступу та policy evaluation описані в ARCH-AUTH.md.
@@ -172,9 +172,9 @@ ABAC не змінює:
 - Session
 
 Session:
-- не є transport connection
+- не є transport-з'єднанням
 - не є користувачем
-- є runtime-інстансом клієнта
+- є активним інстансом клієнта
 - переживає reconnect
 
 Кожна session має власні:
@@ -213,7 +213,7 @@ Reconnect не створює нову session, якщо існуюча ще в�
 Multi-session semantics:
 
 - один user може мати кілька активних session
-- session є runtime інстансами клієнтів (наприклад, різні пристрої)
+- session є активними інстансами клієнтів (наприклад, різні пристрої)
 - state типу `read cursor` є user-scoped і спільний між session
 - state типу `last_seq` є session-scoped і може відрізнятись між session
 
@@ -235,7 +235,7 @@ Multi-session semantics:
 - idempotency required
 - exact-once не гарантується
 
-`received`, `delivered`, `read` є application-level подіями, а не transport-level exact-once гарантією. 
+`received`, `delivered`, `read` є подіями application-рівня, а не transport-рівневою exact-once гарантією.
 
 ### Replay
 
@@ -287,7 +287,7 @@ message_state = fold(message_events)
 - повідомлення має структурований payload
 - payload є частиною message state
 - body є лише одним із полів payload
-- коротка форма повідомлення є скороченням structured payload
+- коротка форма повідомлення є скороченням структурованого payload
 
 Приклад:
 
@@ -306,9 +306,9 @@ message_state = fold(message_events)
 
 ### Delete semantics
 
-- delete змінює current visible state повідомлення на deleted
+- delete змінює поточний видимий стан повідомлення на deleted
 - delete не створює новий message
-- delete перекриває активний content state, включно з попередніми edit
+- delete перекриває активний вмістовний стан, включно з попередніми edit
 
 ---
 
@@ -324,11 +324,11 @@ message_state = fold(message_events)
 Функція переходу стану визначається як:
 
 - apply(edited, state):
-  - якщо state.deleted == true → no-op
+  - якщо state.deleted == true → без змін
   - інакше → оновлює змінювані поля (наприклад body)
 
 - apply(updated, state):
-  - якщо state.deleted == true → no-op
+  - якщо state.deleted == true → без змін
   - інакше → замінює або мерджить поля відповідно до semantics update
 
 - apply(deleted, state):
@@ -368,7 +368,7 @@ Replay і online-обробка повинні приводити до одно�
 
 - replay і online-обробка повинні приводити до одного і того самого фінального стану
 
-- різні recovery-шляхи не повинні давати різний current payload
+- різні recovery-шляхи не повинні давати різний поточний payload
 
 - delete домінує:
   після delete повідомлення не може знову стати видимим,
@@ -382,13 +382,6 @@ Replay і online-обробка повинні приводити до одно�
 
 ---
 
-### Notes
-
-- payload є state, а не просто даними повідомлення
-- edit/delete визначають state, а не створюють нові повідомлення
-- replay повинен конвергувати до того самого стану, що і звичайна обробка подій
-
-
 ## Feed Model
 
 Feed — це логічний контекст доставки й упорядкування.  
@@ -401,14 +394,14 @@ Feed — це логічний контекст доставки й упоряд
 `seq` існує тільки в межах feed.  
 Глобального порядку між feed не існує. 
 
-## Snapshot vs Stream
+## View Model
 
 Протокол явно розрізняє дві моделі:
 
 ### Stream model
 `Event` + `seq`
 
-Це append-only лог подій у межах feed.
+Це лог подій у межах feed, до якого події лише додаються.
 
 ### Snapshot/view model
 `Query` + `continuation`
@@ -420,9 +413,7 @@ Feed — це логічний контекст доставки й упоряд
 - conference
 - member
 
-Між stream і snapshot не гарантується повна консистентність у будь-який момент часу. 
-
-## View Model
+Між stream і snapshot не гарантується повна консистентність у будь-який момент часу.
 
 Протокол розрізняє окремий шар view поверх canonical state.
 
@@ -431,7 +422,7 @@ View:
 - не є джерелом істини
 - не змінює Message або Event state
 - не впливає на replay semantics
-- не є transport-level сутністю
+- не є сутністю transport-рівня
 
 View є результатом Query і може бути:
 
@@ -469,10 +460,10 @@ View є результатом Query і може бути:
 
 Властивості:
 
-- є projection або list/view над існуючим state
+- є projection або list/view над наявним state
 - не має snapshot anchor
 - не використовується для recovery
-- може повертати підмножину payload або paginated items
+- може повертати підмножину payload або елементи частинами
 
 ---
 
@@ -498,7 +489,7 @@ View є результатом Query і може бути:
 - View не впливає на replay boundary
 
 - різні view можуть одночасно спостерігати різний стан
-- view може бути частково застарілим (stale)
+- view може бути частково застарілим
 
 ---
 
@@ -516,7 +507,7 @@ View pagination використовує continuation model:
 - можливі:
   - дублікати
   - пропуски
-  - зміна window між сторінками
+  - зміна вікна між сторінками
 
 ---
 
@@ -530,9 +521,9 @@ View завжди проходить через policy layer:
 
 Це означає:
 
-- view не може відкривати inaccessible data
-- filtering застосовується до view результату
-- search, inbox, home повинні мати однакові visibility guarantees
+- view не може відкривати недоступні дані
+- filtering застосовується до результату view
+- search, inbox, home повинні мати однакові правила видимості
 
 ---
 
@@ -540,7 +531,7 @@ View завжди проходить через policy layer:
 
 Stream (`Event`) і View (`Query`) є незалежними шарами:
 
-- stream визначає істину (truth)
+- stream визначає істину
 - view є проекцією цієї істини
 
 Жоден view не повинен:
@@ -551,22 +542,9 @@ Stream (`Event`) і View (`Query`) є незалежними шарами:
 
 ---
 
-### Summary
-
-View model є окремим шаром поверх protocol:
-
-- не змінює state
-- не є джерелом істини
-- не впливає на replay
-
-але:
-
-- визначає те, що клієнт бачить
-- формує UX через projection і aggregation
-
 ### Feed View Model
 
-FeedViewItem є агрегованою view/snapshot моделлю для:
+FeedViewItem є агрегованою view/snapshot-моделлю для:
 - private feeds
 - group feeds
 - channel feeds
@@ -593,78 +571,24 @@ Home включає:
 - roster
 - feeds
 - previews
-- derived view state (unread, mentions тощо)
+- derived view-стан (unread, mentions тощо)
 
 Home не є джерелом істини, а лише view поверх canonical state.
 
----
+### Home invariants
 
-### Home snapshot
+- `home` повертає `shared snapshot`, який є recovery anchor
+  для подальшого replay (`snapshot = anchor`)
+- snapshot є спільним для всіх feed у межах одного home запиту
+- replay після `home` повертає тільки події з `seq > snapshot`
+- усі сторінки paged `home` повинні використовувати один і той самий snapshot
+- `home` є view без побічного впливу на read:
+  - не викликає read
+  - не змінює read cursor
+  - не впливає на unread
+  - не змінює subscription / roster
 
-Home повертає `shared snapshot`, який є recovery anchor
-для подальшого event replay.
-
-Цей snapshot:
-
-- є узгодженим зрізом (consistent cut) стану
-- покриває всі feed, включені в home result
-- використовується як opaque boundary для replay (`snapshot = anchor`)
-
----
-
-### Home + Replay
-
-Home і replay разом утворюють безшовний recovery механізм:
-
-- replay після snapshot не повинен:
-  - дублювати preview або snapshot дані
-  - створювати gaps
-
-- replay повинен повертати тільки події з `seq > snapshot`
-
-- snapshot визначає нижню межу replay для кожного feed
-
----
-
-### Multi-feed semantics
-
-- snapshot є спільним (shared) для всіх feed у межах одного home запиту
-
-- при цьому:
-  - `seq` лишається feed-scoped
-  - replay виконується окремо для кожного feed
-
-- snapshot не означає, що всі feed мають однаковий seq,
-  але гарантує узгоджений момент часу для recovery
-
----
-
-### Home pagination
-
-Якщо home повертається у кілька сторінок:
-
-- всі сторінки повинні використовувати один і той самий snapshot
-
-- pagination не повинна:
-  - створювати новий snapshot boundary
-  - змінювати recovery anchor
-
-- snapshot є стабільним для всього paged home result
-
----
-
-### Home is read-neutral
-
-Home є view-операцією і не повинен змінювати state:
-
-- не викликає read
-- не змінює read cursor
-- не впливає на unread
-- не змінює subscription / roster
-
-Home не повинен створювати побічних ефектів у protocol state
-
-## Search Model
+### Search as projection view
 
 Search є query/view extension поверх protocol model.
 
@@ -674,124 +598,30 @@ Search:
 - не генерує Event
 - не означає read
 - не рухає replay cursor
-- не є feed або event stream
+- не є feed або потоком event
 
-Search result є projection/view над існуючим state,
+Search result є projection/view над наявним state,
 аналогічно inbox/home/roster.
 
----
+### Search invariants
 
-### Scope
+- search виконується у видимому для користувача scope:
+  - peer
+  - group
+  - global
+- search поважає membership, moderation і field-level visibility
+- hidden field не бере участі в search і не повертається у projection
+- projection не змінює matching semantics і не обходить visibility constraints
+- search використовує continuation pagination, але:
+  - не змінює read state
+  - не впливає на replay boundary
+  - не має snapshot anchor
+  - не використовується для recovery
+- порядок result set є стабільним і задається реалізацією
+- search не гарантує snapshot isolation:
+  можливі дублікати, пропуски і зміна вікна між сторінками
 
-Search виконується у межах видимого для користувача scope:
-
-- peer (private feed)
-- group (conference feed)
-- global (union visible scopes)
-
-Search:
-
-- поважає membership
-- поважає moderation policy
-- не повинен leak-ати inaccessible scope через result
-
----
-
-### Visibility and fields
-
-Search:
-
-- поважає message-level visibility (ABAC / classification)
-- поважає field-level visibility
-
-Інваріанти:
-
-- hidden field => не searchable
-- hidden requested field => не повертається у projection
-- match сам по собі не дає доступу до resource
-
----
-
-### Projection
-
-Search підтримує projection через requested fields:
-
-- результат може містити лише підмножину payload
-- projection не змінює matching semantics
-- projection не обходить visibility constraints
-
----
-
-### Pagination
-
-Search використовує continuation-based pagination:
-
-- `limit`
-- `continue`
-- `hasMore`
-
-Search pagination:
-
-- не змінює read state
-- не впливає на replay boundary
-- є view-only операцією
-
----
-
-### Ordering
-
-Search result повертається у stable implementation-defined order.
-
-Це означає:
-
-- сервер визначає порядок items
-- explicit sortBy/ranking не визначені на цьому етапі
-
-Інваріанти:
-
-- той самий query над незмінним result set
-  повинен повертати items у тому самому порядку
-
-- `continue` повинен продовжувати той самий order chain
-
-- projection не повинна впливати на порядок items
-
----
-
-### Consistency
-
-Search не гарантує snapshot isolation:
-
-- дані можуть змінюватись між сторінками
-- result window може змінюватись
-- можливі:
-  - дублікати
-  - пропуски
-
-Search є eventually-consistent view,
-а не стабільний snapshot.
-
----
-
-### Relation to other views
-
-Search відрізняється від:
-
-- Inbox:
-  - feed-scoped snapshot
-  - може використовуватись для recovery
-
-- Home:
-  - multi-feed bootstrap snapshot
-  - має snapshot anchor
-
-Search:
-
-- не має snapshot anchor
-- не використовується для recovery
-- є ad-hoc projection query
-
-## Pagination Model
+### Pagination and Replay Windows
 
 Pagination використовується для snapshot/view queries:
 
@@ -804,115 +634,27 @@ Snapshot pagination:
 - може повертати дублікати
 - може пропускати елементи
 
-Event replay використовує окрему seq-based модель,
-яка описана в `Event Replay Pagination Model`.
-
-## Event Replay Pagination Model
-
-Event replay використовує seq-based pagination:
+Event replay використовує окрему seq-based модель:
 
 - `after`
 - `limit`
 - `nextAfter`
 - `hasMore`
 
-Ця модель відрізняється від snapshot pagination і має власні інваріанти.
-
----
-
 ### Replay pagination invariants
 
-Replay pagination повинна задовольняти наступні вимоги:
-
-- події повертаються у порядку зростання `seq`
-
-- кожна сторінка replay:
-  - містить події з `seq > after`
-  - не повинна містити події з `seq <= after`
-
-- `nextAfter` визначає позицію для наступного запиту:
-  - `nextAfter >= max(seq)` поточної сторінки
-  - `nextAfter` є монотонним
-
----
-
-### No overlap
-
-Сторінки replay не повинні перекриватися:
-
-- одна і та сама подія не повинна з'являтись у двох послідовних сторінках
-- клієнт не повинен отримувати дублікати через pagination
-
-Примітка:
-- дублікати можливі через at-least-once delivery,
-  але не повинні виникати як наслідок pagination logic
-
----
-
-### No gaps (within retention)
-
-За відсутності `gap`:
-
-- replay не повинен пропускати події
-- усі події з `seq > after` повинні бути доступні через послідовні сторінки
-
-Якщо частина подій недоступна через retention policy:
-
-- сервер повертає `error gap`
-- клієнт повинен перейти до snapshot-based recovery
-
----
-
-### Snapshot vs Replay
-
-Snapshot pagination і replay pagination мають різну семантику:
-
-Snapshot (`limit + continue`):
-
-- не гарантує snapshot isolation
-- може:
-  - повертати дублікати
-  - пропускати елементи
-  - змінювати склад між сторінками
-
-Replay (`after + nextAfter`):
-
-- є строго впорядкованим по `seq`
-- гарантує:
-  - відсутність overlap
-  - відсутність gaps (крім explicit gap error)
-
----
-
-### Snapshot drift
-
-Між snapshot сторінками можуть відбуватись зміни:
-
-- нові повідомлення можуть з'являтись
-- старі можуть зникати або змінюватись
-
-Це означає:
-
-- snapshot не є стабільним зрізом
-- continuation token не гарантує той самий набір даних
-
-Для консистентного recovery:
-
-- клієнт повинен використовувати snapshot як anchor
-- і переходити до replay (`snapshot = anchor`)
-
----
-
-### Interaction with Home
-
-Home bootstrap задає `shared snapshot`,
-який використовується як початкова точка для replay.
-
-Replay pagination після home:
-
-- повинна починатися з `seq > snapshot`
-- не повинна дублювати preview/snapshot дані
-- повинна залишатися узгодженою з multi-feed semantics
+- replay повертає події у порядку зростання `seq`
+- кожна сторінка містить тільки події з `seq > after`
+- `nextAfter` є монотонним і продовжує той самий ланцюжок replay
+- replay pagination не повинна створювати overlap між сторінками
+- за відсутності `gap` replay не повинен пропускати події
+- якщо частина історії недоступна через retention policy,
+  сервер повертає `error gap`, а клієнт переходить до recovery через snapshot
+- snapshot pagination і replay pagination мають різну семантику:
+  - snapshot pagination може давати дублікати, пропуски і зсув між сторінками
+  - replay pagination задає строго впорядковане продовження за `seq`
+- після `home` replay повинен починатися з `seq > snapshot`
+  і не дублювати snapshot/preview дані
 
 ## Read / Unread Model
 
@@ -923,118 +665,23 @@ Read cursor:
 - спільний для всіх session одного користувача
 - оновлюється через read operation з будь-якої session
 
-### Read as boundary
-
-Read інтерпретується як верхня межа (boundary) у feed, а не як набір message ids.
-
-Тобто read означає:
-
-read_cursor(user, feed) = N
-
-де N є максимальним seq, який вважається прочитаним.
-
-Ця семантика узгоджується з DSL формою:
-
-- `send read for last`
-- `query cursor read ... up to <seq>`
-
-Read:
-
-- не залежить від повноти delivery або replay
-- може обганяти фактичну доставку повідомлень у конкретну session
-- може бути явно відмотаний назад через cursor rewind
-
-Unread:
-- є derived view відносно user-level read cursor
-- не є глобальним source of truth
-- може кешуватися або агрегуватися на рівні session/device
-
-Базова формула:
-
-`unread = current_seq(feed) - read_cursor(user)`
-
 ### Read invariants
 
-- read cursor є explicit user-controlled boundary, а не незворотним ack
+- read є явно заданою межею:
+  `read_cursor(user, feed) = N`
+- read cursor є user-scoped, а не session-scoped
+- повторний read з меншим `seq` є валідним відмотуванням назад
+- read cursor відображає спостережувану межу:
+  read не вимагає повного replay і не позначає як read події,
+  які клієнт не спостерігав
+- `unread` є derived view відносно read cursor, а не окремим джерелом істини
+- нові події з `seq > read_cursor` формують новий unread tail
+- unread і mention-derived поля належать до шару feed view,
+  а не до canonical Conference state
 
-- повторний read з меншим seq є валідним rewind cursor state
+### Mention as derived view
 
-- read cursor не повинен ламатись через:
-    - reorder event delivery
-    - delete/edit mutation
-
-Unread і mention-derived поля належать до feed view layer
-(наприклад FeedViewItem), а не до canonical Conference state.
-Агрегація unread до рівня device або користувача є server-side policy. 
-
-### Partial read semantics
-
-Read cursor відображає лише observed boundary, а не повний стан feed.
-
-Це означає:
-
-- read може виконуватись після часткового replay (partial delivery)
-- read не вимагає повного отримання всіх подій у feed
-
----
-
-### Observed boundary
-
-Якщо клієнт отримав лише частину подій:
-
-- read cursor може оновлюватись до будь-якого explicit observed `seq`
-- події з більшим `seq`, які ще не були доставлені, лишаються unread
-
-Формально:
-
-- read_cursor <= max_observed_seq
-
----
-
-### Partial replay interaction
-
-У випадку partial replay:
-
-- `send read for last` означає read до останнього локально отриманого повідомлення
-- це не означає read до head feed
-
-Наслідок:
-
-- remaining tail повинен бути доступний через наступний replay
-- replay після cursor може повертати ще події
-
----
-
-### Unread after partial read
-
-Unread визначається відносно read cursor, а не відносно delivery:
-
-- якщо read виконано після partial replay:
-  - старіші події вважаються read
-  - новіші події (включно з ще не доставленими) лишаються unread
-
----
-
-### Future events
-
-Read не фіксує feed:
-
-- нові події з `seq > read_cursor` автоматично формують новий unread tail
-- read не впливає на події, які з'являються після нього
-
----
-
-### Invariants
-
-- read не може "закрити" feed без повного replay
-- read не повинен позначати як read події, які клієнт не спостерігав
-- unread tail завжди визначається як:
-
-  unread = current_seq(feed) - read_cursor
-
-## Mention View Model
-
-Mention-derived state є feed-level view, а не canonical domain state.
+Mention-derived state є feed-рівневим view, а не canonical domain state.
 
 Mention view:
 - є user-scoped
@@ -1049,148 +696,23 @@ Mention view може містити:
 
 Такі дані належать до FeedViewItem, а не до Conference state.
 
-Mention state:
+### Mention invariants
 
-- є view-level агрегатом
-- не є частиною canonical message або event state
-- може містити посилання на конкретне повідомлення (через message id / seq)
-
-Це узгоджується з DSL:
-- mention не є окремою подією, яка змінює state
-- це derived view поверх event stream
-
-### Mention source conditions
-
-Mention-derived state виникає не з будь-якого message,
-а лише з message, який одночасно:
-
-- видимий для поточного user
-- входить до unread області feed
-- містить mention цього user у payload/context
-
-Це означає:
-
-- hidden message не повинен породжувати visible mention state
-- replay без explicit read не очищає mention state
-- mention cleared semantics визначається read boundary,
-  а не самим фактом delivery або replay
-
-### Mention semantics
-
-Mention є derived сигналом, а не частиною canonical state.
-
-Це означає:
-
-- mention не створює окремих подій
-- mention не змінює message state
-- mention не впливає на replay або ordering
-
-Mention визначається виключно payload + context.
-
----
-
-### Mention detection
-
-Mention виникає, якщо payload повідомлення містить посилання на user:
-
-- explicit (наприклад `@user`)
-- або через structured payload (canonical field `mentions`)
-
-У DSL short form для цього може використовуватись `mention: <user>`
-як sugar над canonical payload shape.
-
-Сервер може інтерпретувати mention:
-
-- під час ingestion message
-- або під час побудови view
-
----
-
-### Mention as view
-
-Mention state:
-
-- є user-scoped
-- є feed-scoped
-- не є частиною canonical message/event state
-
-Це означає:
-
-- mention може кешуватись
-- mention може агрегуватись
-- mention може змінюватись без зміни underlying event stream
-
----
-
-### Interaction with read
-
-Mention не є незалежним від read:
-
-- якщо message.seq <= read_cursor:
-  - mention не повинен вважатися активним
-
-- якщо message.seq > read_cursor:
-  - mention входить в unread mention set
-
-Тобто:
-
-mention_unread ⊆ unread
-
----
-
-### Interaction with visibility
-
-Mention visibility підпорядковується тим самим policy rules,
-що і visibility message/view source.
-
-Це означає:
-
-- якщо message hidden для user,
-  mention-derived state від цього message не повинен бути видимим
-
-- якщо message видимий частково,
-  mention state може існувати тільки тоді,
-  коли policy допускає видимість самого mention source
-  у feed/home view
-
-Mention не повинен бути side-channel,
-через який клієнт дізнається про hidden message.
-
----
-
-### Interaction with replay
-
-Replay не повинен окремо “відновлювати” mention:
-
-- mention повинен автоматично виводитись із replay event stream
-- replay не повинен містити спеціальних mention-подій
-
----
-
-### Interaction with delete/edit
-
-Оскільки mention є derived:
-
-- delete повідомлення:
-  - видаляє mention із view
-
-- edit повідомлення:
-  - може:
-    - додати mention
-    - видалити mention
-
-- replay після edit/delete повинен давати той самий mention state
-
----
-
-### Invariants
-
-- mention не є частиною canonical state
-- mention не повинен впливати на replay semantics
-- mention не повинен створювати окремих event
-- mention завжди узгоджений з:
-  - message payload
-  - read cursor
+- mention є derived сигналом, а не частиною canonical state
+- mention не створює окремих event і не впливає на replay або ordering
+- source mention визначається через payload і context:
+  - явний mention (`@user`)
+  - або canonical structured field `mentions`
+- DSL short form `mention: <user>` є скороченням для canonical payload shape
+- mention виникає тільки для message, який одночасно:
+  - видимий для поточного user
+  - входить до unread області feed
+  - містить mention цього user
+- `mention_unread ⊆ unread`
+- replay не містить спеціальних mention-подій:
+  mention автоматично виводиться з event stream
+- delete видаляє mention із view, а edit може додати або прибрати mention
+- mention не повинен бути побічним каналом для hidden message
 
 ## Presence / Typing Model
 
@@ -1201,11 +723,11 @@ Presence і typing передаються через Event.
 - debounce presence
 - aggregate read/delivered events
 
-`typing` є transient runtime event, а не stable state snapshot.
+`typing` є короткоживучою runtime-подією, а не stable state snapshot.
 
 Тобто:
 - `typing` не повинен зберігатися в home або інших stable view
-- `typing` не повинен повторно з'являтися в replay без нового runtime source
+- `typing` не повинен повторно з'являтися в replay без нового джерела runtime-події
 
 Ці оптимізації не змінюють семантику стану, а лише оптимізують доставку.
 
@@ -1218,18 +740,18 @@ Presence і typing передаються через Event.
 
 Проміжні broker:
 - можуть форвардити пакети
-- можуть додавати transport metadata
+- можуть додавати transport-метадані
 - не повинні змінювати payload
 
-Routing виконується через transport-level headers, а не через зміну domain payload. 
+Routing виконується через transport-рівневі headers, а не через зміну domain payload. 
 
 ## Security Model
 
-TLS захищає transport channel між сусідніми вузлами, але не гарантує end-to-end недоторканність payload.
+TLS захищає transport-канал між сусідніми вузлами, але не гарантує end-to-end недоторканність payload.
 
 Trust boundaries:
-- headers є transport-level metadata
-- payload є domain-level data
+- headers є transport-рівневими метаданими
+- payload є domain-рівневими даними
 - проміжні broker не повинні змінювати payload
 
 Payload model:
@@ -1238,7 +760,7 @@ Payload model:
 - certificate-related data
 - CMS-like content
 
-усе це передається як opaque binary, якщо не задано інше на рівні application/crypto layer. 
+усе це передається як opaque binary, якщо не задано інше на рівні application/crypto layer.
 
 ## Versioning and Capabilities
 
@@ -1259,4 +781,4 @@ CHAT v2 — це:
 - query-driven state/snapshot model
 - at-least-once delivery system
 - feed-scoped ordering protocol
-- architecture, що не змішує transport, runtime events, state views і crypto/application payload. 
+- архітектура, що не змішує transport, runtime events, state views і crypto/application payload. 
