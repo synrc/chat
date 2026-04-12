@@ -1364,6 +1364,20 @@ BEGIN
     --          fields   = { "body", "tag" }
     --        }
     --
+    -- TODO (protocol/backend boundary):
+    --
+    --   Поточне поле dn є зручним для LDAP-backed реалізації,
+    --   але може бути занадто backend-shaped для зовнішнього CHAT контракту.
+    --
+    --   Обговорити, чи не слід у майбутньому замінити/звузити його до
+    --   більш CHAT-native scope reference:
+    --     * peer
+    --     * group
+    --     * feed
+    --     * all
+    --
+    --   а LDAP DN будувати вже всередині server implementation.
+    --
     -- Projection / pagination:
     --
     --   * Query.limit задає розмір search page.
@@ -1403,6 +1417,18 @@ BEGIN
     --
     --   * якщо field visibility для конкретного field відсутня,
     --     застосовується coarse message-level visibility/classification
+    --
+    -- TODO (result shape boundary):
+    --
+    --   SearchItem зараз змішує:
+    --     * LDAP/backend-oriented shape (dn/field/value/criteria/type)
+    --     * CHAT-facing message projection (messageId/feed/payload)
+    --
+    --   Обговорити, чи не слід розділити ці два рівні:
+    --     * backend/internal search representation
+    --     * зовнішній CHAT search result item
+    --
+    --   щоб клієнтський wire contract не залежав від форми backend індексу.
     --
     SearchItem ::= SEQUENCE {
        dn        [0] Binary OPTIONAL,
@@ -1783,6 +1809,18 @@ BEGIN
     --
     --   * Якщо сервер підтримує relation-gated messaging,
     --     ця policy повинна бути явно зафіксована окремо.
+    --
+    -- TODO (roster vs directory boundary):
+    --
+    --   Поточна форма Roster успадковує directory-style projection
+    --   (people/topics/channels/servers), що зручно для LDAP-backed backend.
+    --
+    --   Обговорити, чи повинен зовнішній CHAT protocol:
+    --     * лишити roster як багатосекційний directory snapshot
+    --     * чи звузити його до більш chat-native roster/contact view
+    --
+    --   Якщо LDAP лишається внутрішнім backend сервера,
+    --   клієнтський контракт може бути простішим за backend structure.
 
     -- XMPP відповідність:
     --
