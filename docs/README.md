@@ -32,24 +32,24 @@
 ### Advanced
 
 - [DSL-ADVANCED](./dsl/advanced/DSL-ADVANCED.md)
-  Edge cases: mutation, ordering, moderation interactions, version negotiation, federation.
+  Edge cases: mutation, ordering, moderation interactions, version negotiation і federation routing.
 - [DSL-INVARIANTS](./dsl/advanced/DSL-INVARIANTS.md)
   Cross-layer invariants між protocol truth, replay/read semantics і policy layer.
 
 ### Domain
 
 - [DSL-ROSTER](./dsl/domain/DSL-ROSTER.md)
-  Roster і relation semantics для direct communication flows.
+  Roster / relation semantics для direct communication flows.
 - [DSL-READ](./dsl/domain/DSL-READ.md)
-  Read cursor, unread boundary і multi-session read behavior.
+  Read / unread semantics: read cursor, unread boundary і multi-session read behavior.
 - [DSL-REPLAY](./dsl/domain/DSL-REPLAY.md)
-  Replay, recovery, snapshot anchor і gap handling.
+  Replay / recovery semantics, snapshot anchor і gap handling.
 - [DSL-PAGINATION](./dsl/domain/DSL-PAGINATION.md)
   Pagination semantics для inbox, home і replay/event queries.
 - [DSL-HOME](./dsl/domain/DSL-HOME.md)
-  Home/bootstrap view, feed list, previews і shared snapshot semantics.
+  Home bootstrap / view semantics: feed list, previews і shared snapshot.
 - [DSL-VISIBILITY](./dsl/domain/DSL-VISIBILITY.md)
-  Visible/hidden semantics і field-level filtering поверх protocol truth.
+  Visibility / filtering semantics: visible/hidden state і field-level filtering.
 - [DSL-MENTIONS](./dsl/domain/DSL-MENTIONS.md)
   Mention-derived view semantics у home/feed/unread model.
 - [DSL-PRESENCE](./dsl/domain/DSL-PRESENCE.md)
@@ -59,7 +59,7 @@
 - [DSL-MODERATION](./dsl/domain/DSL-MODERATION.md)
   Global і group-scoped moderation як policy layer.
 - [DSL-PAYLOAD](./dsl/domain/DSL-PAYLOAD.md)
-  Structured payload semantics для send, expect, replay і home views.
+  Payload / mutation semantics для structured send, expect, replay і home views.
 
 ### Coverage
 
