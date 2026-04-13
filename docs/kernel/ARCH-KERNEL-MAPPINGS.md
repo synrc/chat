@@ -1,21 +1,21 @@
 # ARCH-KERNEL-MAPPINGS
 
 Коротка карта системи поверх `DSL-SEMANTIC-KERNEL.md` і `DSL-TYPED-KERNEL-REFINEMENT.md`.
-Мета цього документа: показати, з чого складається kernel, що є "іменниками", що є "дієсловами", і як surface DSL зводиться до kernel-форм.
+Мета цього документа: показати, з чого складається kernel, що є "іменниками", що є "дієсловами", і як поверхневий DSL зводиться до kernel-форм.
 
 ## 1. Онтологія
 
 ### Ресурси
 
-- `Principal` — actor / user identity
-- `Session` — session-scoped identity
+- `Principal` — ідентичність учасника
+- `Session` — ідентичність сесії
 - `Feed` — канал взаємодії (`Private`, `Group`, `Token`)
 - `Message` — адресований message resource
 - `Group` — group resource
 
 ### Події
 
-- `Event` — те, що відбулося в runtime (`Received`, `Delivered`, `Read`, `Edited`, `Deleted`, `UserPresence`, `SessionPresence`)
+- `Event` — те, що відбулося під час виконання (`Received`, `Delivered`, `Read`, `Edited`, `Deleted`, `UserPresence`, `SessionPresence`)
 
 ### Спостереження
 
@@ -37,7 +37,7 @@
 
 ## 2. Дії
 
-Kernel action layer описує canonical kernel-level дії, а не surface DSL-синтаксис:
+Шар `action` у kernel описує канонічні дії рівня kernel, а не поверхневий DSL-синтаксис:
 
 - `SessionOp`
 - `Post`
@@ -49,7 +49,7 @@ Kernel action layer описує canonical kernel-level дії, а не surface 
 - `ChangeRole`
 - `ChangeModeration`
 
-Тобто surface-форми на кшталт `send message`, `edit message`, `query inbox` або `expect event ...` спочатку elaborates у ці канонічні форми.
+Тобто поверхневі форми на кшталт `send message`, `edit message`, `query inbox` або `expect event ...` спочатку зводяться до цих канонічних форм.
 
 ## 3. Розділення шарів
 
@@ -66,12 +66,12 @@ Kernel action layer описує canonical kernel-level дії, а не surface 
 
 Одна й та сама DSL-фраза може торкатися кількох шарів:
 
-- `send message ...` зазвичай elaborates у `Action`
+- `send message ...` зазвичай зводиться до `Action`
 - `expect event ...` перевіряє не `Action`, а `Predicate`, який обгортає `Observation`, яка обгортає `Event`
 
 ## 4. DSL -> Kernel mappings
 
-Нижче не нові правила, а короткі приклади того, як surface DSL опускається до канонічного kernel.
+Нижче не нові правила, а короткі приклади того, як поверхневий DSL опускається до канонічного kernel.
 
 ### 4.1 `expect event typing bob1`
 
@@ -129,7 +129,7 @@ Post {
 
 Пояснення:
 
-- surface `send message` не є kernel-конструктором
+- поверхнева форма `send message` не є kernel-конструктором
 - канонічна дія для відправки повідомлення — `Post`
 
 ### 4.3 `edit message`
@@ -161,8 +161,8 @@ Mutate {
 
 Пояснення:
 
-- surface reference спочатку resolve-иться
-- kernel mutation працює не з alias, а з `ExistingMessage`
+- поверхневе посилання спочатку розв'язується
+- kernel mutation працює не з псевдонімом, а з `ExistingMessage`
 - канонічна дія редагування — `Mutate`
 
 ### 4.4 `read cursor`
@@ -189,7 +189,7 @@ MarkRead {
 
 Пояснення:
 
-- symbolic cursor (`last`) не доходить до kernel
+- символічний cursor (`last`) не доходить до kernel
 - kernel зберігає explicit read boundary
 - канонічна дія тут — `MarkRead`
 
@@ -241,7 +241,7 @@ Replay {
 
 Пояснення:
 
-- surface `snapshot` спочатку elaborates у явний kernel boundary
+- поверхневий `snapshot` спочатку зводиться до явного kernel boundary
 - у `DSL-TYPED-KERNEL-REFINEMENT.md` це розщеплено на `AfterFeedSnapshot` / `AfterHomeSnapshot`
 - у `DSL-SEMANTIC-KERNEL.md` цьому відповідає більш загальна форма `AfterSnapshot`
 - канонічна дія для event/history query — `Replay`
@@ -252,14 +252,14 @@ Replay {
 DSL -> Kernel -> Semantics
 ```
 
-- `DSL` = presentation layer: короткі команди, sugar, aliases, symbolic forms
+- `DSL` = представницький рівень: короткі команди, скорочення, псевдоніми, символічні форми
 - `Kernel` = канонічна модель: стабільні типи сутностей, дій, observation і predicate
 - `Semantics` = виконання + інваріанти: `Steps`, `Produces`, `Satisfies`, permission/state rules
 
-Окремо: alias / symbolic / short форми не існують у kernel; вони зникають на стадії elaboration.
+Окремо: псевдоніми, символічні та скорочені форми не існують у kernel; вони зникають на стадії зведення.
 
 Практично це означає:
 
 1. DSL-поверхня зручна для людини
-2. kernel є єдиною canonical intermediate model
-3. семантика визначається не на surface-формах, а на kernel-конструкторах
+2. kernel є єдиною канонічною проміжною моделлю
+3. семантика визначається не на поверхневих формах, а на kernel-конструкторах
