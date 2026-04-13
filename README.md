@@ -110,30 +110,6 @@ iex(1)> :application.which_applications
 ]
 ```
 
-Development Reports
--------------------
-
-* [2010-10-18 LDAP](https://tonpa.guru/stream/2010/2010-10-18 LDAP.htm)
-* [2020-02-03 Кваліфікований Підпис](https://tonpa.guru/stream/2020/2020-02-03 Кваліфікований Електронний Підпис.htm)
-* [2023-06-22 CMS Месенжер Пітч](https://tonpa.guru/stream/2023/2023-06-22 Месенжер.htm)
-* [2023-06-30 ЧАТ X.509 Домашня сторінка](https://erp.uno/chat/)
-* [2023-07-05 CMS S/MIME](https://tonpa.guru/stream/2023/2023-07-05 CMS SMIME.htm)
-* [2023-07-16 CMS Compliance](https://tonpa.guru/stream/2023/2023-07-16 CMS Compliance.htm)
-* [2023-07-20 LDAP Compliance](https://tonpa.guru/stream/2023/2023-07-20 LDAP Compliance.htm)
-* [2023-07-25 LDAP 13.7.24 Домашня сторінка)](https://erp.uno/ldap/)
-* [2023-07-30 CA X.509 Домашня сторінка](https://erp.uno/ca/)
-* [2023-07-21 CMP/CMC/EST](https://tonpa.guru/stream/2023/2023-07-21 CMP CMC EST.htm)
-* [2023-07-21 MLS ROOM CHAT](https://tonpa.guru/stream/2023/2023-07-27 MLS.htm)
-* [2023-08-05 CA CURVE](https://tonpa.guru/stream/2023/2023-08-05 CA CURVE.htm)
-* [2023-08-07 CHAT ASN.1](https://tonpa.guru/stream/2023/2023-08-07 CHAT ASN.1.htm)
-* [2023-08-08 ASN.1 Компілятор](https://tonpa.guru/stream/2023/2023-08-08 ASN.1 Компілятор.htm)
-* [2023-08-10 CHAT Техзавдання](https://tonpa.guru/stream/2023/2023-08-10 CHAT Техзавдання.htm)
-* [2023-08-11 ITU X Series](https://tonpa.guru/stream/2023/2023-08-11 ITU X Series.htm)
-* [2023-08-13 SWIFT X.509](https://tonpa.guru/stream/2023/2023-08-13 SWIFT X.509.htm)
-* [2023-08-15 CHAT Техноробочий проєкт](https://tonpa.guru/stream/2023/2023-08-15 CHAT Техноробочий проєкт.htm)
-* [2023-09-01 ASN1.EX X.680 Тензори](https://tonpa.guru/stream/2023/2023-09-01 ASN1.EX X.680.htm)
-* [2023-09-07 Криптоніт](https://tonpa.guru/stream/2023/2023-09-07 Криптоніт.htm)
-
 Author
 ------
 
