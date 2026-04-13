@@ -111,6 +111,13 @@
 
 ---
 
+### Discovery
+
+- [DSL-DISCOVERY](./extensions/discovery/DSL-DISCOVERY.md)
+  Сценарії поверхневого DSL для capability discovery і feature introspection.
+
+---
+
 ## Принцип
 
 DSL → elaboration → kernel → evaluation
