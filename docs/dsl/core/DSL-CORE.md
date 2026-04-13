@@ -788,6 +788,72 @@ DSL зазвичай використовує коротку форму `seq`,
 - `expect feeds count <= N` означає, що кількість feed у result не перевищує N
 - `expect events count <= N` означає, що кількість events не перевищує N
 
+#### Expect channel semantics
+
+`expect` не читає "будь-які наступні packet/frame" глобально.
+Він перевіряє відповідний observation/result channel,
+який побудовано попередньою командою або runtime delivery.
+
+На цьому етапі DSL фіксує мінімальне розділення:
+
+- command result channel
+  - використовується для `auth`, `renew`, command errors, view/query status
+  - приклади:
+    - `expect authenticated`
+    - `expect session created`
+    - `expect access token`
+    - `expect error unauthorized`
+
+- replay/event observation channel
+  - містить replay/history result semantics і protocol-observable events
+  - може наповнюватися як `query events ...`, так і runtime delivery / push surface
+  - використовується як для replay metadata, так і для exact event observation
+  - приклади:
+    - `expect events`
+    - `expect empty replay`
+    - `expect no gaps`
+    - `expect event offline alice`
+
+- message observation channel
+  - використовується для delivery/message observation
+  - приклади:
+    - `expect message from alice body "hi"`
+    - `expect message deleted`
+
+Практичне правило:
+
+- поточний `expect` перевіряє лише релевантний channel/context
+- нерелевантні observation не повинні випадково задовольняти поточний `expect`
+- нерелевантні observation не повинні зникати лише тому, що сценарій зараз перевіряє щось інше
+- `expect event ...` не повинен споживати command result
+- `expect message ...` не повинен залежати від replay metadata
+- `expect authenticated` не повинен матчитися на presence/message event
+
+Consume semantics:
+
+- `expect` споживає observation лише у своєму релевантному channel
+- observation з інших channel цим `expect` не споживаються
+- observation може лишатися доступним для наступного `expect`, якщо semantics цього channel не вимагає одноразового зняття
+- command result assertions зазвичай споживають свій result одноразово
+- event/message observations можуть лишатися доступними в буфері до явного match або до завершення відповідного channel scope
+
+Це узгоджується з domain scenarios:
+
+- `auth` перевіряється через command result assertions
+- `expect event ...` зазвичай стоїть після `query events ...`
+- `expect empty replay` і `expect event offline ...` можуть співіснувати після одного `query events ...`
+- presence event є окремим від message replay items і не переписує message state
+
+Це правило стосується не лише auth-related response.
+Шумом для конкретного кроку сценарію можуть бути будь-які observation,
+які не є ціллю цього `expect`:
+
+- auth/result frames
+- presence events
+- message delivery observations
+- replay metadata
+- інші protocol-observable events
+
 Argument rules застосовуються до обох рівнів DSL (canonical і exact).
 
 ### ABAC / Access Policy extension
