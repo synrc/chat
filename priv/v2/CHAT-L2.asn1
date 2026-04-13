@@ -1,0 +1,1083 @@
+--- Протокол Месенжера Сохацького (Будда Протокол) v2 для паб-саб брокерів на TLS
+--- https://tonpa.guru/stream/2023/2023-08-07%20CHAT%20ASN.1.htm
+--- Верифікація протоколу для узгодженого порівняння з XMPP виконана Юрієм Масловським,
+--- автором його першої імплементації для NYNJA.
+
+CHAT-L2 DEFINITIONS IMPLICIT TAGS ::=
+BEGIN
+    -- CHAT-v2 design direction:
+    --   * CHATProtocol містить тільки transport-level packet types
+    --   * Message описує тільки контент повідомлення
+    --   * Event є єдиним каналом runtime-подій
+    --   * Query є єдиним request/response механізмом
+    --   * Domain сутності не повинні бути top-level packet types
+
+    -- IMPORTS ContentInfo FROM CryptographicMessageSyntax-2009
+            -- CertificationRequest FROM PKCS-10
+            -- Certificate FROM PKIX1Explicit-2009 ;
+
+    -- PKIX / PKCS модулі навмисно не імпортуються:
+    -- протокол лише транспортує certificate/CSR як opaque binary.
+
+    CertificationRequest ::= OCTET STRING
+    Certificate ::= OCTET STRING -- DER encoded X.509
+
+    Version ::= INTEGER  { v0(0), v1(1), v2(2), v3(3) }
+
+    -- vsn визначає wire-версію повідомлення.
+    -- Unsupported version -> Query(type=error, code=unsupported).
+    -- Невідомі extension-поля SHOULD ігноруватись.
+
+    Flavour ::= ENUMERATED { apple (1), microsoft (2), google (3), ericsson (4), nokia (5), cisco (6) }
+    Binary  ::= OCTET STRING
+    Continuation ::= OCTET STRING
+
+    -- ContentInfo транспортується як opaque binary.
+    ContentInfo ::= OCTET STRING
+
+    -- Session:
+    --   * не є transport connection і не є користувачем
+    --   * переживає reconnect
+    --   * створюється через Authority.authenticate
+    --   * може бути active / expired / revoked
+
+    -- 01 Authority (CA)
+
+    Feature ::= SEQUENCE { id Binary, key Binary, value Binary, group Binary }
+    -- Feature описує capability; невідомі feature ігноруються.
+
+    AuthorityMethod ::= ENUMERATED { announce (0), enroll (1), authenticate (2), revoke (3), renew (4), ... }
+    -- announce -> capabilities / bootstrap metadata
+    -- enroll -> первинна реєстрація
+    -- authenticate -> нова або відновлена session
+    -- renew -> перевидача accessToken
+    -- revoke -> інвалідація session/token/device binding
+    AuthRequest ::= SEQUENCE {
+       accessToken  [0] Binary OPTIONAL,
+       refreshToken [1] Binary OPTIONAL,
+       device       [2] Binary OPTIONAL,
+       client       [3] Binary OPTIONAL,
+       phone        [4] Binary OPTIONAL,
+       sms          [5] Binary OPTIONAL,
+       os           [6] INTEGER OPTIONAL,
+       services     [7] INTEGER OPTIONAL,
+       push         [8] Binary OPTIONAL,
+       supportedVsn [9] SEQUENCE OF version Version OPTIONAL,
+       ...
+    }
+
+    -- AuthAnswer повертає токени та параметри session
+    -- після authenticate / renew.
+    -- accessToken авторизує конкретну session.
+    -- refreshToken дозволяє перевидачу accessToken для device/client.
+    AuthAnswer ::= SEQUENCE {
+       accessToken  [0] Binary OPTIONAL,
+       refreshToken [1] Binary OPTIONAL,
+       device       [2] Binary OPTIONAL,
+       client       [3] Binary OPTIONAL,
+       services     [4] INTEGER OPTIONAL,
+       selectedVsn  [5] Version OPTIONAL,
+       ...
+    }
+
+    -- Authority є trust endpoint для enroll/authenticate/renew/revoke.
+    -- Certificate/CSR payload лишається opaque і тлумачиться поза протоколом.
+
+    AuthorityCert ::= CHOICE {
+       request     [1] CertificationRequest,
+       certificate [2] Certificate,
+       chain       [3] SEQUENCE OF certificate Certificate,
+       ...
+    }
+
+    -- last_seq лишається session-scoped replay position.
+    -- read cursor не належить session і визначається в CursorCore.
+    --
+    Authority ::= SEQUENCE {
+       id Binary,
+       vsn Version,
+       session Binary,
+       type AuthorityMethod,
+       request [0] AuthRequest OPTIONAL,
+       result  [1] AuthAnswer OPTIONAL,
+
+       -- cert містить request/certificate/chain залежно від AuthorityMethod
+       cert [2] AuthorityCert OPTIONAL,
+       settings SEQUENCE OF feature Feature OPTIONAL,
+        ... }
+
+    -- 02 Message (MNESIA, SQLite)
+
+    -- Message описує тільки повідомлення і його payload.
+
+    MessageType ::= ENUMERATED { normal (0), sys (1), reply (2), forward (3), ... }
+
+    MessageFeed ::= CHOICE { private [1] Privatebox, chan [2] Streambox, mailbox [4] Mailbox, group [8] Groupbox, ... }
+
+    -- MessageFeed.group посилається на існуючий Conference(type=group).
+    -- Доступ до group feed визначається membership і authorization.
+
+    File ::= SEQUENCE {
+       id Binary,
+       mime Binary,
+       payload ContentInfo,
+       parentid Binary }
+
+    -- Message.id є єдиною protocol-level identity повідомлення.
+    -- payload є частиною message state; runtime mutation іде через MessageEvent.
+    --
+    Message ::= SEQUENCE {
+       id Binary,
+       vsn Version,
+       session Binary,
+       feed MessageFeed,
+       payload ContentInfo,
+       type MessageType OPTIONAL,
+       link Binary OPTIONAL,
+       files [0] SEQUENCE OF file File OPTIONAL,
+       mentions [1] SEQUENCE OF name Binary OPTIONAL,
+       ...
+    }
+
+    -- send/create нового повідомлення йде через Message.
+    -- edit/delete існуючого повідомлення йде через Query.payload.mutation.
+    --
+    MessageMutationOp ::= ENUMERATED {
+       edit   (1),
+       delete (2), ...
+    }
+
+    FieldPatch ::= SEQUENCE {
+       name  [0] Binary,
+       value [1] Binary OPTIONAL,
+       clear [2] BOOLEAN OPTIONAL,
+       ...
+    }
+
+    MessagePatch ::= SEQUENCE {
+       fields [0] SEQUENCE OF field FieldPatch OPTIONAL,
+       ...
+    }
+
+    MessageMutationQuery ::= SEQUENCE {
+       op        MessageMutationOp,
+       messageId [0] Binary,
+       patch     [1] MessagePatch OPTIONAL,
+       ...
+    }
+
+    -- edit: messageId + patch
+    -- delete: messageId, без patch
+    -- patch описує field-level mutation intent для ABAC / visibility policy
+    --
+    MessageMutationAnswer ::= SEQUENCE {
+       messageId [0] Binary OPTIONAL,
+        ...
+    }
+
+    MessageMutationExtension ::= CHOICE {
+       request [1] MessageMutationQuery,
+       result  [2] MessageMutationAnswer
+    }
+
+    -- 03 Inbox Folder Queue (MNESIA, SQLite) /Mail /Chat
+    --
+
+    Privatebox ::= SEQUENCE { address Binary }
+    Streambox ::= SEQUENCE { channel Binary }
+    Groupbox ::= SEQUENCE { channel Binary }
+    Mailbox ::= SEQUENCE { channel Binary }
+
+    InboxOp ::= ENUMERATED {
+       get   (1),
+       erase (2),
+       ...
+    }
+
+    -- get/erase працюють у межах конкретного feed
+    -- для обох операцій feed очікується
+    InboxQuery ::= SEQUENCE {
+       op    InboxOp,
+       feed  [0] MessageFeed OPTIONAL,
+       ...
+    }
+
+    InboxItem ::= SEQUENCE {
+       message Message
+    }
+
+    -- continue є opaque cursor; hasMore є лише hint.
+    -- snapshot є opaque feed-scoped replay boundary і не є read cursor.
+    --
+    InboxAnswer ::= SEQUENCE {
+       items       [0] SEQUENCE OF item InboxItem OPTIONAL,
+       continue    [1] Continuation OPTIONAL,
+       hasMore     [2] BOOLEAN OPTIONAL,
+       snapshot    [3] Binary OPTIONAL,
+       ...
+    }
+
+    -- 04 Event (Ack + Activity fusion)
+    -- Event є єдиним каналом runtime-подій.
+
+    MessageEventType ::= ENUMERATED {
+       received  (1),
+       delivered (2),
+       read      (3),
+       edited    (4),
+       deleted   (5),
+       updated   (6), ...}
+
+    -- delivered і read є різними подіями.
+    -- client-originated read update передається через CursorCore.
+    -- edited/deleted/updated адресують наявний Message.id.
+    --
+    MessageEvent ::= SEQUENCE {
+       type       MessageEventType,
+       messageId  [0] Binary OPTIONAL,
+       -- для edited/deleted/updated messageId визначає target message state
+
+       feed       [1] MessageFeed OPTIONAL,
+       actor      [2] Binary OPTIONAL,
+       timestamp  [3] INTEGER OPTIONAL,
+       readSeq    [4] INTEGER OPTIONAL,
+       ...
+    }
+
+    -- typing є transient runtime event і не є stable presence state.
+    --
+    PresenceEventType ::= ENUMERATED {
+       online   (1),
+       offline  (2),
+       typing   (3), ...}
+
+    PresenceEvent ::= SEQUENCE {
+       type       PresenceEventType,
+       feed       [0] MessageFeed OPTIONAL,
+       actor      [1] Binary OPTIONAL,
+       timestamp  [2] INTEGER OPTIONAL,
+       ...
+    }
+
+    EventPayload ::= CHOICE {
+       message   [1] MessageEvent,
+       presence  [2] PresenceEvent
+    }
+
+    -- seq є feed-scoped і монотонно зростає в межах feed.
+    -- Події можуть дублюватись, приходити поза порядком або із затримкою.
+    --
+    Event ::= SEQUENCE {
+       id Binary,
+       vsn Version,
+       session Binary,
+       seq INTEGER,
+       payload EventPayload,
+       ...
+    }
+
+    -- Query є єдиним request/response шаром протоколу.
+    -- Authorization, membership і existence перевіряються під час виконання.
+    -- Replay і gap recovery також проходять через Query.
+    --
+
+
+    QueryType ::= ENUMERATED {
+       get    (1),
+       set    (2),
+       result (3),
+       error  (4), ...}
+
+    QueryError ::= ENUMERATED {
+       badRequest          (1),
+       unauthorized        (2),
+       forbidden           (3),
+       notFound            (4),
+       conflict            (5),
+       unsupported  (6),
+       gap         (7),
+       rateLimited         (8),
+       internalError       (9),
+       unavailable         (10),
+       ...
+    }
+
+    -- unauthorized -> renew / authenticate
+    -- unsupported  -> fallback version
+    -- gap          -> full sync через Inbox / view Query
+    -- forbidden    -> policy/member/moderation denial
+    -- notFound     -> resource не існує або вже видалений
+    --
+    Query ::= SEQUENCE {
+       id Binary,
+       vsn Version,
+       session Binary,
+       queryType QueryType,
+       ref [0] Binary OPTIONAL, -- request correlation id
+       feed [1] MessageFeed OPTIONAL,
+       target [2] Binary OPTIONAL, -- optional routing hint; domain target belongs in payload
+       payload [3] QueryPayload OPTIONAL, -- typed query family payload
+       code [4] QueryError OPTIONAL,
+       limit    [5] INTEGER OPTIONAL,
+       continue [6] Continuation OPTIONAL,
+       ...
+    }
+
+    QueryPayload ::= CHOICE {
+       subscription [1] SubscriptionCore,
+       presence     [2] PresenceCore,
+       person       [3] PersonCore,
+       roster       [4] RosterCore,
+       member       [5] MemberExtension,
+       conference   [6] ConferenceExtension,
+       moderation   [7] ModerationExtension,
+       inbox        [8] InboxExtension,
+       search       [9] SearchExtension,
+       bpe          [10] ProcessExtension,
+       kvs          [11] StorageExtension,
+       mail         [12] MailExtension, -- X.420
+       event        [13] EventCore,
+       cursor       [14] CursorCore,
+       home         [15] HomeCore,
+       mutation     [16] MessageMutationExtension,
+       discovery    [17] DiscoveryExtension,
+       ...
+    }
+
+    -- discovery є capability introspection layer.
+    -- використовує вже наявний Feature.
+    -- unknown features SHOULD ігноруватись.
+    -- discovery не змінює state, не означає read і не рухає replay cursor.
+    -- target/filter задають optional context selectors для discovery.
+    -- Їх точне тлумачення визначається реалізацією.
+    --
+    DiscoveryScope ::= ENUMERATED {
+       server    (1),
+       auth      (2),
+       feed      (3),
+       message   (4),
+       event     (5),
+       query     (6),
+       extension (7),
+       policy    (8),
+       ...
+    }
+
+    DiscoveryQuery ::= SEQUENCE {
+       scope  DiscoveryScope,
+       target [0] Binary OPTIONAL,
+       filter [1] Binary OPTIONAL,
+       ...
+    }
+
+    DiscoveryAnswer ::= SEQUENCE {
+       features [0] SEQUENCE OF feature Feature OPTIONAL,
+       ...
+    }
+
+    DiscoveryExtension ::= CHOICE {
+       request [1] DiscoveryQuery,
+       result  [2] DiscoveryAnswer
+    }
+
+    ProcessExtension ::= CHOICE { request [1] Binary, result [2] Binary }
+    StorageExtension ::= CHOICE { request [1] Binary, result [2] Binary }
+    MailExtension    ::= CHOICE { request [1] Binary, result [2] Binary }
+
+    SubscriptionCore ::= CHOICE {
+       request [1] SubscriptionQuery,
+       result  [2] SubscriptionAnswer
+    }
+
+    PresenceCore ::= CHOICE {
+       request [1] PresenceQuery,
+       result  [2] PresenceAnswer
+    }
+
+    PersonCore ::= CHOICE {
+       request [1] PersonQuery,
+       result  [2] PersonAnswer
+    }
+
+    MemberExtension ::= CHOICE {
+       request [1] MemberQuery,
+       result  [2] MemberAnswer
+    }
+
+    InboxExtension ::= CHOICE {
+       request [1] InboxQuery,
+       result  [2] InboxAnswer
+    }
+
+    -- CursorCore є єдиним джерелом істини для read cursor state.
+    -- У базовій моделі підтримується тільки cursor kind = read.
+    -- Cursor update є client-originated command; server MAY дозволяти rewind.
+    -- FeedViewItem.readSeq і MessageEvent.readSeq є похідними представленнями.
+    --
+    CursorKind ::= ENUMERATED {
+       read (1),
+       ...
+    }
+
+    CursorOp ::= ENUMERATED {
+       get    (1),
+       update (2),
+       ...
+    }
+
+    CursorQuery ::= SEQUENCE {
+       op    CursorOp,
+       kind  [0] CursorKind OPTIONAL,
+       feed  [1] MessageFeed OPTIONAL,
+       seq   [2] INTEGER OPTIONAL,
+       ...
+    }
+
+    CursorAnswer ::= SEQUENCE {
+       kind  [0] CursorKind OPTIONAL,
+       feed  [1] MessageFeed OPTIONAL,
+       seq   [2] INTEGER OPTIONAL,
+       ...
+    }
+
+    CursorCore ::= CHOICE {
+       request [1] CursorQuery,
+       result  [2] CursorAnswer
+    }
+
+    -- HomeCore є multi-feed bootstrap/view query.
+    -- HomeAnswer.items повертає FeedViewItem, а не canonical state ресурсу.
+    -- Home snapshot є shared replay anchor для feed, покритих цим HomeAnswer.
+    -- Home не замінює Inbox/Roster/MemberQuery і має нести лише дані
+    -- для першого рендеру та робочого UI context.
+    --
+    HomeQuery ::= SEQUENCE {
+       previewLimit  [0] INTEGER OPTIONAL,
+       includeRoster [1] BOOLEAN OPTIONAL,
+       ...
+    }
+
+    -- FeedViewItem є агрегованим snapshot/view item для home/feed list.
+    -- unread / mentions / preview належать до view layer, а не до canonical state.
+    --
+    MentionView ::= SEQUENCE {
+       count      [0] INTEGER OPTIONAL,
+       latestSeq  [1] INTEGER OPTIONAL,
+       messageId  [2] Binary OPTIONAL,
+       ...
+    }
+
+    -- GroupView є derived bootstrap/view projection для group feed.
+    -- Джерелами істини лишаються ConferenceQuery і MemberQuery.
+    --
+    GroupView ::= SEQUENCE {
+       myRole      [0] MemberStatus OPTIONAL,
+       memberCount [1] INTEGER OPTIONAL,
+       ...
+    }
+
+    FeedViewItem ::= SEQUENCE {
+       feed      MessageFeed,
+       message   [0] Message OPTIONAL,
+
+        -- headSeq — останній відомий seq у feed на момент snapshot
+       headSeq   [1] INTEGER OPTIONAL,
+
+        -- readSeq є derived projection effective read cursor(user, feed)
+        -- джерелом істини лишається CursorCore
+       readSeq   [2] INTEGER OPTIONAL,
+
+        -- unread є derived/cached значенням і не є джерелом істини
+       unread    [3] INTEGER OPTIONAL,
+
+        -- mentions є user-scoped derived view state
+       mentions   [4] MentionView OPTIONAL,
+
+        -- optional derived group-specific bootstrap/view info
+       groupView [5] GroupView OPTIONAL,
+       ...
+    }
+
+    -- continue є opaque cursor для home pagination; hasMore є hint.
+    -- snapshot є shared opaque anchor для цього HomeAnswer.
+    -- Home не гарантує snapshot isolation.
+    --
+    HomeAnswer ::= SEQUENCE {
+       items     [0] SEQUENCE OF item FeedViewItem OPTIONAL,
+       continue  [1] Continuation OPTIONAL,
+       hasMore   [2] BOOLEAN OPTIONAL,
+
+       -- shared home snapshot anchor
+       snapshot  [3] Binary OPTIONAL,
+
+       -- optional roster snapshot/view; для повного roster слід
+       -- використовувати RosterQuery
+       roster    [4] RosterAnswer OPTIONAL,
+       ...
+    }
+
+    HomeCore ::= CHOICE {
+       request [1] HomeQuery,
+       result  [2] HomeAnswer
+    }
+
+    -- View query використовують continuation-based pagination.
+    -- EventCore є canonical API для replay/recovery event stream.
+
+
+    EventQuery ::= SEQUENCE {
+       after    [0] INTEGER OPTIONAL,
+       limit    [1] INTEGER OPTIONAL,
+       -- snapshot:
+       --
+       --   * opaque replay boundary після Inbox/Home snapshot recovery.
+       --
+       --   * after і snapshot є альтернативними replay anchor.
+       --
+       --   * after використовується для seq-based replay continuation.
+       --   * snapshot використовується для snapshot-based recovery boundary.
+       snapshot [2] Binary OPTIONAL,
+       ...
+    }
+
+    -- after задає нижню межу replay: сервер повертає події з seq > after.
+    -- nextAfter/hasMore використовуються для продовження replay.
+    --
+    EventAnswer ::= SEQUENCE {
+       events     [0] SEQUENCE OF event Event OPTIONAL,
+       nextAfter  [1] INTEGER OPTIONAL,
+       hasMore    [2] BOOLEAN OPTIONAL,
+       ...
+    }
+
+    EventCore ::= CHOICE {
+       request [1] EventQuery,
+       result  [2] EventAnswer
+    }
+
+    -- 05 Search (query / view extension)
+    -- Search є read-only query/view layer для visible message/feed scope.
+    -- LDAP або інший backend може використовуватись лише як server-side mapping.
+
+    Criteria ::= ENUMERATED { equal (0), notequal (1), like (2), ...}
+
+    -- Scope визначає search domain / object family.
+    --
+    Scope ::= ENUMERATED { profile (0), folder (1), contact (2), member (3), room (4), chat (5), message (6), ...}
+
+    -- SearchScope є CHAT-facing scope reference.
+    -- Backend mapping лишається всередині server implementation.
+    SearchScope ::= CHOICE {
+       all    [0] NULL,
+       peer   [1] Binary,
+       group  [2] Binary,
+       ...
+    }
+
+    SearchOp ::= ENUMERATED {
+       execute (1),
+       list    (2),
+       ...
+    }
+
+    -- execute використовує field/value/criteria/type.
+    -- list допускає частковий фільтр або перегляд у межах scope.
+    --
+    SearchQuery ::= SEQUENCE {
+       op       SearchOp,
+       scope    [0] SearchScope OPTIONAL,
+       field    [1] Binary OPTIONAL,
+       value    [2] Binary OPTIONAL,
+       criteria [3] Criteria OPTIONAL,
+       type     [4] Scope OPTIONAL,
+
+       -- requested projection fields for chat-facing search result
+       fields   [5] SEQUENCE OF field Binary OPTIONAL,
+       ...
+    }
+
+    -- SearchResultItem є CHAT-facing search result projection.
+    -- payload містить тільки requested visible fields.
+    --
+    SearchResultItem ::= SEQUENCE {
+       messageId [0] Binary OPTIONAL,
+       feed      [1] MessageFeed OPTIONAL,
+       payload   [2] ContentInfo OPTIONAL,
+       ...
+    }
+
+    -- result повертає список знайдених елементів у stable implementation-defined order
+    SearchAnswer ::= SEQUENCE {
+       items     [0] SEQUENCE OF item SearchResultItem OPTIONAL,
+       continue  [1] Continuation OPTIONAL,
+       hasMore   [2] BOOLEAN OPTIONAL,
+       ...
+    }
+
+    -- Search не змінює Message state, не означає read і не рухає replay cursor.
+    -- Search result є projection/view над наявним state.
+    -- Group-scoped search допускається тільки для authorized member/owner.
+    -- hidden field не є searchable і не повертається у projection.
+    -- Pagination не має snapshot binding і не гарантує isolation між сторінками.
+    --
+    SearchExtension ::= CHOICE {
+       request [1] SearchQuery,
+       result  [2] SearchAnswer
+    }
+
+    -- 06 Subscription (зв'язок підписки між суб'єктом і ціллю)
+    -- Subscription описує directed relation actor -> target.
+    -- Presence/lifecycle/moderation більше не живуть у Subscription.
+    --
+
+    Subscription ::= SEQUENCE {
+       actor  Binary,
+       target Binary,
+       ...
+    }
+
+    -- get/create/remove очікують actor + target
+    -- list допускає частковий фільтр
+    --
+    -- Inspection semantics:
+    --
+    --   * get використовується для inspection directed relation:
+    --
+    --       actor -> target
+    --
+    --   * list використовується для отримання relation set
+    --     у межах actor filter.
+    --
+    --   * Якщо actor не вказаний явно,
+    --     він MAY бути виведений із поточного authenticated session context.
+    --
+    SubscriptionQuery ::= SEQUENCE {
+       op     SubscriptionOp,
+       actor  [0] Binary OPTIONAL,
+       target [1] Binary OPTIONAL,
+       ...
+    }
+
+    SubscriptionOp ::= ENUMERATED {
+       get    (1),
+       list   (2),
+       create (3),
+       remove (4),
+       ...
+    }
+
+    -- get/create/remove зазвичай повертають item
+    -- list повертає items
+    --
+    --   * item означає один directed relation state
+    --   * items означає список directed relation state
+    --     для поточного actor/query context
+    --
+    SubscriptionAnswer ::= SEQUENCE {
+       item   [0] Subscription OPTIONAL,
+       items  [1] SEQUENCE OF subscription Subscription OPTIONAL,
+       ...
+    }
+
+    -- 07 Roster (contact / relation view)
+
+    -- Presence як snapshot-стан для roster/member.
+    -- Runtime presence-події (online/offline/typing) передаються через Event.
+
+    Presence ::= ENUMERATED { offline (1), online (2), ... }
+
+    PresenceOp ::= ENUMERATED {
+       get  (1),
+       list (2), ...
+    }
+
+    -- get зазвичай очікує actor
+    -- list допускає actor і/або feed як фільтр вибірки
+    -- feed задає контекст (якщо presence залежить від feed)
+    PresenceQuery ::= SEQUENCE {
+       op     PresenceOp,
+       actor  [0] Binary OPTIONAL,
+       feed   [1] MessageFeed OPTIONAL,
+       ...
+    }
+
+    PresenceItem ::= SEQUENCE {
+       actor     Binary,
+       presence  Presence
+    }
+
+    -- get зазвичай повертає item
+    -- list повертає items (може бути пустим)
+    PresenceAnswer ::= SEQUENCE {
+       item   [0] PresenceItem OPTIONAL,
+       items  [1] SEQUENCE OF item PresenceItem OPTIONAL,
+       ...
+    }
+
+
+    -- PersonStatus описує лише стан самого profile/state запису.
+    -- Relation, lifecycle і moderation більше не живуть у Person:
+    --   req/auth/ignore/friend -> Subscription / Event
+    --   ban/banned             -> ModerationQuery / Event
+    PersonStatus ::= ENUMERATED {
+       active      (1),
+       deleted     (2),
+       nonexistent (3), ...
+    }
+
+    -- lastmsg і presence не є частиною Person state.
+    -- View-дані повинні передаватися через Query (Inbox/Search/Presence)
+    -- або Event.
+    Person ::= SEQUENCE {
+       id Binary,
+       nickname Binary,
+       avatar Binary,
+       names SEQUENCE OF name Binary,
+       phone Binary,
+       surnames SEQUENCE OF name Binary,
+       update INTEGER,
+       created INTEGER,
+       settings SEQUENCE OF feature Feature OPTIONAL,
+       status PersonStatus,
+       ...
+    }
+
+    PersonOp ::= ENUMERATED {
+       get    (1),
+       list   (2),
+       update (3),
+       remove (4), ...
+    }
+
+    -- get/remove очікують id
+    -- update використовує поля профілю
+    -- list допускає частковий фільтр
+
+    PersonQuery ::= SEQUENCE {
+       op   PersonOp,
+
+       id   [0] Binary OPTIONAL,
+       name [1] Binary OPTIONAL,
+       ...
+    }
+
+    PersonItem ::= SEQUENCE {
+       id       Binary,
+       nickname Binary,
+       avatar   [0] Binary OPTIONAL,
+       presence [1] Presence OPTIONAL,
+       status   [2] PersonStatus OPTIONAL,
+       ...
+    }
+
+    -- get/update зазвичай повертають item
+    -- list повертає items
+
+    PersonAnswer ::= SEQUENCE {
+       item   [0] PersonItem OPTIONAL,
+       items  [1] SEQUENCE OF item PersonItem OPTIONAL,
+       ...
+    }
+
+    Server ::= SEQUENCE { service Binary, port INTEGER, host Binary }
+
+    -- Roster є contact-oriented snapshot/view і не є джерелом істини.
+    -- LDAP або інший backend може використовуватись лише як server-side mapping.
+    --
+
+    RosterOp ::= ENUMERATED {
+       get  (1),
+       list (2), ...
+    }
+    -- RosterQuery повертає contact-oriented view над relation model
+    -- (наприклад Subscription), а не raw directory snapshot.
+
+    -- get зазвичай очікує id
+    -- list допускає частковий фільтр
+    --
+    RosterQuery ::= SEQUENCE {
+       op   RosterOp,
+       id   [0] Binary OPTIONAL,
+       name [1] Binary OPTIONAL,
+       ...
+    }
+
+    RosterItem ::= SEQUENCE {
+       id        Binary,
+       nickname  [0] Binary OPTIONAL,
+       avatar    [1] Binary OPTIONAL,
+       presence  [2] Presence OPTIONAL,
+       ...
+    }
+
+    -- get зазвичай повертає item
+    -- list повертає items
+    RosterAnswer ::= SEQUENCE {
+       item      [0] RosterItem OPTIONAL,
+       items     [1] SEQUENCE OF item RosterItem OPTIONAL,
+       continue  [2] Continuation OPTIONAL,
+       hasMore   [3] BOOLEAN OPTIONAL,
+       ...
+    }
+
+    RosterCore ::= CHOICE {
+       request [1] RosterQuery,
+       result  [2] RosterAnswer
+    }
+
+    -- Moderation є окремим policy layer, а не relation state і не roster view.
+    -- Group-scoped moderation не повинна неявно змінювати Member relation.
+    --
+    ModerationOp ::= ENUMERATED {
+       ban    (1),
+       unban  (2),
+       list   (3), ...
+    }
+
+    -- ban/unban очікують actor + target
+    -- list повертає список обмежень
+    --
+    -- Semantics:
+    --
+    --   * actor є джерелом policy restriction
+    --   * target є суб'єктом, до якого застосовується restriction
+    --
+    --   * Якщо actor не вказаний явно,
+    --     він MAY бути виведений із поточного authenticated session context.
+    --
+    --   * ban/unban не повинні змінювати Subscription або Roster напряму.
+    --
+    -- Scope:
+    --
+    --   * Якщо feed відсутній, restriction є глобальною.
+    --
+    --   * Якщо feed=group/chan/... заданий,
+    --     restriction застосовується в межах цього scope.
+    --
+    --   * Для group-scoped moderation canonical case є feed=group.
+    --
+    ModerationQuery ::= SEQUENCE {
+       op     ModerationOp,
+       actor  [0] Binary OPTIONAL,
+       target [1] Binary OPTIONAL,
+       feed   [2] MessageFeed OPTIONAL,
+       ...
+    }
+
+    ModerationItem ::= SEQUENCE {
+       actor   Binary,
+       target  Binary,
+       feed    [0] MessageFeed OPTIONAL,
+       ...
+    }
+
+    -- ban/unban зазвичай повертають item
+    -- list повертає items
+    --
+    --   * item означає конкретну moderation restriction
+    --     разом із її optional scope
+    --   * items означає snapshot/list moderation restrictions
+    --     у межах поточного query context
+    --
+    ModerationAnswer ::= SEQUENCE {
+       item   [0] ModerationItem OPTIONAL,
+       items  [1] SEQUENCE OF item ModerationItem OPTIONAL,
+       ...
+    }
+
+    ModerationExtension ::= CHOICE {
+       request [1] ModerationQuery,
+       result  [2] ModerationAnswer
+    }
+
+    -- 08 Conference (RocksDB, Multi-user Conferences)
+
+    -- MemberStatus описує лише роль учасника в конференції.
+    MemberStatus ::= ENUMERATED {
+       member (1),
+       admin  (2),
+       owner  (3), ...}
+
+    -- owner має всі права member щодо доступу до group feed.
+
+    Member ::= SEQUENCE {
+       id Binary,
+       nickname Binary,
+       feed MessageFeed,
+       feeds SEQUENCE OF feed Binary,
+       phone Binary,
+       avatar Binary,
+       names SEQUENCE OF name Binary,
+       surnames SEQUENCE OF name Binary,
+       alias Binary,
+       update INTEGER,
+       settings SEQUENCE OF feature Feature,
+       status MemberStatus, ... }
+
+    MemberOp ::= ENUMERATED {
+       get    (1),
+       list   (2),
+       add    (3),
+       remove (4),
+       update (5)
+    }
+
+    -- Member є джерелом істини для membership у Conference/group feed.
+    -- Детальний склад учасників слід отримувати через MemberQuery.
+    --
+    MemberQuery ::= SEQUENCE {
+       op    MemberOp,
+
+       actor [0] Binary OPTIONAL,
+       feed  [1] MessageFeed OPTIONAL
+    }
+
+    MemberItem ::= SEQUENCE {
+       actor    Binary,
+       feed     MessageFeed,
+       status   MemberStatus,
+       presence [0] Presence OPTIONAL,
+       ...
+    }
+
+    -- get/add/update зазвичай повертають item
+    -- list повертає items
+
+    MemberAnswer ::= SEQUENCE {
+       item      [0] MemberItem OPTIONAL,
+       items     [1] SEQUENCE OF item MemberItem OPTIONAL,
+       continue  [2] Continuation OPTIONAL,
+       hasMore   [3] BOOLEAN OPTIONAL
+    }
+
+    ConferenceType ::= ENUMERATED { group (1), channel (2), call (3) }
+
+    -- ConferenceStatus описує лише стан конференції як ресурсу.
+    --
+
+    ConferenceStatus ::= ENUMERATED {
+       active   (1),
+       archived (2),
+       deleted  (3), ...
+    }
+
+    -- Conference описує існування і стан group ресурсу.
+    -- Membership і доступ до group feed визначаються через Member relation.
+    --
+    Conference ::= SEQUENCE {
+       id Binary,
+       vsn Version,
+       session Binary,
+       name Binary,
+       links SEQUENCE OF link Binary,
+       description Binary,
+       settings SEQUENCE OF feature Feature,
+       data SEQUENCE OF fileId Binary OPTIONAL,
+       type ConferenceType,
+       tos Binary,
+       update INTEGER,
+       created INTEGER,
+       status ConferenceStatus,
+        ... }
+
+    ConferenceOp ::= ENUMERATED {
+       get     (1),
+       list    (2),
+       create  (3),
+       update  (4),
+       remove  (5), ...
+    }
+
+    -- Conference(type=group) створює group resource, пов'язаний з MessageFeed.group.
+    -- Membership інших користувачів керується через MemberQuery.
+    --
+    ConferenceQuery ::= SEQUENCE {
+       op    ConferenceOp,
+       id    [0] Binary OPTIONAL,
+       name  [1] Binary OPTIONAL,
+       type  [2] ConferenceType OPTIONAL,
+       ...
+    }
+
+    -- get/create/update зазвичай повертають item
+    -- list повертає items
+
+    ConferenceAnswer ::= SEQUENCE {
+       item      [0] ConferenceItem OPTIONAL,
+       items     [1] SEQUENCE OF item ConferenceItem OPTIONAL,
+       continue  [2] Continuation OPTIONAL,
+       hasMore   [3] BOOLEAN OPTIONAL,
+       ...
+    }
+
+    ConferenceItem ::= SEQUENCE {
+       id          Binary,
+       name        Binary,
+       description [0] Binary OPTIONAL,
+       type        ConferenceType,
+       status      ConferenceStatus,
+       ...
+    }
+
+    ConferenceExtension ::= CHOICE {
+       request [1] ConferenceQuery,
+       result  [2] ConferenceAnswer
+    }
+
+    -- 09 CHAT-v2 Protocol Entities
+    -- Delivery є at-least-once; порядок гарантується тільки в межах feed.
+    -- Replay гарантує лише partial recovery; gap сигналізується через Query error.
+    -- Protocol не гарантує serializable snapshot між commands і view queries.
+
+    CHATProtocol ::= CHOICE {
+       authority [1] Authority,
+       message   [2] Message,
+       event     [4] Event,
+       query     [5] Query
+    }
+
+    -- batch є transport-оптимізацією і не змінює семантику packet.
+    -- Порядок packet у batch зберігається.
+    -- batch не є atomic transaction і не створює shared snapshot/context.
+    CHATBody ::= CHOICE {
+       single [1] CHATProtocol,
+       batch  [2] SEQUENCE OF packet CHATProtocol
+    }
+
+    -- TLS захищає transport channel, але не гарантує end-to-end payload integrity.
+    -- Проміжні broker можуть змінювати headers/metadata, але не payload.
+    -- accessToken є transport credential; refreshToken не виходить за auth flow.
+    Header ::= CHOICE {
+       auth      [1] AuthHeader,
+       routing   [2] RoutingHeader,
+       tracing   [3] TracingHeader,
+       ...
+    }
+
+    AuthHeader ::= SEQUENCE {
+       accessToken Binary
+    }
+
+    -- RoutingHeader використовується для transport-level маршрутизації.
+    -- Порядок подій гарантується тільки authoritative вузлом feed.
+    -- Невідомий або недоступний маршрут -> Query error notFound/unavailable.
+
+    RoutingHeader ::= SEQUENCE {
+       target [0] Binary OPTIONAL,
+       feed   [1] MessageFeed OPTIONAL,
+       broker [2] Binary OPTIONAL,
+       ...
+    }
+
+    TracingHeader ::= SEQUENCE {
+       traceId [0] Binary OPTIONAL,
+       spanId  [1] Binary OPTIONAL,
+       ...
+    }
+
+    CHATMessage ::= SEQUENCE {
+       no INTEGER,
+       headers SEQUENCE OF header Header,
+       body CHATBody }
+
+END

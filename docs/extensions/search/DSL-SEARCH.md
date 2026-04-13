@@ -1,0 +1,1002 @@
+> See DSL-CORE.md for language definition
+
+# DSL-SEARCH
+
+Сценарії для search query/view semantics, projection, ordering і pagination
+
+Цей файл описує search semantics як query/view extension поверх protocol model.
+
+Search у DSL:
+
+- не змінює Message/Event semantics
+- не означає `read`
+- не рухає replay cursor
+- не замінює inbox/home/replay
+- поважає visibility / ABAC / moderation / membership
+
+На цьому етапі search трактується як projection/query layer,
+а не як окремий feed або event stream.
+
+---
+
+## Search surface (minimal)
+
+Canonical:
+
+- `query search text "draft"`
+- `query search peer alice text "draft"`
+- `query search group room1 text "draft"`
+
+Exact:
+
+- `query search scope all text "draft"`
+- `query search scope peer alice text "draft"`
+- `query search scope group room1 text "draft"`
+
+Fielded canonical:
+
+- `query search field body like "draft"`
+- `query search peer alice field body like "draft"`
+- `query search group room1 field body like "draft"`
+- `query search field tag equal "release"`
+
+Fielded exact:
+
+- `query search scope all field body criteria like value "draft"`
+- `query search scope peer alice field body criteria like value "draft"`
+- `query search scope group room1 field body criteria like value "draft"`
+- `query search scope all field tag criteria equal value "release"`
+
+Projection canonical:
+
+- `query search peer alice field body like "draft" return body tag`
+- `query search group room1 field tag equal "release" return body`
+- `query search text "draft" return body tag`
+
+Projection exact:
+
+- `query search scope peer alice field body criteria like value "draft" fields body tag`
+- `query search scope group room1 field tag criteria equal value "release" fields body`
+- `query search scope all field body criteria like value "draft" fields body tag`
+
+Search result:
+
+- містить `result items`
+- може містити message items
+- не змінює message state
+- не створює read/update side effects
+- може повертати projection requested fields only
+- не повинен відкривати hidden fields через projection
+
+## Search ordering and pagination
+
+На цьому етапі search result має stable implementation-defined order.
+
+Це означає:
+
+- сервер сам визначає порядок result items
+- DSL не фіксує explicit `sortBy` або ranking semantics
+- повтор того самого search query над незмінним result set
+  повинен повертати items у тому самому порядку
+- `query search continue` повинен продовжувати той самий order chain,
+  який був встановлений first page того самого search query
+- projection / requested fields не повинні змінювати порядок items,
+  а лише shape result item
+- якщо underlying data змінюються між сторінками,
+  snapshot isolation не гарантується
+- через mutation / visibility / ABAC / moderation change
+  вікно наступної сторінки може змінитися
+- за відсутності snapshot isolation сервер не зобов'язаний
+  зберігати той самий full result set між page 1 і continue
+- stable order визначається server-side evaluation order
+  і не повинен залежати від projection / pagination parameters
+
+Цей шар фіксує тільки stable ordering semantics
+для незмінного result set.
+
+Він поки не фіксує:
+
+- `sortBy`
+- ranking
+- snippets/highlighting
+- fuzzy/stemming relevance order
+- snapshot-pinned search view
+
+---
+
+## SEARCH-1. Search finds message in private feed
+```
+scenario search finds message in private feed
+
+given
+  private feed alice<->bob has messages
+    1 from alice "draft v1"
+    2 from bob "other"
+
+session bob
+connect
+auth
+
+query search peer alice text "draft"
+
+expect result items
+expect message from alice body "draft v1"
+```
+
+- search у private peer scope може знаходити message за text match
+- search result є view над існуючим message state
+
+---
+
+## SEARCH-2. Search in group respects membership
+```
+scenario search in group respects membership
+
+given
+  group room1 exists
+  alice is owner of group room1
+  bob is member of group room1
+
+  group feed room1 has messages
+    1 from alice "release draft"
+    2 from bob "status"
+
+session bob
+connect
+auth
+
+query search group room1 text "draft"
+
+expect result items
+expect message from alice body "release draft"
+```
+
+- group search валідний лише в межах доступного group scope
+- search не обходить group membership semantics
+
+---
+
+## SEARCH-3. Search does not imply replay progress
+```
+scenario search does not imply replay progress
+
+given
+  private feed alice<->bob has messages
+    1 from alice "draft v1"
+    2 from alice "draft v2"
+
+  bob read private:alice up to 1
+
+session bob
+connect
+auth
+
+query search peer alice text "draft"
+
+expect result items
+
+query events peer alice after cursor
+
+expect events non-empty
+```
+
+- search не є substitute для read
+- search result не зсуває replay/read boundary
+- після search звичайний replay/query semantics лишається незалежним
+
+---
+
+## SEARCH-5. Search respects group moderation
+```
+scenario search respects group moderation
+
+given
+  group room1 exists
+  alice is owner of group room1
+  bob is member of group room1
+  bob is banned in group room1
+
+  group feed room1 has messages
+    1 from alice "draft policy"
+
+session bob
+connect
+auth
+
+query search group room1 text "draft"
+
+expect error forbidden
+```
+
+- search не обходить group-scoped moderation
+- banned user не повинен отримувати search access до restricted group scope
+
+---
+
+## SEARCH-6. Global search returns only visible scope
+```
+scenario global search returns only visible scope
+
+given
+  group room1 exists
+  alice is owner of group room1
+  bob is member of group room1
+
+  group room2 exists
+  carol is owner of group room2
+
+  private feed alice<->bob has messages
+    1 from alice "draft private"
+
+  group feed room1 has messages
+    1 from alice "draft group one"
+
+  group feed room2 has messages
+    1 from carol "draft hidden"
+
+session bob
+connect
+auth
+
+query search text "draft"
+
+expect result items
+expect result items <= 2
+expect message from alice body "draft private"
+expect message from alice body "draft group one"
+```
+
+- global search є union visible scopes поточного user
+- inaccessible scopes не повинні leak-ати через search
+---
+
+## SEARCH-7. Search hides restricted messages
+```
+scenario search hides restricted messages
+
+given alice has clearance confidential
+given message m1 has classification confidential
+given message m2 has classification secret
+
+when alice queries inbox
+
+expect message m1 visible
+expect message m2 hidden
+
+session alice
+connect
+auth
+
+query search text "draft"
+
+expect result items <= 1
+```
+
+- search не повинен повертати message,
+  який hidden у поточному visibility / ABAC context
+- match сам по собі не дає права бачити resource
+
+---
+
+## SEARCH-8. Search does not leak restricted group content through global scope
+```
+scenario search does not leak restricted group content through global scope
+
+given alice has branch civil
+given bob has branch military
+given feed room1 has branch civil
+given feed room2 has branch military
+
+when alice queries inbox
+
+expect access allowed
+
+session alice
+connect
+auth
+
+query search text "draft"
+
+expect result items <= 1
+```
+
+- global search не повинен leak-ати inaccessible scope
+- visibility/policy rules для search повинні бути не слабші,
+  ніж для інших view query
+
+---
+
+## SEARCH-9. Search respects field-level visibility
+```
+scenario search respects field-level visibility
+
+given alice has clearance confidential
+given message m1 has classification secret
+given message m1 field body visible at level confidential
+given message m1 field attachment visible at level secret
+
+when alice queries inbox
+
+expect message m1 field body visible
+expect message m1 field attachment hidden
+
+session alice
+connect
+auth
+
+query search text "draft"
+
+expect result items <= 1
+```
+
+- search result не повинен обходити field-level visibility
+- якщо message частково видимий,
+  search view не повинен відкривати hidden fields неявно
+
+---
+
+## SEARCH-10. Search first page returns limited items
+```
+scenario search first page returns limited items
+
+given
+  private feed alice<->bob has messages
+    1 from alice "draft a"
+    2 from alice "draft b"
+    3 from alice "draft c"
+
+session bob
+connect
+auth
+
+query search peer alice text "draft" limit 2
+
+expect result items
+expect result items <= 2
+expect more
+expect next
+```
+
+- search pagination використовує той самий continuation model,
+  що й інші view query
+- `limit` обмежує розмір поточної сторінки,
+  але не змінює search semantics
+
+---
+
+## SEARCH-11. Search continue returns next page
+```
+scenario search continue returns next page
+
+given
+  private feed alice<->bob has messages
+    1 from alice "draft a"
+    2 from alice "draft b"
+    3 from alice "draft c"
+
+session bob
+connect
+auth
+
+query search peer alice text "draft" limit 2
+
+expect result items
+expect more
+expect next
+
+query search continue
+
+expect result items
+expect result items <= 1
+expect not more
+```
+
+- `continue` повертає наступну сторінку того самого search result
+- continuation token є opaque
+- pagination не повинна вимагати повторного формування query вручну
+
+---
+
+## SEARCH-12. Search pagination does not imply replay progress
+```
+scenario search pagination does not imply replay progress
+
+given
+  private feed alice<->bob has messages
+    1 from alice "draft a"
+    2 from alice "draft b"
+    3 from alice "draft c"
+
+bob read private:alice up to 1
+
+session bob
+connect
+auth
+
+query search peer alice text "draft" limit 1
+
+expect result items
+expect more
+expect next
+
+query search continue
+
+expect result items
+
+query events peer alice after cursor
+
+expect events non-empty
+```
+
+- search pagination лишається view-only semantics
+- `continue` у search не означає `read`
+- `continue` у search не рухає replay boundary
+
+---
+
+## SEARCH-13. Global search pagination still respects visibility
+```
+scenario global search pagination still respects visibility
+
+given
+  private feed alice<->bob has messages
+    1 id "m1" from bob "draft visible a"
+    2 id "m2" from bob "draft visible b"
+    3 id "m3" from bob "archive hidden"
+  alice has clearance confidential
+  message m1 has classification confidential
+  message m2 has classification confidential
+  message m3 has classification secret
+
+when alice queries inbox
+
+expect message m1 visible
+expect message m2 visible
+expect message m3 hidden
+
+session alice
+connect
+auth
+
+query search text "draft" limit 1
+
+expect result items
+expect result items <= 1
+expect more
+expect next
+
+query search continue
+
+expect result items
+expect result items <= 1
+expect not more
+```
+
+- pagination не повинна послаблювати visibility / ABAC rules
+- hidden content не повинно з'являтись на наступних сторінках лише через pagination
+
+---
+
+## SEARCH-14. Search by field body like
+```
+scenario search by field body like
+
+given
+  private feed alice<->bob has messages
+  1 from alice {
+    body: "draft v1"
+    tag: "release"
+  }
+  2 from alice {
+    body: "status"
+    tag: "note"
+  }
+
+session bob
+connect
+auth
+
+query search peer alice field body like "draft"
+
+expect result items
+expect message from alice {
+  body: "draft v1"
+  tag: "release"
+}
+```
+
+- fielded search може працювати по explicit payload field
+- `body like` є природним field-specific варіантом text search
+
+---
+
+## SEARCH-15. Search by field exact match
+```
+scenario search by field exact match
+
+given
+  private feed alice<->bob has messages
+  1 from alice {
+    body: "draft v1"
+    tag: "release"
+  }
+  2 from alice {
+    body: "draft v2"
+    tag: "note"
+  }
+
+session bob
+connect
+auth
+
+query search peer alice field tag equal "release"
+
+expect result items
+expect result items <= 1
+expect message from alice {
+  body: "draft v1"
+  tag: "release"
+}
+```
+
+- `equal` не повинен поводитись як substring match
+- fielded search повинен дозволяти exact-match semantics
+
+---
+
+## SEARCH-16. Hidden field is not searchable
+```
+scenario hidden field is not searchable
+
+given
+  private feed alice<->bob has messages
+    1 id "m1" from bob {
+      body: "visible draft"
+      attachment: "secret-plan.pdf"
+    }
+
+alice has clearance confidential
+message m1 has classification secret
+message m1 field body visible at level confidential
+message m1 field attachment visible at level secret
+
+when alice queries inbox
+
+expect message m1 field body visible
+expect message m1 field attachment hidden
+
+session alice
+connect
+auth
+
+query search peer bob field attachment like "secret"
+
+expect result items = 0
+```
+
+- hidden field не повинен бути searchable
+- search index не повинен обходити field-level visibility
+
+---
+
+## SEARCH-17. Peer field search respects visibility
+```
+scenario peer field search respects visibility
+
+given
+private feed alice<->bob has messages
+  1 id "m1" from bob {
+    body: "visible draft"
+    tag: "release"
+  }
+  2 id "m2" from bob {
+    body: "hidden draft"
+    tag: "release"
+  }
+
+alice has clearance confidential
+message m1 has classification confidential
+message m2 has classification secret
+message m1 field tag visible at level confidential
+message m2 field tag visible at level secret
+
+when alice queries inbox
+
+expect message m1 visible
+expect message m2 hidden
+
+session alice
+connect
+auth
+
+query search peer bob field tag equal "release"
+
+expect result items
+expect result items <= 1
+expect message from bob {
+  body: "visible draft"
+  tag: "release"
+}
+```
+
+- peer field search повинен поважати message-level visibility
+- однакове field value не дає права бачити hidden message
+
+---
+
+## SEARCH-18. Group field search respects moderation
+```
+scenario group field search respects moderation
+
+given
+  group room1 exists
+  alice is owner of group room1
+  bob is member of group room1
+  bob is banned in group room1
+
+group feed room1 has messages
+1 from alice {
+  body: "release draft"
+  tag: "release"
+}
+
+session bob
+connect
+auth
+
+query search group room1 field tag equal "release"
+
+expect error forbidden
+```
+
+- fielded search не обходить group-scoped moderation
+- criteria/field search успадковує ті самі access rules, що й text search
+---
+
+## SEARCH-19. Search projection returns requested fields only
+```
+scenario search projection returns requested fields only
+
+given
+  private feed alice<->bob has messages
+  1 from alice {
+    body: "draft v1"
+    tag: "release"
+    attachment: "plan.pdf"
+  }
+  2 from alice {
+    body: "status"
+    tag: "note"
+    attachment: "note.txt"
+  }
+
+session bob
+connect
+auth
+
+query search peer alice field body like "draft" return body tag
+
+expect result items
+expect message from alice {
+  body: "draft v1"
+  tag: "release"
+}
+```
+
+- projection дозволяє повертати тільки потрібні fields
+- search result shaping не змінює matching semantics
+
+---
+
+## SEARCH-20. Hidden field is not returned even if body matched
+```
+scenario hidden field is not returned even if body matched
+
+given
+private feed alice<->bob has messages
+  1 id "m1" from bob {
+    body: "visible draft"
+    tag: "release"
+    attachment: "secret-plan.pdf"
+  }
+
+alice has clearance confidential
+message m1 has classification secret
+message m1 field body visible at level confidential
+message m1 field tag visible at level confidential
+message m1 field attachment visible at level secret
+
+when alice queries inbox
+
+expect message m1 field body visible
+expect message m1 field tag visible
+expect message m1 field attachment hidden
+
+session alice
+connect
+auth
+
+query search peer bob field body like "draft" return body tag attachment
+
+expect result items
+expect message from bob {
+  body: "visible draft"
+  tag: "release"
+}
+```
+
+- projection не повинен відкривати hidden field,
+  навіть якщо match був по іншому visible field
+- requested hidden field має silently filtered out
+  або omitted у projection result
+
+---
+
+## SEARCH-21. Projection does not bypass message visibility
+```
+scenario projection does not bypass message visibility
+
+given
+private feed alice<->bob has messages
+1 id "m1" from bob {
+  body: "visible draft"
+  tag: "release"
+}
+2 id "m2" from bob {
+  body: "hidden draft"
+  tag: "release"
+}
+
+alice has clearance confidential
+message m1 has classification confidential
+message m2 has classification secret
+message m1 field tag visible at level confidential
+message m2 field tag visible at level secret
+
+when alice queries inbox
+
+expect message m1 visible
+expect message m2 hidden
+
+session alice
+connect
+auth
+
+query search peer bob field tag equal "release" return body tag
+
+expect result items
+expect result items <= 1
+expect message from bob {
+  body: "visible draft"
+  tag: "release"
+}
+```
+
+- projection не дає обходити message-level visibility
+- requested fields не роблять hidden message visible
+
+---
+
+## SEARCH-22. Projection is preserved across pagination
+```
+scenario projection is preserved across pagination
+
+given
+private feed alice<->bob has messages
+  1 from alice {
+    body: "draft a"
+    tag: "release"
+    attachment: "a.pdf"
+  }
+  2 from alice {
+    body: "draft b"
+    tag: "release"
+    attachment: "b.pdf"
+  }
+  3 from alice {
+    body: "draft c"
+    tag: "release"
+    attachment: "c.pdf"
+  }
+
+session bob
+connect
+auth
+
+query search peer alice field tag equal "release" return body tag limit 2
+
+expect result items
+expect result items <= 2
+expect more
+expect next
+
+query search continue
+
+expect result items
+expect result items <= 1
+```
+- pagination не повинна скидати projection shape
+- `continue` має продовжувати той самий projected search result
+
+---
+
+## SEARCH-23. Same query keeps stable order on unchanged result set
+```
+scenario same query keeps stable order on unchanged result set
+
+given
+  private feed alice<->bob has messages
+    1 from alice "draft a"
+    2 from alice "draft b"
+    3 from alice "draft c"
+
+session bob
+connect
+auth
+
+query search peer alice text "draft" limit 2
+
+expect result items
+expect more
+expect next
+
+query search peer alice text "draft" limit 2
+
+expect result items
+expect more
+expect next
+```
+
+- той самий search query над незмінним result set
+  повинен зберігати той самий item order
+- DSL тут фіксує stable order semantics,
+  навіть якщо concrete order лишається implementation-defined
+
+---
+
+## SEARCH-24. Continue does not duplicate items in unchanged result set
+```
+scenario search continue does not duplicate items in unchanged result set
+
+given
+  private feed alice<->bob has messages
+    1 from alice "draft a"
+    2 from alice "draft b"
+    3 from alice "draft c"
+    4 from alice "draft d"
+
+session bob
+connect
+auth
+
+query search peer alice text "draft" limit 2
+
+expect result items
+expect more
+expect next
+
+query search continue
+
+expect result items
+expect result items <= 2
+expect not more
+```
+
+- `continue` повинен іти далі по тому самому order chain
+- у незмінному result set already returned items
+  не повинні повторно з'являтися на next page
+
+---
+
+## SEARCH-25. Projection does not affect ordering
+```
+scenario search projection does not affect ordering
+
+given
+  private feed alice<->bob has messages
+    1 from alice {
+      body: "draft a"
+      tag: "release"
+      attachment: "a.pdf"
+    }
+    2 from alice {
+      body: "draft b"
+      tag: "release"
+      attachment: "b.pdf"
+    }
+    3 from alice {
+      body: "draft c"
+      tag: "release"
+      attachment: "c.pdf"
+    }
+
+session bob
+connect
+auth
+
+query search peer alice field tag equal "release" limit 2
+
+expect result items
+expect more
+expect next
+
+query search peer alice field tag equal "release" return body tag limit 2
+
+expect result items
+expect more
+expect next
+```
+- projection змінює only result shape
+- projection не повинна перебудовувати search ordering
+
+---
+
+## SEARCH-26. Pagination after mutation may change result window
+```
+scenario search pagination after mutation may change result window
+
+given
+  private feed alice<->bob has messages
+    1 from alice "draft a"
+    2 from alice "draft b"
+    3 from alice "draft c"
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session bob
+query search peer alice text "draft" limit 2
+
+expect result items
+expect more
+expect next
+
+session alice
+send message to bob "draft d"
+
+session bob
+query search continue
+
+expect result items
+```
+
+- якщо data змінюються між first page і `continue`,
+  snapshot isolation не гарантується
+- через це next page window може змінитися
+- DSL тут фіксує допустимість зміни window,
+  а не pinned search snapshot semantics
+
+---
+
+## Notes
+
+Search на цьому етапі не фіксує:
+
+- ranking
+- stemming
+- fuzzy matching
+- snippets / highlighting
+- явне керування сортуванням поза stable implementation-defined order
+- розширене відображення результатів LDAP/backend
+
+Ці речі можуть бути додані пізніше,
+коли буде погоджено наступний шар protocol/query model для search.
+
+На цьому етапі executable subset для search покриває:
+
+- scope selection
+- membership / moderation checks
+- search як view без replay/read side effects
+- visibility-aware filtering
+- field-level visibility constraints
+- field / criteria matching
+- projection / requested fields
+- pagination / continue semantics
+
+Search result shaping / projection semantics
+є наступним шаром DSL model.
