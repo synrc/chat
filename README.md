@@ -10,9 +10,9 @@ ASN.1 X.509 CMS PKCS-10 PCKS-7 OCSP LDAP DNS X9-42 X9-62 X25519 X488 SECP384r1
 Features
 --------
 
-* X.509 CMS Envelope for Key Management;
-* MNESIA records delivery system;
-* CMP EST for X.509 CA enrollment;
+* X.509 CMS Envelope for Key Management
+* MNESIA records delivery system
+* CMP EST for X.509 CA enrollment
 
 CHAT protocol
 -------------
@@ -32,7 +32,7 @@ CHAT server
 -----------
 
 ```sh
-$ sudo apt install erlang elixir
+$ sudo apt install erlang elixir cmake libsnappy-dev
 $ git clone git@github.com:synrc/chat && cd chat
 $ mix deps.get
 $ mix release
@@ -44,5 +44,3 @@ Author
 ------
 
 * Максим Сохацький
-
-
