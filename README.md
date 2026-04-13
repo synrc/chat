@@ -14,51 +14,6 @@ Features
 * MNESIA records delivery system;
 * CMP EST for X.509 CA enrollment;
 
-Files
------
-
-```
-├── config
-│   └── config.exs
-├── include
-│   ├── CHAT-v2.hrl
-│   ├── meta.hrl
-│   ├── push.hrl
-│   └── roster.hrl
-├── lib
-│   ├── application.ex
-│   ├── auth.ex
-│   ├── chat.ex
-│   ├── inbox.ex
-│   ├── message.ex
-│   ├── p1.ex
-│   ├── p3.ex
-│   ├── p7.ex
-│   └── roster.ex
-├── priv
-│   ├── v1
-│   │   ├── AlgorithmInformation-2009.asn1
-│   │   ├── CryptographicMessageSyntax-2009.asn1
-│   │   ├── MESSAGE-v1.asn1
-│   │   ├── PKIX-CommonTypes-2009.asn1
-│   │   ├── PKIX1-PSS-OAEP-Algorithms-2009.asn1
-│   │   ├── PKIX1Explicit-2009.asn1
-│   │   ├── PKIX1Implicit-2009.asn1
-│   │   └── PKIXAlgs-2009.asn1
-│   └── v2
-│       ├── CHAT-v2.asn1
-│       ├── CryptographicMessageSyntax-2009.asn1
-│       ├── PKCS-10.asn1
-│       ├── PKIX1Explicit-2009.asn1
-│       └── PKIX1Implicit-2009.asn1
-├── src
-│   └── CHAT-v2.erl
-├── mix.exs
-├── LICENSE
-├── index.html
-└── README.md
-```
-
 CHAT protocol
 -------------
 
