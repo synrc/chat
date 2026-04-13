@@ -21,7 +21,7 @@ defmodule CHAT.Mixfile do
 
   def package() do
       [
-        files: ["src", "include", "LICENSE", "README.md" ],
+        files: ~w(include config lib LICENSE mix.exs README.md),
         licenses: ["DHARMA"],
         maintainers: ["Namdak Tonpa"],
         name: :chat,
