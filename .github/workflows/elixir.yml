@@ -10,11 +10,11 @@ jobs:
       BPE_BACKEND: ${{ matrix.backend }}
       KVS_BACKEND: ${{ matrix.backend }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - uses: erlef/setup-beam@v1
       with:
-        otp-version: 24.x
-        elixir-version: 1.13.x
+        otp-version: 26.x
+        elixir-version: 1.16.x
     - name: CMake
       run: sudo apt-get install -y cmake libsnappy-dev
     - name: Dependencies
