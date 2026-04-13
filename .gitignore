@@ -16,3 +16,5 @@ priv/protobuf/*
 src/roster_validator.erl
 src/priv/*
 sec/priv/*
+doc/
+mix.lock
