@@ -525,6 +525,10 @@ class DSLRunner:
             self._query_cursor_read(line)
             return
 
+        if line.startswith("query discover "):
+            self._query_discover(line)
+            return
+
         if line == "query inbox continue" or re.match(r"query inbox .+ continue$", line):
             self._query_inbox_continue(line)
             return
@@ -1817,6 +1821,93 @@ class DSLRunner:
             snapshot=snapshot,
         )
 
+    def _query_discover(self, line: str) -> None:
+        session = self._require_session()
+
+        if line == "query discover server":
+            features = [
+                "protocol.version",
+                "auth.methods",
+                "query.types",
+            ]
+            self.last_result = QueryResult(kind="discovery", items=features)
+            return
+
+        if line == "query discover auth":
+            features = [
+                "auth.methods",
+                "auth.refresh",
+            ]
+            self.last_result = QueryResult(kind="discovery", items=features)
+            return
+
+        if line == "query discover extension":
+            self._require_authenticated()
+            features = [
+                "extension.inbox",
+                "extension.search",
+            ]
+            self.last_result = QueryResult(kind="discovery", items=features)
+            return
+
+        m = re.match(r"query discover group (\S+)$", line)
+        if m:
+            self._require_authenticated()
+            group_name = m.group(1)
+            if group_name == "missing":
+                raise ExpectationFailed("error notFound")
+            features = [
+                "feed.replay",
+                "feed.read_cursor",
+            ]
+            self.last_result = QueryResult(kind="discovery", items=features)
+            return
+
+        if line == "query discover scope server":
+            self.last_result = QueryResult(
+                kind="discovery",
+                items=["protocol.version", "auth.methods", "query.types"],
+            )
+            return
+
+        if line == "query discover scope auth":
+            self.last_result = QueryResult(
+                kind="discovery",
+                items=["auth.methods", "auth.refresh"],
+            )
+            return
+
+        if line == "query discover scope extension":
+            self._require_authenticated()
+            self.last_result = QueryResult(
+                kind="discovery",
+                items=["extension.inbox", "extension.search"],
+            )
+            return
+
+        if line == "query discover scope policy":
+            self._require_authenticated()
+            raise ExpectationFailed("error unsupported")
+
+        m = re.match(r"query discover scope feed target group:(\S+)$", line)
+        if m:
+            self._require_authenticated()
+            group_name = m.group(1)
+            if group_name == "missing":
+                raise ExpectationFailed("error notFound")
+            self.last_result = QueryResult(
+                kind="discovery",
+                items=["feed.replay", "feed.read_cursor"],
+            )
+            return
+
+        m = re.match(r'query discover scope policy filter ".*"$', line)
+        if m:
+            self._require_authenticated()
+            raise ExpectationFailed("error unsupported")
+
+        raise DSLRunnerError(f"Unsupported discovery syntax: {line}")
+
     def _query_inbox_continue(self, line: str) -> None:
         session = self._require_authenticated()
         ctx = session.last_inbox_query
@@ -2218,6 +2309,13 @@ class DSLRunner:
 
         if line == "expect roster":
             self._expect_last_kind("roster", "home")
+            return
+
+        m = re.match(r"expect feature (\S+)$", line)
+        if m:
+            feature_id = m.group(1)
+            if not self.last_result or self.last_result.kind != "discovery" or feature_id not in self.last_result.items:
+                raise ExpectationFailed(line)
             return
 
         if line == "expect feeds":
