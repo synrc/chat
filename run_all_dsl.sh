@@ -4,12 +4,14 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$SCRIPT_DIR"
 RUNNER="$REPO_ROOT/tools/dsl_runner.py"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
 
 DSL_DIRS=(
   "$REPO_ROOT/docs/dsl/domain"
   "$REPO_ROOT/docs/dsl/advanced"
   "$REPO_ROOT/docs/extensions/auth"
   "$REPO_ROOT/docs/extensions/abac"
+  "$REPO_ROOT/docs/extensions/discovery"
   "$REPO_ROOT/docs/extensions/search"
 )
 
@@ -44,7 +46,7 @@ for dir in "${DSL_DIRS[@]}"; do
 
     echo "==> $file"
 
-    if python "$RUNNER" "$file"; then
+    if "$PYTHON_BIN" "$RUNNER" "$file"; then
       PASSED=$((PASSED + 1))
     else
       FAILED=$((FAILED + 1))
