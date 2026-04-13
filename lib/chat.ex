@@ -6,8 +6,8 @@ defmodule CHAT.X509 do
   use ThousandIsland.Handler
   require Record
   Record.defrecord(:cx, Record.extract(:cx, from_lib: "chat/include/roster.hrl"))
-  for name <- [:'Feature', :'Authority', :'File', :'Message', :'Privatebox', :'Streambox', :'Groupbox', :'Mailbox', :'Inbox', :'Ack',
-               :'Activity', :'Search', :'Subscription', :'Person', :'Server', :'Roster', :'Member', :'Conference', :'CHATMessage'] do
+  for name <- [:"Feature", :"Authority", :"File", :"Message", :"Privatebox", :"Streambox", :"Groupbox", :"Mailbox", :"Inbox", :"Ack",
+               :"Activity", :"Search", :"Subscription", :"Person", :"Server", :"Roster", :"Member", :"Conference", :"CHATMessage"] do
       Record.defrecord(name, Record.extract(name, from_lib: "chat/include/CHAT-v2.hrl"))
   end
 
@@ -73,7 +73,7 @@ defmodule CHAT.X509 do
 
   def handle_message(body) do
     try do
-      {:ok, dec} = :'CHAT-v2'.decode(:'CHATMessage', body)
+      {:ok, dec} = :"CHAT-v2".decode(:"CHATMessage", body)
       {:CHATMessage, _no, _headers, {_tag, msg_body}} = dec
       info(msg_body, [], cx())
     catch

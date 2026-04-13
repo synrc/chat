@@ -1,7 +1,8 @@
 SYNRC 💬 CHAT
 =============
 
-<img width="5001" height="2495" alt="CHAT" src="https://github.com/user-attachments/assets/86e4a1a3-73e1-405e-9107-5665664ca894" />
+[![Actions Status](https://github.com/synrc/chat/workflows/mix/badge.svg)](https://github.com/synrc/chat/actions)
+[![Hex pm](https://img.shields.io/hexpm/v/chat.svg?style=flat)](https://hex.pm/packages/chat)
 
 SYNRC 💬 CHAT Instant Messenger respects IETF 3394 3565 5280 5480 5652 5755 8551 ITU
 ASN.1 X.509 CMS PKCS-10 PCKS-7 OCSP LDAP DNS X9-42 X9-62 X25519 X488 SECP384r1
@@ -61,18 +62,7 @@ Files
 CHAT protocol
 -------------
 
-The CHAT protocols communicates with `Inbox`, `Activity`, `Search`, `File`, `Presence`,
-`Friend`, `Message`, `Member`, `Conference`, `Person`, `Ack`, `Authority`, `Roster`, `History`
-DER-serialized ASN.1-defined messages.
-
-The CHAT protocol is implemented in the set of sub-protocol modules:
-FILE, HISTORY, LINK, MESSAGE, PRESENSE, PROFILE, PUSH, ROOM, ROSTER,
-SEARCH, AUTH. For full specification follow `priv/design` folder.
-The CHAT server implementation relies only on ISO/IETF connections
-such as DNSSEC, X.509 CSR, LDAP, QUIC, WebSocket.
-
-* [CHAT V2 ASN.1 SPEC](priv/v2/CHAT-L2.asn1) DER over TCP/QUIC
-* [CHAT V2 PROTOCOL SPEC](docs/spec/SPEC.md) Architecture, delivery model and semantics
+* [Zen Crypted Buddha Protocol](https://protocol.zencrypted.uk)
 
 CHAT is a simple instant messaging server based on ISO standards.
 It uses ASN.1 defined protocol and DER binary serialization from Erlang/OTP
@@ -80,7 +70,8 @@ across applications: MAIL, LDAP, NS, CA. Secure by default.
 The CHAT application has Sign/Verify, Encrypt/Decrypt feature enabled for
 every single message passed by. The delivered messages are being deleted
 from instance after recipient acknowledgment.
-This is Keybase, OTR, PGP (you name it) replacement for secure X.509 ASN.1 defined communications.
+This is Keybase, OTR, PGP (you name it) replacement for secure
+X.509 ASN.1 defined communications.
 
 CHAT server
 -----------
@@ -122,30 +113,30 @@ iex(1)> :application.which_applications
 Development Reports
 -------------------
 
-* [DR-1] <a href="https://tonpa.guru/stream/2010/2010-10-18 LDAP.htm">2010-10-18 LDAP</a><br>
-* [DR-2] <a href="https://tonpa.guru/stream/2020/2020-02-03 Кваліфікований Електронний Підпис.htm">2020-02-03 Кваліфікований Підпис</a><br>
-* [DR-3] <a href="https://tonpa.guru/stream/2023/2023-06-22 Месенжер.htm">2023-06-22 CMS Месенжер (Пітч)</a><br>
-* [DR-4] <a href="https://chat.erp.uno">2023-06-30 ЧАТ X.509 (Домашня сторінка)</a><br>
-* [DR-5] <a href="https://tonpa.guru/stream/2023/2023-07-05 CMS SMIME.htm">2023-07-05 CMS S/MIME</a><br>
-* [DR-6] <a href="https://tonpa.guru/stream/2023/2023-07-16 CMS Compliance.htm">2023-07-16 CMS Compliance</a><br>
-* [DR-7] <a href="https://tonpa.guru/stream/2023/2023-07-20 LDAP Compliance.htm">2023-07-20 LDAP Compliance</a><br>
-* [DR-8] <a href="https://ldap.erp.uno">2023-07-25 LDAP 13.7.24 (Домашня сторінка)</a><br>
-* [DR-9] <a href="https://ca.erp.uno">2023-07-30 CA X.509 (Домашня сторінка)</a><br>
-* [DR-10] <a href="https://tonpa.guru/stream/2023/2023-07-21 CMP CMC EST.htm">2023-07-21 CMP/CMC/EST</a><br>
-* [DR-11] <a href="https://tonpa.guru/stream/2023/2023-07-27 MLS.htm">2023-07-21 MLS ROOM CHAT</a><br>
-* [DR-12] <a href="https://tonpa.guru/stream/2023/2023-08-05 CA CURVE.htm">2023-08-05 CA CURVE</a><br>
-* [DR-13] <a href="https://tonpa.guru/stream/2023/2023-08-07 CHAT ASN.1.htm">2023-08-07 CHAT ASN.1</a><br>
-* [DR-14] <a href="https://tonpa.guru/stream/2023/2023-08-08 ASN.1 Компілятор.htm">2023-08-08 ASN.1 Компілятор</a><br>
-* [DR-15] <a href="https://tonpa.guru/stream/2023/2023-08-10 CHAT Техзавдання.htm">2023-08-10 CHAT Техзавдання</a><br>
-* [DR-16] <a href="https://tonpa.guru/stream/2023/2023-08-11 ITU X Series.htm">2023-08-11 ITU X Series</a><br>
-* [DR-17] <a href="https://tonpa.guru/stream/2023/2023-08-13 SWIFT X.509.htm">2023-08-13 SWIFT X.509</a><br>
-* [DR-18] <a href="https://tonpa.guru/stream/2023/2023-08-15 CHAT Техноробочий проєкт.htm">2023-08-15 CHAT Техноробочий проєкт</a><br>
-* [DR-19] <a href="https://tonpa.guru/stream/2023/2023-09-01 ASN1.EX X.680.htm">2023-09-01 ASN1.EX X.680 Тензори</a><br>
-* [DR-20] <a href="https://tonpa.guru/stream/2023/2023-09-07 Криптоніт.htm">2023-09-07 Криптоніт</a><br>
+* [2010-10-18 LDAP](https://tonpa.guru/stream/2010/2010-10-18 LDAP.htm)
+* [2020-02-03 Кваліфікований Підпис](https://tonpa.guru/stream/2020/2020-02-03 Кваліфікований Електронний Підпис.htm)
+* [2023-06-22 CMS Месенжер (Пітч)](https://tonpa.guru/stream/2023/2023-06-22 Месенжер.htm)
+* [2023-06-30 ЧАТ X.509 (Домашня сторінка)](https://erp.uno/chat/)
+* [2023-07-05 CMS S/MIME](https://tonpa.guru/stream/2023/2023-07-05 CMS SMIME.htm)
+* [2023-07-16 CMS Compliance](https://tonpa.guru/stream/2023/2023-07-16 CMS Compliance.htm)
+* [2023-07-20 LDAP Compliance](https://tonpa.guru/stream/2023/2023-07-20 LDAP Compliance.htm)
+* [2023-07-25 LDAP 13.7.24 (Домашня сторінка)](https://erp.uno/ldap/)
+* [2023-07-30 CA X.509 (Домашня сторінка)](https://erp.uno/ca/)
+* [2023-07-21 CMP/CMC/EST](https://tonpa.guru/stream/2023/2023-07-21 CMP CMC EST.htm)
+* [2023-07-21 MLS ROOM CHAT](https://tonpa.guru/stream/2023/2023-07-27 MLS.htm)
+* [2023-08-05 CA CURVE](https://tonpa.guru/stream/2023/2023-08-05 CA CURVE.htm)
+* [2023-08-07 CHAT ASN.1](https://tonpa.guru/stream/2023/2023-08-07 CHAT ASN.1.htm)
+* [2023-08-08 ASN.1 Компілятор](https://tonpa.guru/stream/2023/2023-08-08 ASN.1 Компілятор.htm)
+* [2023-08-10 CHAT Техзавдання](https://tonpa.guru/stream/2023/2023-08-10 CHAT Техзавдання.htm)
+* [2023-08-11 ITU X Series](https://tonpa.guru/stream/2023/2023-08-11 ITU X Series.htm)
+* [2023-08-13 SWIFT X.509](https://tonpa.guru/stream/2023/2023-08-13 SWIFT X.509.htm)
+* [2023-08-15 CHAT Техноробочий проєкт](https://tonpa.guru/stream/2023/2023-08-15 CHAT Техноробочий проєкт.htm)
+* [2023-09-01 ASN1.EX X.680 Тензори](https://tonpa.guru/stream/2023/2023-09-01 ASN1.EX X.680.htm)
+* [2023-09-07 Криптоніт](https://tonpa.guru/stream/2023/2023-09-07 Криптоніт.htm)
 
-Credits
--------
+Author
+------
 
-* Namdak Tonpa
+* Максим Сохацький
 
-OM A HUM
+
