@@ -340,7 +340,44 @@ BEGIN
        cursor       [14] CursorCore,
        home         [15] HomeCore,
        mutation     [16] MessageMutationExtension,
+       discovery    [17] DiscoveryExtension,
        ...
+    }
+
+    -- discovery є capability introspection layer.
+    -- використовує вже наявний Feature.
+    -- unknown features SHOULD ігноруватись.
+    -- discovery не змінює state, не означає read і не рухає replay cursor.
+    -- target/filter задають optional context selectors для discovery.
+    -- Їх точне тлумачення визначається реалізацією.
+    --
+    DiscoveryScope ::= ENUMERATED {
+       server    (1),
+       auth      (2),
+       feed      (3),
+       message   (4),
+       event     (5),
+       query     (6),
+       extension (7),
+       policy    (8),
+       ...
+    }
+
+    DiscoveryQuery ::= SEQUENCE {
+       scope  DiscoveryScope,
+       target [0] Binary OPTIONAL,
+       filter [1] Binary OPTIONAL,
+       ...
+    }
+
+    DiscoveryAnswer ::= SEQUENCE {
+       features [0] SEQUENCE OF feature Feature OPTIONAL,
+       ...
+    }
+
+    DiscoveryExtension ::= CHOICE {
+       request [1] DiscoveryQuery,
+       result  [2] DiscoveryAnswer
     }
 
     ProcessExtension ::= CHOICE { request [1] Binary, result [2] Binary }
