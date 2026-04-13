@@ -85,31 +85,6 @@ $ _build/dev/rel/chat/bin/chat daemon
 $ _build/dev/rel/chat/bin/chat remote
 ```
 
-```elixir
-Erlang/OTP 28 [erts-16.0.2] [source] [64-bit]
-  [smp:8:8] [ds:8:8:10] [async-threads:1] [jit] [dtrace]
-
-Eshell V16.0.2 (press Ctrl+G to abort, type help(). for help)
-iex(1)> :application.which_applications
-[
-  {:chat, ~c"CHAT X.509 Instant Messenger tcp://chat.erp.uno", ~c"9.1.2"},
-  {:ssl_verify_fun, ~c"SSL verification functions for Erlang\n", ~c"1.1.6"},
-  {:mnesia, ~c"MNESIA  CXC 138 12", ~c"4.20.1"},
-  {:hex, ~c"hex", ~c"2.0.0"},
-  {:inets, ~c"INETS  CXC 138 49", ~c"7.5"},
-  {:ssl, ~c"Erlang/OTP SSL application", ~c"10.6.1"},
-  {:public_key, ~c"Public key infrastructure", ~c"1.11.3"},
-  {:asn1, ~c"The Erlang ASN1 compiler version 5.0.17", ~c"5.0.17"},
-  {:crypto, ~c"CRYPTO", ~c"5.0.5"},
-  {:mix, ~c"mix", ~c"1.12.2"},
-  {:iex, ~c"iex", ~c"1.12.2"},
-  {:elixir, ~c"elixir", ~c"1.12.2"},
-  {:compiler, ~c"ERTS  CXC 138 10", ~c"8.0.4"},
-  {:stdlib, ~c"ERTS  CXC 138 10", ~c"3.17"},
-  {:kernel, ~c"ERTS  CXC 138 10", ~c"8.2"}
-]
-```
-
 Author
 ------
 
