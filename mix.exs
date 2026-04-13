@@ -22,7 +22,7 @@ defmodule CHAT.Mixfile do
   def package() do
       [
         files: ~w(include config lib LICENSE mix.exs README.md),
-        licenses: ["DHARMA"],
+        licenses: ["ISC"],
         maintainers: ["Namdak Tonpa"],
         name: :chat,
         links: %{"GitHub" => "https://github.com/synrc/chat"}
