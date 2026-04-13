@@ -6,3 +6,4 @@
 *.erl linguist-detectable=false
 *.hrl linguist-detectable=false
 *.swift linguist-detectable=false
+*.py linguist-detectable=false
