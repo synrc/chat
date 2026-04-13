@@ -1,43 +1,46 @@
 # ARCH-KERNEL-MAPPINGS
 
-Коротка карта системи поверх `DSL-SEMANTIC-KERNEL.md` і `DSL-TYPED-KERNEL-REFINEMENT.md`.
-Мета цього документа: показати, з чого складається kernel, що є "іменниками", що є "дієсловами", і як поверхневий DSL зводиться до kernel-форм.
+Мета цього документа: показати kernel як коротку класичну схему:
 
-## 1. Онтологія
+- іменники = типи / суми типів
+- дієслова = канонічні morphism-like дії над цими доменами
+- DSL = лише поверхневий запис, який зводиться до kernel
+
+## 1. Objects
 
 ### Ресурси
 
-- `Principal` — ідентичність учасника
-- `Session` — ідентичність сесії
-- `Feed` — канал взаємодії (`Private`, `Group`, `Token`)
-- `Message` — адресований message resource
-- `Group` — group resource
+- `Principal`
+- `Session`
+- `Feed`
+- `Message`
+- `Group`
 
 ### Події
 
-- `Event` — те, що відбулося під час виконання (`Received`, `Delivered`, `Read`, `Edited`, `Deleted`, `UserPresence`, `SessionPresence`)
+- `Event`
 
 ### Спостереження
 
-- `Observation` — те, що сценарій може спостерігати (`MessageObs`, `EventObs`, `ViewObs`)
+- `Observation`
 
 ### Твердження
 
-- `Predicate` — те, що сценарій перевіряє (`Holds`, `Seen`, `CountIs`, `HasMore`, `HasSnapshot`, `NoDuplicates`, `NoGaps`, `AccessIs`)
+- `Predicate`
 
 ### Стан
 
-- `State` — набір фактів системи
+- `State`
 
 ### Семантичні судження
 
-- `Judgment` — форма семантики (`Steps`, `Produces`, `Satisfies`, а також well-formedness / permission judgments)
+- `Judgment`
 
-У kernel це розведено навмисно: ресурс, подія, спостереження, твердження, стан і семантичне судження не є одним і тим самим.
+Усі іменники живуть у типах kernel. Вони не є DSL-командами.
 
-## 2. Дії
+## 2. Morphisms
 
-Шар `action` у kernel описує канонічні дії рівня kernel, а не поверхневий DSL-синтаксис:
+Kernel `action` layer містить канонічні дієслова:
 
 - `SessionOp`
 - `Post`
@@ -49,31 +52,47 @@
 - `ChangeRole`
 - `ChangeModeration`
 
-Тобто поверхневі форми на кшталт `send message`, `edit message`, `query inbox` або `expect event ...` спочатку зводяться до цих канонічних форм.
+Це не surface syntax, а канонічні переходи системи.
 
-## 3. Розділення шарів
+## 3. Semantic Separation
 
 `Event ≠ Action`
 
 `Action` може породжувати `Event`, але `Event` не є `Action`.
 
-| Layer | Meaning |
+| Layer | Роль |
 | --- | --- |
 | `Action` | що виконується |
 | `Event` | що відбулося |
 | `Observation` | що спостерігається |
-| `Predicate` | що перевіряється (`expect`) |
+| `Predicate` | що перевіряється в `expect` |
+| `Judgment` | яка семантична форма це фіксує |
 
-Одна й та сама DSL-фраза може торкатися кількох шарів:
+У короткій формі:
 
-- `send message ...` зазвичай зводиться до `Action`
-- `expect event ...` перевіряє не `Action`, а `Predicate`, який обгортає `Observation`, яка обгортає `Event`
+- `State × Action -> State` задається через `Steps`
+- `State × Action -> Observation` задається через `Produces`
+- `State ⊨ Predicate` задається через `Satisfies`
 
-## 4. DSL -> Kernel mappings
+Тому `expect event ...` не є `Action`.
+Це `Predicate` над `Observation`, яка містить `Event`.
 
-Нижче не нові правила, а короткі приклади того, як поверхневий DSL опускається до канонічного kernel.
+## 4. DSL -> Kernel -> Semantics
 
-### 4.1 `expect event typing bob1`
+```text
+DSL -> Kernel -> Semantics
+```
+
+- `DSL` — представницький рівень
+- `Kernel` — канонічна модель
+- `Semantics` — `Steps`, `Produces`, `Satisfies` та інваріанти
+
+Псевдоніми, символічні та скорочені форми не існують у kernel.
+Вони зникають на стадії зведення.
+
+## 5. Mappings
+
+### 5.1 `expect event typing bob1`
 
 DSL:
 
@@ -98,14 +117,19 @@ Seen (
 )
 ```
 
-Пояснення:
+Розклад:
 
 - `typing` -> `Event`
 - `EventObs` -> `Observation`
 - `Seen` -> `Predicate`
-- форма предиката тут: `Predicate(Seen(Observation(Event)))`
 
-### 4.2 `send message to bob "hi"`
+Форма:
+
+```text
+Predicate(Seen(Observation(Event)))
+```
+
+### 5.2 `send message to bob "hi"`
 
 DSL:
 
@@ -127,12 +151,12 @@ Post {
 }
 ```
 
-Пояснення:
+Класифікація:
 
-- поверхнева форма `send message` не є kernel-конструктором
-- канонічна дія для відправки повідомлення — `Post`
+- це `Action`
+- канонічна дія: `Post`
 
-### 4.3 `edit message`
+### 5.3 `edit message`
 
 DSL:
 
@@ -159,13 +183,12 @@ Mutate {
 }
 ```
 
-Пояснення:
+Класифікація:
 
-- поверхневе посилання спочатку розв'язується
-- kernel mutation працює не з псевдонімом, а з `ExistingMessage`
-- канонічна дія редагування — `Mutate`
+- це `Action`
+- канонічна дія: `Mutate`
 
-### 4.4 `read cursor`
+### 5.4 `read cursor`
 
 DSL:
 
@@ -187,13 +210,12 @@ MarkRead {
 }
 ```
 
-Пояснення:
+Класифікація:
 
-- символічний cursor (`last`) не доходить до kernel
-- kernel зберігає explicit read boundary
-- канонічна дія тут — `MarkRead`
+- це `Action`
+- канонічна дія: `MarkRead`
 
-### 4.5 `query inbox`
+### 5.5 `query inbox`
 
 DSL:
 
@@ -214,12 +236,12 @@ View {
 }
 ```
 
-Пояснення:
+Класифікація:
 
-- `query inbox` не є окремим kernel-типом у refined kernel
-- це `View` з конкретним `view_kind = Inbox (...)`
+- це `Action`
+- канонічна дія: `View`
 
-### 4.6 `query events ... after snapshot`
+### 5.6 `query events ... after snapshot`
 
 DSL:
 
@@ -239,27 +261,17 @@ Replay {
 }
 ```
 
-Пояснення:
+Класифікація:
 
-- поверхневий `snapshot` спочатку зводиться до явного kernel boundary
-- у `DSL-TYPED-KERNEL-REFINEMENT.md` це розщеплено на `AfterFeedSnapshot` / `AfterHomeSnapshot`
-- у `DSL-SEMANTIC-KERNEL.md` цьому відповідає більш загальна форма `AfterSnapshot`
-- канонічна дія для event/history query — `Replay`
+- це `Action`
+- канонічна дія: `Replay`
+- у refined kernel це `AfterFeedSnapshot` / `AfterHomeSnapshot`
+- у semantic kernel цьому відповідає загальніша форма `AfterSnapshot`
 
-## 5. Pipeline
+## 6. Minimal Rule
 
-```text
-DSL -> Kernel -> Semantics
-```
+Щоб читати DSL без OCaml-коду, достатньо пам'ятати одне правило:
 
-- `DSL` = представницький рівень: короткі команди, скорочення, псевдоніми, символічні форми
-- `Kernel` = канонічна модель: стабільні типи сутностей, дій, observation і predicate
-- `Semantics` = виконання + інваріанти: `Steps`, `Produces`, `Satisfies`, permission/state rules
-
-Окремо: псевдоніми, символічні та скорочені форми не існують у kernel; вони зникають на стадії зведення.
-
-Практично це означає:
-
-1. DSL-поверхня зручна для людини
-2. kernel є єдиною канонічною проміжною моделлю
-3. семантика визначається не на поверхневих формах, а на kernel-конструкторах
+- якщо DSL щось робить, це зводиться до `Action`
+- якщо DSL каже `expect`, це зводиться до `Predicate`
+- якщо всередині `expect` стоїть `event`, то це `Predicate(Observation(Event))`, а не `Action`
