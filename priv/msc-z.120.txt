@@ -1,0 +1,130 @@
+Ось детальна BNF-нотація (текстова синтаксична граматика) для Message Sequence Chart (MSC) з ITU-T Z.120.
+Зверніть увагу: повна граматика MSC/PR (textual syntax) дуже велика (десятки сторінок у рекомендації Z.120).
+
+Нижче я наводжу основну структуру та ключові production rules з класичної версії (Z.120 1996–2011),
+яка використовується в більшості інструментів та літератури.
+
+Meta-notation (як у Z.120)
+
+ITU-T використовує BNF-подібну нотацію з такими правилами:
+
+<non-terminal> — нетермінал
+::= — визначається як
+ — альтернатива
+[] — опціонально
+{} — повторення 0 або більше разів
+() — групування
+
+Термінали пишуться жирним або в лапках (keywords: msc, instance, endmsc тощо)
+
+Основна структура MSC (Top-level)
+
+<msc-document> ::= { <msc> | <hmsc> }*
+
+<msc> ::= msc <msc-name> [ <parameters> ] ;
+          <msc-body>
+          endmsc ;
+
+<msc-name> ::= <identifier>
+
+<msc-body> ::= { <instance-definition> | <message-declaration> | <gate-definition> }*
+
+Instance Definition
+
+<instance-definition> ::= instance <instance-name> [ : <type> ] ;
+                          <instance-body>
+                          endinstance ;
+
+<instance-name> ::= <identifier>
+
+<instance-body> ::= { <event> }*
+
+Основні події (Events) на інстансі
+
+<event> ::= <message-send>
+          | <message-receive>
+          | <action>
+          | <timer-event>
+          | <condition>
+          | <create>
+          | <stop>
+          | <inline-expression>
+          | <msc-reference>
+          | <coregion>
+
+<message-send>   ::= out <message-name> [ <parameters> ] to <instance-name> ;
+
+<message-receive>::= in <message-name> [ <parameters> ] from <instance-name> ;
+
+<action>         ::= action <action-name> [ <parameters> ] ;
+
+<timer-start>    ::= starttimer <timer-name> [ <duration> ] ;
+
+<timer-stop>     ::= stoptimer <timer-name> ;
+
+<timeout>        ::= timeout <timer-name> ;
+
+<condition>      ::= condition <condition-name> ;
+
+<create>         ::= create <instance-name> ;
+
+<stop>           ::= stop ;
+
+Inline Expressions (дуже важливі для сучасного MSC)
+
+<inline-expression> ::= alt <inline-body> endalt
+                      | par <inline-body> endpar
+                      | loop <loop-bound> <inline-body> endloop
+                      | opt <inline-body> endopt
+                      | seq <inline-body> endseq
+                      | exc <inline-body> endexc
+
+<inline-body> ::= { <event> | <inline-expression> }*
+
+High-level MSC (HMSC)
+
+<hmsc> ::= hmsc <hmsc-name> ;
+           <hmsc-body>
+           endhmsc ;
+
+<hmsc-body> ::= <hmsc-expression>
+
+<hmsc-expression> ::= <msc-reference>
+                    | <hmsc-expression> ; <hmsc-expression>     // seq
+                    | alt <hmsc-expression> , <hmsc-expression> endalt
+                    | loop <loop-bound> <hmsc-expression> endloop
+                    | par <hmsc-expression> , <hmsc-expression> endpar
+
+
+Приклад простого MSC у текстовій нотації (MSC/PR)
+
+msc ExampleMessageFlow;
+  instance Alice;
+    out Hello to Bob;
+    in Ack from Bob;
+  endinstance;
+
+  instance Bob;
+    in Hello from Alice;
+    action ProcessMessage;
+    out Ack to Alice;
+  endinstance;
+endmsc;
+
+Більш складний приклад з inline expression
+
+msc LoginScenario;
+  instance User : Client;
+    out LoginRequest to Server;
+  endinstance;
+
+  instance Server;
+    in LoginRequest from User;
+    alt
+      out LoginOK to User;
+    else
+      out LoginFailed to User;
+    endalt;
+  endinstance;
+endmsc;
+
