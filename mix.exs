@@ -11,7 +11,7 @@ defmodule CHAT.Mixfile do
   def project do
       [
         app: :chat,
-        version: "9.4.14",
+        version: "9.4.15",
         description: "CHAT  CXC 138 25 X.509 CMS Instant Messenger",
         package: package(),
         deps: deps(),
@@ -31,8 +31,8 @@ defmodule CHAT.Mixfile do
 
   def deps() do
       [
-        {:ex_doc, ">= 0.0.0", only: :dev},
-#        {:ldap, "~> 15.1.1"},
+        {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
+        {:ldap, "~> 15.1.1"},
         {:kvs, "~> 13.4.15"},
         {:ca, "~> 7.4.14"},
         {:thousand_island, "~> 1.4.3"},
