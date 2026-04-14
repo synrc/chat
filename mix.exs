@@ -32,7 +32,7 @@ defmodule CHAT.Mixfile do
   def deps() do
       [
         {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-        {:ldap, "~> 15.1.1"},
+        {:ldap, "~> 15.4.16"},
         {:kvs, "~> 13.4.15"},
         {:ca, "~> 7.4.14"},
         {:thousand_island, "~> 1.4.3"},
