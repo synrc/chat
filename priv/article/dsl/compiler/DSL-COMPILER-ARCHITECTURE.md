@@ -9,29 +9,42 @@ DSL розглядається як frontend до формальної моде�
 Ключова ідея:
 
 ```text
-DSL text
--> Lexer
--> Parser
--> CST
--> Surface AST
--> Normalize / Desugar
--> Compile
--> Program IR
--> Interpreter over Kernel
--> Judgments / checks
+OCaml model:
+  Kernel
+  Typed AST (ручне конструювання)
+  Tests
+
+Elixir compiler:
+  DSL text
+  -> Lexer
+  -> Parser
+  -> Surface AST
+  -> Normalize / Desugar
+  -> Compile
+  -> Erlang AST
+  -> BEAM
+  -> Execution over Kernel
+  -> Judgments / checks
 ```
 
 ---
 
 ## Загальний підхід
 
-DSL не виконується напряму. Замість цього він:
+Важливо: формальна модель системи реалізується в OCaml без використання DSL-синтаксису.
 
-1. Парситься у синтаксичне дерево
-2. Нормалізується
-3. Компілюється у проміжне представлення (Program IR)
-4. Інтерпретується поверх формального kernel
-5. Перевіряється через систему semantic judgments
+Усі сценарії на цьому рівні задаються безпосередньо через типізований AST kernel-моделі.
+
+Синтаксис DSL (lexer, parser) з’являється лише в Elixir-реалізації компілятора.
+
+DSL не виконується напряму. Замість цього Elixir-реалізація:
+
+1. Парсить DSL у синтаксичне дерево
+2. Нормалізує surface form
+3. Компілює сценарій у Erlang AST
+4. Компілює Erlang AST у BEAM
+5. Виконує код поверх формального kernel
+6. Перевіряє результат через semantic judgments
 
 Таким чином система має чітке розділення між:
 
@@ -110,17 +123,17 @@ Parser не виконує semantic resolution.
 
 - resolution alias-ів
 - роботу з контекстом сесії
-- перетворення resource references
+- перетворення feed references
 - інтерпретацію symbolic boundary (`snapshot`, `continue`)
 - перевірку базової коректності
 
-Результатом є **Program IR** — компільована програма сценарію.
+Результатом є Erlang AST — компільована програма сценарію у форматі, що напряму компілюється у BEAM.
 
 ---
 
-## Program IR
+## Erlang AST
 
-Program IR — це проміжне представлення сценарію як програми з ефектами.
+Erlang AST — це представлення сценарію як програми з ефектами у форматі, що напряму відповідає BEAM execution model.
 
 Основна ідея:
 
@@ -128,6 +141,10 @@ Program IR — це проміжне представлення сценарію
 - `query` — operation, що повертає результат
 - `expect` — assertion
 - сценарій — композиція таких операцій
+
+У OCaml-моделі ці операції задаються безпосередньо через типізований AST, без використання текстового синтаксису DSL.
+
+В Elixir-компіляторі вони мають бути скомпільовані не у власний IR, а в Erlang AST як цільове представлення BEAM.
 
 ### Приклад структури
 
@@ -152,7 +169,7 @@ type _ program =
   | Op : 'a op -> 'a program
 ```
 
-Program IR є строго типізованим і визначає порядок виконання ефектів.
+Ця структура описує типізований AST моделі; у цільовій Elixir-реалізації сценарій має компілюватися в Erlang AST.
 
 ---
 
@@ -175,9 +192,9 @@ Kernel не містить DSL-специфічного синтаксису.
 
 ---
 
-## Interpreter
+## Execution over Kernel
 
-Interpreter виконує Program IR поверх kernel.
+Execution layer виконує скомпільований Erlang AST поверх kernel.
 
 Він:
 
@@ -192,7 +209,7 @@ Interpreter виконує Program IR поверх kernel.
 run : program -> state -> result
 ```
 
-Interpreter є єдиною точкою, де відбувається execution semantics.
+Execution over Kernel є точкою, де Erlang AST зв’язується з формальною моделлю та runtime semantics.
 
 ---
 
@@ -226,12 +243,12 @@ Interpreter є єдиною точкою, де відбувається executio
 
 - env.ml
 - compile.ml
-- program.ml
+- erlang_ast.ml
 
 ### Semantic core
 
 - kernel.ml
-- interpreter.ml
+- execution.ml
 - judgment.ml
 - typecheck.ml
 - world_check.ml
@@ -246,10 +263,11 @@ Interpreter є єдиною точкою, де відбувається executio
 
 Архітектура розділяє:
 
-- синтаксис (DSL)
-- програму сценарію (Program IR)
+- синтаксис DSL (тільки в Elixir)
+- типізований AST моделі (в OCaml)
+- цільове Erlang AST (для BEAM)
 - семантику (Kernel)
-- виконання (Interpreter)
+- виконання (Execution over Kernel)
 - перевірку (Judgments)
 
 Це дозволяє:
@@ -262,10 +280,26 @@ Interpreter є єдиною точкою, де відбувається executio
 Ключова формула:
 
 ```text
-DSL = frontend
-Program IR = compiled scenario program
+OCaml model = kernel + typed AST + tests
+Elixir compiler = syntax + compile to Erlang AST
+Erlang AST = compiled scenario program
 Kernel = canonical semantic model
-Interpreter = semantics
+Execution over Kernel = semantics
 Judgments = verification layer
 ```
 
+
+
+Розділення відповідальностей:
+
+- OCaml модель:
+  - Kernel
+  - Типізований AST
+  - Формальні перевірки
+  - Без DSL-синтаксису
+
+- Elixir компілятор:
+  - DSL синтаксис
+  - Парсер і токенайзер
+  - Компіляція у Erlang AST
+  - Генерація BEAM коду
