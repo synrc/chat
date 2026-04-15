@@ -829,6 +829,28 @@ DSL зазвичай використовує коротку форму `seq`,
 - `expect message ...` не повинен залежати від replay metadata
 - `expect authenticated` не повинен матчитися на presence/message event
 
+Таким чином `expect` у DSL є channel-scoped assertion,
+а не глобальним читанням "наступного packet/frame" без розрізнення semantic типу observation.
+
+#### Observation buffering
+
+Runtime model повинен підтримувати окремі буфери observation для кожного channel.
+
+Мінімально:
+
+- command result buffer
+- replay/event buffer
+- message buffer
+
+Кожен отриманий protocol observation маршрутизується в рівно один
+релевантний buffer відповідно до своєї semantic nature:
+
+- command/result status -> command result buffer
+- replay metadata і protocol-observable events -> replay/event buffer
+- message delivery / message observation -> message buffer
+
+Буфери є незалежними і не змішуються.
+
 Consume semantics:
 
 - `expect` споживає observation лише у своєму релевантному channel
@@ -836,6 +858,26 @@ Consume semantics:
 - observation може лишатися доступним для наступного `expect`, якщо semantics цього channel не вимагає одноразового зняття
 - command result assertions зазвичай споживають свій result одноразово
 - event/message observations можуть лишатися доступними в буфері до явного match або до завершення відповідного channel scope
+
+Noise semantics:
+
+- observation вважається шумом для поточного `expect`,
+  якщо воно:
+  - знаходиться в іншому channel/buffer;
+  - або знаходиться в тому самому channel, але не відповідає predicate match цього `expect`
+
+Шум не повинен:
+
+- випадково задовольняти `expect`
+- автоматично видалятись лише через перевірку іншого channel
+- змінювати результат matching для релевантного observation
+
+Приклади шуму:
+
+- auth/result frames під час `expect event ...`
+- presence events під час `expect message ...`
+- message delivery observations під час `expect authenticated`
+- replay metadata під час `expect message ...`
 
 Це узгоджується з domain scenarios:
 
