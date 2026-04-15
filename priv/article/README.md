@@ -29,6 +29,11 @@
 - [DSL-CORE](./dsl/core/DSL-CORE.md)
   Поверхневий DSL: canonical/exact форми, session context, references і сценарна модель.
 
+### Compiler
+
+- [DSL-COMPILER-ARCHITECTURE](./dsl/compiler/DSL-COMPILER-ARCHITECTURE.md)
+  Архітектура DSL як мови: parser, elaboration, program IR, interpreter і kernel semantics.
+
 ### Advanced
 
 - [DSL-ADVANCED](./dsl/advanced/DSL-ADVANCED.md)
