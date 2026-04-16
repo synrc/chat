@@ -275,6 +275,7 @@ scenario ban does not hide already visible messages
 
 given alice has clearance secret
 given message m1 has classification confidential
+given message m1 was visible to bob before ban
 given bob is banned
 
 when bob queries inbox
