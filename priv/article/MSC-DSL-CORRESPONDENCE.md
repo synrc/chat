@@ -30,7 +30,8 @@
 | `disconnect` | `Alice -> Server : Disconnect()` | Session-level дія |
 | `reconnect` | `Alice -> Server : Connect()` | Окреме повторне підключення |
 | `send message to bob "hi"` | `Alice -> Server : SendMessage("hi")` + `Server -> Bob : DeliverMessage("hi")` | Канонічна server-mediated delivery |
-| `send message to bob { ... }` | `Alice -> Server : SendMessage(...)` + `Server -> Bob : DeliverMessage(...)` | Structured payload лишається в message label |
+| `send message to bob { ... }` | `Alice -> Server : SendMessage({...})` + `Server -> Bob : DeliverMessage({...})` | Structured payload is still message-level state |
+| `send message to bob { ... } capture id as doc1` | `Alice -> Server : SendMessage({...})` | Captured id alias is recorded in Notes / local binding, not a new MSC core construct |
 | `send typing to bob` | `Alice -> Server : SendTyping(Bob)` | Transient presence action |
 | `send message to group:room1 "g1"` | `Alice -> Server : SendGroupMessage(room1, "g1")` + delivery fanout | Для group feed |
 | `create group room1` | `Alice -> Server : CreateGroup(room1)` | Resource mutation |
@@ -56,6 +57,7 @@
 | `query groups` | `Alice -> Server : GroupListQuery()` | Group list view query |
 | `query members of group room1` | `Alice -> Server : MemberListQuery(room1)` | Group member list view query |
 | `query events peer alice after cursor` | `Bob -> Server : EventQuery(peer=alice, after=cursor)` | Канонічний replay query |
+| `query events peer alice after 0` | `Bob -> Server : EventQuery(peer=alice, after=0)` | Replay from start / baseline cursor |
 | `query events peer alice after cursor limit 2` | `Bob -> Server : EventQuery(peer=alice, after=cursor, limit=2)` | Bounded replay |
 | `query events peer alice after next` | `Bob -> Server : EventQuery(peer=alice, after=next)` | Replay continuation by returned cursor |
 | `query events group room1 after cursor` | `Bob -> Server : EventQuery(group=room1, after=cursor)` | Group-scoped replay query |
@@ -68,7 +70,14 @@
 | `send read peer alice for last` | `Bob -> Server : UpdateReadCursor(feed=private:alice, up_to=last_observed)` | Peer-scoped read update |
 | `send read group room1 for last` | `Bob -> Server : UpdateReadCursor(feed=group:room1, up_to=last_observed)` | Feed-scoped read update |
 | `query cursor read group room1 up to 1` | `Bob -> Server : UpdateReadCursor(feed=group:room1, up_to=1)` | Group-scoped read cursor update |
+| `edit message "doc" field subject "Draft v2"` | `Alice -> Server : EditMessage(ref="doc", field=subject, value="Draft v2")` | Field-level edit by local ref |
+| `edit message ref "doc" field subject "Draft v2"` | `Alice -> Server : EditMessage(ref="doc", field=subject, value="Draft v2")` | Field-level edit by explicit ref |
+| `edit message id doc1 field subject "Draft v2"` | `Alice -> Server : EditMessage(id=doc1, field=subject, value="Draft v2")` | Field-level edit by protocol identity |
+| `delete message ref "doc"` | `Alice -> Server : DeleteMessage(ref="doc")` | Delete by local ref |
+| `delete message id doc1` | `Alice -> Server : DeleteMessage(id=doc1)` | Delete by protocol identity |
 | `expect message from alice body "hi"` | `condition Seen(Message(from=Alice, body="hi"));` | Observation-level check in the receiving instance scope |
+| `expect message from alice { ... }` | `condition Seen(Message(from=Alice, ...));` | Structured or partial payload match at message observation level |
+| `expect not message from alice { ... }` | `condition Seen(Message(from=Alice, ...)) = false;` | Negative payload observation match |
 | `expect message marked as read` | `condition Seen(MessageEvent(read, actor=Bob, seq=N));` | Конкретна read observation у receiving / observing instance scope, не final-state check |
 | `expect event offline` | `condition Seen(PresenceEvent(offline));` | Presence observation without explicit actor |
 | `expect event offline alice` | `condition Seen(PresenceEvent(offline, actor=Alice));` | Aggregate user-scoped offline fact |
