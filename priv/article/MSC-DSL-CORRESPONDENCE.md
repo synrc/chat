@@ -51,6 +51,7 @@
 | `query moderation group room1` | `Alice -> Server : ModerationListQuery(group=room1)` | Group-scoped moderation view query |
 | `when alice queries inbox` | `Alice -> Server : InboxQuery()` | Shorthand for inbox view query in policy/view scenarios |
 | `query inbox peer alice` | `Bob -> Server : InboxQuery(peer=alice)` | History/view query |
+| `query inbox feed private:alice` | `Bob -> Server : InboxQuery(feed=private:alice)` | Feed-scoped inbox query |
 | `query inbox group room1` | `Bob -> Server : InboxQuery(group=room1)` | Group inbox / group feed view query |
 | `query inbox peer alice limit 10` | `Bob -> Server : InboxQuery(peer=alice, limit=10)` | Bounded inbox page |
 | `query inbox continue` | `Bob -> Server : InboxQuery(continue)` | Continuation in current inbox query context |
@@ -58,10 +59,14 @@
 | `query groups` | `Alice -> Server : GroupListQuery()` | Group list view query |
 | `query members of group room1` | `Alice -> Server : MemberListQuery(room1)` | Group member list view query |
 | `query events peer alice after cursor` | `Bob -> Server : EventQuery(peer=alice, after=cursor)` | Канонічний replay query |
+| `query events peer alice after snapshot` | `Bob -> Server : EventQuery(peer=alice, after=snapshot)` | Replay query from snapshot boundary |
 | `query events peer alice after 0` | `Bob -> Server : EventQuery(peer=alice, after=0)` | Replay from start / baseline cursor |
 | `query events peer alice after cursor limit 2` | `Bob -> Server : EventQuery(peer=alice, after=cursor, limit=2)` | Bounded replay |
 | `query events peer alice after next` | `Bob -> Server : EventQuery(peer=alice, after=next)` | Replay continuation by returned cursor |
+| `query events feed private:alice after 0` | `Bob -> Server : EventQuery(feed=private:alice, after=0)` | Feed-scoped replay from baseline cursor |
+| `query events feed private:alice after snapshot` | `Bob -> Server : EventQuery(feed=private:alice, after=snapshot)` | Feed-scoped replay from snapshot boundary |
 | `query events group room1 after cursor` | `Bob -> Server : EventQuery(group=room1, after=cursor)` | Group-scoped replay query |
+| `query events group room1 after 0` | `Bob -> Server : EventQuery(group=room1, after=0)` | Group-scoped replay from baseline cursor |
 | `query events group room1 after snapshot` | `Bob -> Server : EventQuery(group=room1, after=snapshot)` | Group-scoped replay query from home snapshot |
 | `bootstrap home` | `Bob -> Server : HomeQuery(...)` | Minimal home bootstrap query |
 | `bootstrap home limit 10 preview 1` | `Bob -> Server : HomeQuery(limit=10, preview=1)` | Home bootstrap query |
@@ -123,8 +128,10 @@
 | `expect next` | `condition HasNext;` | Continuation cursor is present |
 | `expect not more` | `condition HasMore = false;` | Негативна форма без нового predicate |
 | `expect shared snapshot` | `condition HasSnapshot;` | Shared snapshot anchor is present |
+| `expect snapshot` | `condition HasSnapshot;` | Snapshot anchor is present |
 | `expect empty replay` | `condition ReplayEmpty;` | Replay result is empty |
 | `expect error badRequest` | `condition Error(badRequest);` | Result error |
+| `expect error gap` | `condition Error(gap);` | Replay failed due to missing recovery boundary |
 | `expect error forbidden` | `condition Error(forbidden);` | Result error |
 | `expect error notFound` | `condition Error(notFound);` | Result error |
 | `expect not error forbidden` | `condition Permitted(action);` | Action/query is permitted under current policy state |
