@@ -23,13 +23,16 @@
 | `session bob1 as bob` | `instance Bob1;` | User-scoped semantics лишається в Notes, якщо це важливо |
 | `given ...` | `Preconditions:` block | Не перетворювати у message flow |
 | `connect` | `Alice -> Server : Connect()` | Якщо є explicit server boundary |
+| `connect brokerA` | `Alice -> BrokerA : Connect()` | Federation-aware connect to explicit broker instance |
 | `connect alice@example.com` | `Alice -> Server : Connect(alice@example.com)` | Конкретний transport/login payload лишається в label |
 | `auth` | `Alice -> Server : Authenticate(...)` | Деталі auth лишаються в параметрах |
 | `auth password "secret"` | `Alice -> Server : Authenticate(password="secret")` | Канонічно як explicit auth payload |
 | `auth resume` | `Alice -> Server : Authenticate(resume)` | Resume оформлюється як auth variant |
+| `auth supportedVsn [v1, v2]` | `Alice -> Server : Authenticate(supportedVsn=[v1, v2])` | Version negotiation payload |
 | `disconnect` | `Alice -> Server : Disconnect()` | Session-level дія |
 | `reconnect` | `Alice -> Server : Connect()` | Окреме повторне підключення |
 | `send message to bob "hi"` | `Alice -> Server : SendMessage("hi")` + `Server -> Bob : DeliverMessage("hi")` | Канонічна server-mediated delivery |
+| `send message to bob@brokerB "hi"` | `Alice -> BrokerA : SendMessage(to=bob@brokerB, body="hi")` + broker routing | Federation-aware routed delivery |
 | `send message to bob { ... }` | `Alice -> Server : SendMessage({...})` + `Server -> Bob : DeliverMessage({...})` | Structured payload is still message-level state |
 | `send message to bob { body: "hi" mention: bob }` | `Alice -> Server : SendMessage({body="hi", mentions=[Bob]})` + `Server -> Bob : DeliverMessage({body="hi", mentions=[Bob]})` | DSL short form `mention: bob` is sugar over canonical payload mentions |
 | `send message to bob { ... } capture id as doc1` | `Alice -> Server : SendMessage({...})` | Captured id alias is recorded in Notes / local binding, not a new MSC core construct |
@@ -90,6 +93,9 @@
 | `expect event offline alice` | `condition Seen(PresenceEvent(offline, actor=Alice));` | Aggregate user-scoped offline fact |
 | `expect event online alice` | `condition Seen(PresenceEvent(online, actor=Alice));` | Aggregate user-scoped online fact |
 | `expect event typing alice` | `condition Seen(PresenceEvent(typing, actor=Alice));` | Transient presence observation |
+| `expect event message read bob up to 1` | `condition Seen(MessageEvent(read, actor=Bob, up_to=1));` | Exact observed read event with explicit actor |
+| `expect event message read up to 1` | `condition Seen(MessageEvent(read, up_to=1));` | Exact observed read event with wildcard actor |
+| `expect event message deleted alice id m1id` | `condition Seen(MessageEvent(deleted, actor=Alice, id=m1id));` | Exact observed delete event by protocol identity |
 | `expect read cursor updated` | `condition FinalState(ReadCursor(...), up_to=N);` | Єдина форма для read cursor result semantics |
 | `expect read cursor unchanged in private:alice` | `condition NotChanged(ReadCursor(actor=Bob, feed=private:alice));` | Для isolation / no side effect |
 | `expect bob in roster` | `condition FinalState(Roster(actor=Alice), contains(Bob));` | Roster membership as actor-local final view state |
@@ -110,6 +116,7 @@
 | `expect not mentions` | `condition FinalState(Mentions(actor=Bob), absent);` | Mention-derived home/feed state is absent for the actor |
 | `expect access allowed` | `condition Permitted(action);` | Policy allows the current query/action |
 | `expect access denied` | `condition Forbidden(action);` | Policy denies the current query/action |
+| `expect selectedVsn v2` | `condition FinalState(SessionVersion(actor=Alice), v2);` | Negotiated session version as final session state |
 | `expect message m1 visible` | `condition Visible(m1);` | View/policy-level visibility |
 | `expect message m1 hidden` | `condition Hidden(m1);` | View/policy-level hidden state |
 | `expect message m1 field body visible` | `condition FieldVisible(m1, body);` | Field-level visibility |
