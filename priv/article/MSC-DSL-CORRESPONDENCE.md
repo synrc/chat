@@ -31,6 +31,7 @@
 | `reconnect` | `Alice -> Server : Connect()` | Окреме повторне підключення |
 | `send message to bob "hi"` | `Alice -> Server : SendMessage("hi")` + `Server -> Bob : DeliverMessage("hi")` | Канонічна server-mediated delivery |
 | `send message to bob { ... }` | `Alice -> Server : SendMessage(...)` + `Server -> Bob : DeliverMessage(...)` | Structured payload лишається в message label |
+| `send typing to bob` | `Alice -> Server : SendTyping(Bob)` | Transient presence action |
 | `send message to group:room1 "g1"` | `Alice -> Server : SendGroupMessage(room1, "g1")` + delivery fanout | Для group feed |
 | `create group room1` | `Alice -> Server : CreateGroup(room1)` | Resource mutation |
 | `add bob to group room1` | `Alice -> Server : AddMember(room1, Bob)` | Membership mutation |
@@ -69,6 +70,10 @@
 | `query cursor read group room1 up to 1` | `Bob -> Server : UpdateReadCursor(feed=group:room1, up_to=1)` | Group-scoped read cursor update |
 | `expect message from alice body "hi"` | `condition Seen(Message(from=Alice, body="hi"));` | Observation-level check in the receiving instance scope |
 | `expect message marked as read` | `condition Seen(MessageEvent(read, actor=Bob, seq=N));` | Конкретна read observation у receiving / observing instance scope, не final-state check |
+| `expect event offline` | `condition Seen(PresenceEvent(offline));` | Presence observation without explicit actor |
+| `expect event offline alice` | `condition Seen(PresenceEvent(offline, actor=Alice));` | Aggregate user-scoped offline fact |
+| `expect event online alice` | `condition Seen(PresenceEvent(online, actor=Alice));` | Aggregate user-scoped online fact |
+| `expect event typing alice` | `condition Seen(PresenceEvent(typing, actor=Alice));` | Transient presence observation |
 | `expect read cursor updated` | `condition FinalState(ReadCursor(...), up_to=N);` | Єдина форма для read cursor result semantics |
 | `expect read cursor unchanged in private:alice` | `condition NotChanged(ReadCursor(actor=Bob, feed=private:alice));` | Для isolation / no side effect |
 | `expect bob in roster` | `condition FinalState(Roster(actor=Alice), contains(Bob));` | Roster membership as actor-local final view state |
@@ -161,6 +166,7 @@
 
 - `Seen(Message(...))`
 - `Seen(MessageEvent(...))`
+- `Seen(PresenceEvent(...))`
 
 ### Result / Replay
 
