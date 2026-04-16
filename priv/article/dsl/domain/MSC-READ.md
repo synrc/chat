@@ -156,8 +156,8 @@ endmsc;
 ```
 
 Extensions used:
-- `Seen`
 - `FinalState`
+- `Seen`
 
 ## cross-session read sync
 
@@ -210,12 +210,12 @@ msc CrossSessionReadSync;
 
   Bob1 -> Server : UpdateReadCursor(feed=private:alice, up_to=1);
 
-  condition Seen(ReadCursorUpdated(feed=private:alice, up_to=1));
+  condition FinalState(ReadCursor(actor=Bob, feed=private:alice), up_to=1);
 endmsc;
 ```
 
 Extensions used:
-- `Seen`
+- `FinalState`
 
 Notes:
 - `bob1` and `bob2` are distinct sessions of the same user `bob`; the shared user-scoped semantics follows `session bob1 as bob` / `session bob2 as bob`.
@@ -286,8 +286,8 @@ endmsc;
 ```
 
 Extensions used:
-- `Seen`
 - `FinalState`
+- `Seen`
 
 ## read after reconnect
 
@@ -356,9 +356,9 @@ endmsc;
 ```
 
 Extensions used:
-- `Seen`
-- `FinalState`
 - `Delay(500ms)` (`extension (new)`)
+- `FinalState`
+- `Seen`
 
 Notes:
 - `wait 500ms` has no canonical mapping in `MSC-MAPPING-v2.md`, so it is represented as `extension (new)`.
@@ -415,8 +415,8 @@ endmsc;
 ```
 
 Extensions used:
-- `Seen`
 - `Error`
+- `Seen`
 
 ## read before delivery
 
@@ -556,9 +556,9 @@ endmsc;
 ```
 
 Extensions used:
-- `Seen`
 - `FinalState`
 - `NotChanged`
+- `Seen`
 
 ## read persists after reconnect
 
@@ -951,7 +951,7 @@ msc NewMessageAfterReadBecomesUnreadAgain;
   Alice -> Server : SendMessage("m2");
 
   Bob -> Server : EventQuery(peer=alice, after=cursor);
-  loop replay_tail
+  loop replay_events
     Server -> Bob : MessageEvent(...);
   endloop;
 
@@ -1021,8 +1021,8 @@ endmsc;
 ```
 
 Extensions used:
-- `ResultNotEmpty`
 - `Delay(500ms)` (`extension (new)`)
+- `ResultNotEmpty`
 
 Notes:
 - `wait 500ms` has no canonical mapping in `MSC-MAPPING-v2.md`, so it is represented as `extension (new)`.
@@ -1158,17 +1158,18 @@ msc PartialReadKeepsNewerTailUnread;
   Alice -> Server : SendMessage("m3");
 
   Bob -> Server : EventQuery(peer=alice, after=cursor, limit=1);
-  loop replay_page
+  loop replay_events
     Server -> Bob : MessageEvent(...);
   endloop;
 
+  condition ResultCount <= 1;
   condition ResultNotEmpty;
   condition HasMore;
 
   Bob -> Server : UpdateReadCursor(feed=private:alice, up_to=1);
 
   Bob -> Server : EventQuery(peer=alice, after=cursor);
-  loop replay_tail
+  loop replay_events
     Server -> Bob : MessageEvent(...);
   endloop;
 
@@ -1177,8 +1178,9 @@ endmsc;
 ```
 
 Extensions used:
-- `ResultNotEmpty`
 - `HasMore`
+- `ResultCount`
+- `ResultNotEmpty`
 
 ## read after partial replay advances only observed boundary
 
@@ -1233,17 +1235,18 @@ msc ReadAfterPartialReplayAdvancesOnlyObservedBoundary;
   Alice -> Server : SendMessage("m3");
 
   Bob -> Server : EventQuery(peer=alice, after=cursor, limit=2);
-  loop replay_page
+  loop replay_events
     Server -> Bob : MessageEvent(...);
   endloop;
 
+  condition ResultCount <= 2;
   condition ResultNotEmpty;
   condition HasMore;
 
   Bob -> Server : UpdateReadCursor(feed=private:alice, up_to=2);
 
   Bob -> Server : EventQuery(peer=alice, after=cursor);
-  loop replay_tail
+  loop replay_events
     Server -> Bob : MessageEvent(...);
   endloop;
 
@@ -1253,8 +1256,9 @@ endmsc;
 ```
 
 Extensions used:
-- `ResultNotEmpty`
 - `HasMore`
+- `ResultCount`
+- `ResultNotEmpty`
 
 ## new message after partial read stays after unread boundary
 
@@ -1309,10 +1313,11 @@ msc NewMessageAfterPartialReadStaysAfterUnreadBoundary;
   Alice -> Server : SendMessage("m2");
 
   Bob -> Server : EventQuery(peer=alice, after=cursor, limit=1);
-  loop replay_page
+  loop replay_events
     Server -> Bob : MessageEvent(...);
   endloop;
 
+  condition ResultCount <= 1;
   condition ResultNotEmpty;
   condition HasMore;
 
@@ -1321,7 +1326,7 @@ msc NewMessageAfterPartialReadStaysAfterUnreadBoundary;
   Alice -> Server : SendMessage("m3");
 
   Bob -> Server : EventQuery(peer=alice, after=cursor);
-  loop replay_tail
+  loop replay_events
     Server -> Bob : MessageEvent(...);
   endloop;
 
@@ -1330,5 +1335,6 @@ endmsc;
 ```
 
 Extensions used:
-- `ResultNotEmpty`
 - `HasMore`
+- `ResultCount`
+- `ResultNotEmpty`
