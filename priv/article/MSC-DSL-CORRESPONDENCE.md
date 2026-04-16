@@ -72,6 +72,7 @@
 | `bootstrap home limit 10 preview 1` | `Bob -> Server : HomeQuery(limit=10, preview=1)` | Home bootstrap query |
 | `query home continue` | `Bob -> Server : HomeQuery(continue)` | Continuation in current home query context |
 | `query cursor read feed private:alice up to 2` | `Bob -> Server : UpdateReadCursor(feed=private:alice, up_to=2)` | Read cursor treated as command/update |
+| `query cursor read peer alice up to 2` | `Bob -> Server : UpdateReadCursor(feed=private:alice, up_to=2)` | Peer-scoped read cursor update |
 | `send read for last` | `Bob -> Server : UpdateReadCursor(feed=..., up_to=last_observed)` | Конкретне `up_to` виводиться з локально observed boundary |
 | `send read peer alice for last` | `Bob -> Server : UpdateReadCursor(feed=private:alice, up_to=last_observed)` | Peer-scoped read update |
 | `send read group room1 for last` | `Bob -> Server : UpdateReadCursor(feed=group:room1, up_to=last_observed)` | Feed-scoped read update |
