@@ -34,12 +34,18 @@
 | `send message to group:room1 "g1"` | `Alice -> Server : SendGroupMessage(room1, "g1")` + delivery fanout | Для group feed |
 | `create group room1` | `Alice -> Server : CreateGroup(room1)` | Resource mutation |
 | `add bob to group room1` | `Alice -> Server : AddMember(room1, Bob)` | Membership mutation |
+| `remove bob from group room1` | `Alice -> Server : RemoveMember(room1, Bob)` | Membership mutation |
+| `delete group room1` | `Alice -> Server : DeleteGroup(room1)` | Resource deletion |
 | `add bob to roster` | `Alice -> Server : AddToRoster(Bob)` | Roster relation mutation |
 | `remove bob from roster` | `Alice -> Server : RemoveFromRoster(Bob)` | Roster relation mutation |
 | `query roster` | `Alice -> Server : RosterQuery()` | Roster view query |
 | `query inbox peer alice` | `Bob -> Server : InboxQuery(peer=alice)` | History/view query |
+| `query inbox group room1` | `Bob -> Server : InboxQuery(group=room1)` | Group inbox / group feed view query |
 | `query inbox peer alice limit 10` | `Bob -> Server : InboxQuery(peer=alice, limit=10)` | Bounded inbox page |
 | `query inbox continue` | `Bob -> Server : InboxQuery(continue)` | Continuation in current inbox query context |
+| `query group room1` | `Alice -> Server : GroupQuery(room1)` | Single group view query |
+| `query groups` | `Alice -> Server : GroupListQuery()` | Group list view query |
+| `query members of group room1` | `Alice -> Server : MemberListQuery(room1)` | Group member list view query |
 | `query events peer alice after cursor` | `Bob -> Server : EventQuery(peer=alice, after=cursor)` | Канонічний replay query |
 | `query events peer alice after cursor limit 2` | `Bob -> Server : EventQuery(peer=alice, after=cursor, limit=2)` | Bounded replay |
 | `query events peer alice after next` | `Bob -> Server : EventQuery(peer=alice, after=next)` | Replay continuation by returned cursor |
@@ -54,6 +60,12 @@
 | `expect read cursor unchanged in private:alice` | `condition NotChanged(ReadCursor(actor=Bob, feed=private:alice));` | Для isolation / no side effect |
 | `expect bob in roster` | `condition FinalState(Roster(actor=Alice), contains(Bob));` | Roster membership as actor-local final view state |
 | `expect bob not in roster` | `condition FinalState(Roster(actor=Alice), excludes(Bob));` | Negative roster membership as actor-local final view state |
+| `expect group room1 exists` | `condition FinalState(Group(room1), exists);` | Group existence as state-level check |
+| `expect alice is owner of group room1` | `condition FinalState(GroupOwner(group=room1), Alice);` | Group owner as state-level check |
+| `expect bob is member of group room1` | `condition FinalState(GroupMembers(group=room1), contains(Bob));` | Group membership as state-level check |
+| `expect groups` | `condition ResultNotEmpty;` | Result-level check for group list view |
+| `expect room1 in groups` | `condition FinalState(GroupList(actor=Alice), contains(room1));` | Actor-local group list view |
+| `expect members` | `condition ResultNotEmpty;` | Result-level check for member list view |
 | `expect events` | `condition ResultNotEmpty;` | Result-level check, не observation |
 | `expect events non-empty` | `condition ResultNotEmpty;` | Те саме |
 | `expect events count <= N` | `condition ResultCount <= N;` | Для bounded replay/page results |
@@ -109,6 +121,7 @@
 - Назви predicates мають бути однаковими по всьому корпусу.
 - `FinalState(...)` має використовуватись в одній формі без варіантів на кшталт cursor-updated event predicates.
 - `Roster(actor=X)` завжди означає actor-local roster view користувача `X`, а не global/shared relation object.
+- `GroupList(actor=X)` завжди означає actor-local groups view користувача `X`.
 - `Extensions used` містить тільки реально використані predicates без дублювання.
 
 ## 3. Predicates in Use
