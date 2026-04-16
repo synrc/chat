@@ -29,6 +29,8 @@
 | `auth password "secret"` | `Alice -> Server : Authenticate(password="secret")` | Канонічно як explicit auth payload |
 | `auth resume` | `Alice -> Server : Authenticate(resume)` | Resume оформлюється як auth variant |
 | `auth supportedVsn [v1, v2]` | `Alice -> Server : Authenticate(supportedVsn=[v1, v2])` | Version negotiation payload |
+| `renew` | `Alice -> Server : RenewAccessToken()` | Access token renewal action |
+| `revoke access token` | `Alice -> Server : RevokeAccessToken()` | Access token revocation action |
 | `disconnect` | `Alice -> Server : Disconnect()` | Session-level дія |
 | `reconnect` | `Alice -> Server : Connect()` | Окреме повторне підключення |
 | `send message to bob "hi"` | `Alice -> Server : SendMessage("hi")` + `Server -> Bob : DeliverMessage("hi")` | Канонічна server-mediated delivery |
@@ -96,6 +98,11 @@
 | `expect event message read bob up to 1` | `condition Seen(MessageEvent(read, actor=Bob, up_to=1));` | Exact observed read event with explicit actor |
 | `expect event message read up to 1` | `condition Seen(MessageEvent(read, up_to=1));` | Exact observed read event with wildcard actor |
 | `expect event message deleted alice id m1id` | `condition Seen(MessageEvent(deleted, actor=Alice, id=m1id));` | Exact observed delete event by protocol identity |
+| `expect authenticated` | `condition Authenticated(Alice);` | Auth result/state, not observation |
+| `expect session created` | `condition SessionCreated(Alice);` | Primary auth created a session |
+| `expect same session` | `condition SameSession(Alice);` | Resume/renew preserved session identity |
+| `expect access token` | `condition AccessTokenIssued(Alice);` | Access token issued for the actor |
+| `expect access token refreshed` | `condition AccessTokenIssued(Alice);` | Refreshed token is modeled as token issuance result |
 | `expect read cursor updated` | `condition FinalState(ReadCursor(...), up_to=N);` | Єдина форма для read cursor result semantics |
 | `expect read cursor unchanged in private:alice` | `condition NotChanged(ReadCursor(actor=Bob, feed=private:alice));` | Для isolation / no side effect |
 | `expect bob in roster` | `condition FinalState(Roster(actor=Alice), contains(Bob));` | Roster membership as actor-local final view state |
@@ -169,7 +176,14 @@
 - `expect message marked as read` лишається observation-level перевіркою через `Seen(MessageEvent(read, ...))`.
 - Для isolation semantics використовувати `NotChanged(ReadCursor(...))`.
 
-### 2.4. Replay and Pagination
+### 2.4. Auth continuity
+
+- `reconnect` саме по собі означає лише нове transport connection і не додає окремого auth predicate.
+- Якщо сценарій після `reconnect` одразу виконує protected action і очікує `Permitted(action)`, це фіксує, що валідний auth context збережено через reconnect.
+- `auth resume` є explicit optional restoration flow і використовується тоді, коли сценарій хоче явно перевірити відновлення існуючої session.
+- `renew` моделюється як action у вже валідному session/auth context; після `reconnect` воно використовується як session-continuity flow, а не як створення нової session.
+
+### 2.5. Replay and Pagination
 
 - Для replay у read-сценаріях можна використовувати `MessageEvent(...)` усередині replay loop.
 - `MessageEvent(...)` у replay template є прикладом для read-oriented scenarios, а не універсальним event type для всіх replay cases.
@@ -177,7 +191,7 @@
 - Якщо replay/query bounded by `limit`, додавати `condition ResultCount <= N;`.
 - `expect more` / `expect not more` відображаються через `HasMore` / `HasMore = false`.
 
-### 2.5. Naming and Style
+### 2.6. Naming and Style
 
 - Назви predicates мають бути однаковими по всьому корпусу.
 - `FinalState(...)` має використовуватись в одній формі без варіантів на кшталт cursor-updated event predicates.
@@ -218,6 +232,7 @@
 
 - `Authenticated(actor)`
 - `SessionCreated(x)`
+- `SameSession(actor)`
 - `AccessTokenIssued(actor)`
 - `Visible(x)`
 - `Hidden(x)`
