@@ -952,6 +952,21 @@ expect message m2 hidden
 expect message m1 field body visible
 expect message m1 field attachment hidden
 ```
+
+### ABAC evaluation semantics
+
+У policy/visibility сценаріях:
+
+- `when <actor> queries <view>` може означати evaluation context,
+  а не обов'язково фактичне виконання query
+- `expect access allowed/denied` означає authorization decision
+- `expect message visible/hidden` і `expect field visible/hidden`
+  означають visibility classification
+- ці assertions можуть співіснувати,
+  якщо вони описують різні policy outputs
+- visibility assertions самі по собі не означають,
+  що результат реально повернуто клієнту,
+  якщо доступ заборонений
 ---
 
 ### Relation to schema
