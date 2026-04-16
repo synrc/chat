@@ -254,6 +254,10 @@ expect message from alice body "draft group one"
 ```
 scenario search hides restricted messages
 
+given
+  private feed alice<->bob has messages
+    1 id "m1" from bob "draft visible"
+    2 id "m2" from bob "draft hidden"
 given alice has clearance confidential
 given message m1 has classification confidential
 given message m2 has classification secret
@@ -281,6 +285,13 @@ expect result items <= 1
 ## SEARCH-8. Search does not leak restricted group content through global scope
 ```
 scenario search does not leak restricted group content through global scope
+
+given
+  group feed room1 has messages
+    1 from alice "draft civil"
+
+  group feed room2 has messages
+    1 from bob "draft military"
 
 given alice has branch civil
 given bob has branch military
@@ -310,6 +321,12 @@ expect result items <= 1
 ```
 scenario search respects field-level visibility
 
+given
+  private feed alice<->bob has messages
+    1 id "m1" from bob {
+      body: "draft visible"
+      attachment: "secret-plan.pdf"
+    }
 given alice has clearance confidential
 given message m1 has classification secret
 given message m1 field body visible at level confidential

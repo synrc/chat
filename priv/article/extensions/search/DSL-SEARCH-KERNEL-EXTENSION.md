@@ -422,7 +422,7 @@ expect next
 elaborates у:
 
 ```ocaml
-ResultItems
+HasMore
 HasNext
 ```
 
