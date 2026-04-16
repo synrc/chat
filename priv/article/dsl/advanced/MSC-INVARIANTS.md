@@ -50,14 +50,14 @@ msc ReadCursorNotAffectedByGlobalModeration;
 
   Alice -> Server : Ban(Bob);
 
-  Bob -> Server : UpdateReadCursor(feed=private:alice, up_to=2);
+  Bob -> Server : ReadCursorQuery(feed=private:alice);
 
-  condition NotChanged(ReadCursor(actor=Bob, feed=private:alice));
+  condition FinalState(ReadCursor(actor=Bob, feed=private:alice), up_to=2);
 endmsc;
 ```
 
 Extensions used:
-- NotChanged
+- FinalState(target, state)
 
 ## ABAC view filtering does not change message truth
 
@@ -87,7 +87,7 @@ msc AbacViewFilteringDoesNotChangeMessageTruth;
 
   Alice -> Server : InboxQuery();
 
-  condition Permitted(InboxQuery());
+  condition Permitted(action);
   condition Hidden(m1);
 endmsc;
 ```
@@ -95,6 +95,59 @@ endmsc;
 Extensions used:
 - Hidden
 - Permitted(action)
+
+## Delete overrides visibility and replay
+
+DSL:
+```text
+scenario delete overrides visibility and replay
+
+given
+  message m1 exists
+  message m1 is visible to alice
+
+session alice
+connect
+auth
+
+session alice
+delete message id m1
+
+session alice
+query events peer bob after cursor
+
+expect message deleted
+expect message m1 hidden
+expect not message from bob body "m1"
+```
+
+MSC:
+```text
+msc DeleteOverridesVisibilityAndReplay;
+  instance Alice;
+  instance Server;
+
+  Preconditions:
+  - message m1 exists
+  - message m1 is visible to alice
+
+  Alice -> Server : Connect();
+  Alice -> Server : Authenticate(...);
+
+  Alice -> Server : DeleteMessage(id=m1);
+
+  Alice -> Server : EventQuery(peer=bob, after=cursor);
+
+  condition FinalState(Message(id=m1), deleted);
+  condition Hidden(m1);
+  condition Seen(Message(from=Bob, body="m1")) = false;
+endmsc;
+```
+
+Extensions used:
+- FinalState(target, state)
+- Hidden
+- Seen(Message(...))
 
 ## Group-scoped moderation overrides replay access
 
