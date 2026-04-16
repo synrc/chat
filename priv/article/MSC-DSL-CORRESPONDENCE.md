@@ -36,9 +36,16 @@
 | `add bob to group room1` | `Alice -> Server : AddMember(room1, Bob)` | Membership mutation |
 | `remove bob from group room1` | `Alice -> Server : RemoveMember(room1, Bob)` | Membership mutation |
 | `delete group room1` | `Alice -> Server : DeleteGroup(room1)` | Resource deletion |
+| `ban bob` | `Alice -> Server : Ban(Bob)` | Global moderation mutation |
+| `unban bob` | `Alice -> Server : Unban(Bob)` | Global moderation mutation |
+| `ban bob in group room1` | `Alice -> Server : BanInGroup(room1, Bob)` | Group-scoped moderation mutation |
+| `unban bob in group room1` | `Alice -> Server : UnbanInGroup(room1, Bob)` | Group-scoped moderation mutation |
 | `add bob to roster` | `Alice -> Server : AddToRoster(Bob)` | Roster relation mutation |
 | `remove bob from roster` | `Alice -> Server : RemoveFromRoster(Bob)` | Roster relation mutation |
 | `query roster` | `Alice -> Server : RosterQuery()` | Roster view query |
+| `query subscriptions` | `Alice -> Server : SubscriptionQuery()` | Subscription view query |
+| `query moderation` | `Alice -> Server : ModerationListQuery()` | Global moderation view query |
+| `query moderation group room1` | `Alice -> Server : ModerationListQuery(group=room1)` | Group-scoped moderation view query |
 | `query inbox peer alice` | `Bob -> Server : InboxQuery(peer=alice)` | History/view query |
 | `query inbox group room1` | `Bob -> Server : InboxQuery(group=room1)` | Group inbox / group feed view query |
 | `query inbox peer alice limit 10` | `Bob -> Server : InboxQuery(peer=alice, limit=10)` | Bounded inbox page |
@@ -49,23 +56,33 @@
 | `query events peer alice after cursor` | `Bob -> Server : EventQuery(peer=alice, after=cursor)` | Канонічний replay query |
 | `query events peer alice after cursor limit 2` | `Bob -> Server : EventQuery(peer=alice, after=cursor, limit=2)` | Bounded replay |
 | `query events peer alice after next` | `Bob -> Server : EventQuery(peer=alice, after=next)` | Replay continuation by returned cursor |
+| `query events group room1 after cursor` | `Bob -> Server : EventQuery(group=room1, after=cursor)` | Group-scoped replay query |
+| `query events group room1 after snapshot` | `Bob -> Server : EventQuery(group=room1, after=snapshot)` | Group-scoped replay query from home snapshot |
+| `bootstrap home` | `Bob -> Server : HomeQuery(...)` | Minimal home bootstrap query |
 | `bootstrap home limit 10 preview 1` | `Bob -> Server : HomeQuery(limit=10, preview=1)` | Home bootstrap query |
 | `query home continue` | `Bob -> Server : HomeQuery(continue)` | Continuation in current home query context |
 | `query cursor read feed private:alice up to 2` | `Bob -> Server : UpdateReadCursor(feed=private:alice, up_to=2)` | Read cursor treated as command/update |
 | `send read for last` | `Bob -> Server : UpdateReadCursor(feed=..., up_to=last_observed)` | Конкретне `up_to` виводиться з локально observed boundary |
 | `send read group room1 for last` | `Bob -> Server : UpdateReadCursor(feed=group:room1, up_to=last_observed)` | Feed-scoped read update |
+| `query cursor read group room1 up to 1` | `Bob -> Server : UpdateReadCursor(feed=group:room1, up_to=1)` | Group-scoped read cursor update |
 | `expect message from alice body "hi"` | `condition Seen(Message(from=Alice, body="hi"));` | Observation-level check in the receiving instance scope |
 | `expect message marked as read` | `condition Seen(MessageEvent(read, actor=Bob, seq=N));` | Конкретна read observation у receiving / observing instance scope, не final-state check |
 | `expect read cursor updated` | `condition FinalState(ReadCursor(...), up_to=N);` | Єдина форма для read cursor result semantics |
 | `expect read cursor unchanged in private:alice` | `condition NotChanged(ReadCursor(actor=Bob, feed=private:alice));` | Для isolation / no side effect |
 | `expect bob in roster` | `condition FinalState(Roster(actor=Alice), contains(Bob));` | Roster membership as actor-local final view state |
 | `expect bob not in roster` | `condition FinalState(Roster(actor=Alice), excludes(Bob));` | Negative roster membership as actor-local final view state |
+| `expect bob is banned` | `condition FinalState(Moderation(scope=global), contains(Bob));` | Global moderation state |
+| `expect bob is banned in group room1` | `condition FinalState(Moderation(scope=group:room1), contains(Bob));` | Group-scoped moderation state |
 | `expect group room1 exists` | `condition FinalState(Group(room1), exists);` | Group existence as state-level check |
 | `expect alice is owner of group room1` | `condition FinalState(GroupOwner(group=room1), Alice);` | Group owner as state-level check |
 | `expect bob is member of group room1` | `condition FinalState(GroupMembers(group=room1), contains(Bob));` | Group membership as state-level check |
 | `expect groups` | `condition ResultNotEmpty;` | Result-level check for group list view |
 | `expect room1 in groups` | `condition FinalState(GroupList(actor=Alice), contains(room1));` | Actor-local group list view |
 | `expect members` | `condition ResultNotEmpty;` | Result-level check for member list view |
+| `expect moderation` | `condition ResultNotEmpty;` | Result-level check for moderation list view |
+| `expect bob in moderation` | `condition FinalState(Moderation(...), contains(Bob));` | Moderation list membership in current query scope |
+| `expect subscriptions` | `condition ResultNotEmpty;` | Result-level check for subscription list view |
+| `expect bob in subscriptions` | `condition FinalState(Subscriptions(actor=Alice), contains(Bob));` | Actor-local subscriptions view |
 | `expect events` | `condition ResultNotEmpty;` | Result-level check, не observation |
 | `expect events non-empty` | `condition ResultNotEmpty;` | Те саме |
 | `expect events count <= N` | `condition ResultCount <= N;` | Для bounded replay/page results |
@@ -82,6 +99,9 @@
 | `expect shared snapshot` | `condition HasSnapshot;` | Shared snapshot anchor is present |
 | `expect empty replay` | `condition ReplayEmpty;` | Replay result is empty |
 | `expect error badRequest` | `condition Error(badRequest);` | Result error |
+| `expect error forbidden` | `condition Error(forbidden);` | Result error |
+| `expect error notFound` | `condition Error(notFound);` | Result error |
+| `expect not error forbidden` | `condition Permitted(action);` | Action/query is permitted under current policy state |
 | `expect no gaps` | `condition NoGaps;` | Replay continuity |
 | `expect no duplicates` | `condition NoDuplicates;` | Replay overlap check |
 | `expect not duplicate feeds` | `condition NoDuplicates;` | No repeated feed entries across paged home result |
@@ -122,6 +142,8 @@
 - `FinalState(...)` має використовуватись в одній формі без варіантів на кшталт cursor-updated event predicates.
 - `Roster(actor=X)` завжди означає actor-local roster view користувача `X`, а не global/shared relation object.
 - `GroupList(actor=X)` завжди означає actor-local groups view користувача `X`.
+- `Subscriptions(actor=X)` завжди означає actor-local subscriptions view користувача `X`.
+- `Moderation(scope=global)` і `Moderation(scope=group:<name>)` означають policy state у відповідному scope.
 - `Extensions used` містить тільки реально використані predicates без дублювання.
 
 ## 3. Predicates in Use
@@ -141,6 +163,7 @@
 - `NoGaps`
 - `NoDuplicates`
 - `HasSnapshot`
+- `Permitted(action)`
 
 ### Final-state / Consistency
 
