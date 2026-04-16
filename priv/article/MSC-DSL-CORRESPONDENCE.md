@@ -58,6 +58,15 @@
 | `when alice queries inbox` | `Alice -> Server : InboxQuery()` | Shorthand for inbox view query in policy/view scenarios |
 | `when alice sends message` | `Alice -> Server : SendMessage(...)` | Shorthand for command evaluation context in policy scenarios |
 | `when alice queries events for group room1` | `Alice -> Server : EventQuery(group=room1)` | Shorthand for group query evaluation context in policy scenarios |
+| `query search text "draft"` | `Alice -> Server : SearchQuery(scope=all, text="draft")` | Global text search query |
+| `query search peer alice text "draft"` | `Bob -> Server : SearchQuery(scope=peer:alice, text="draft")` | Peer-scoped text search query |
+| `query search group room1 text "draft"` | `Bob -> Server : SearchQuery(scope=group:room1, text="draft")` | Group-scoped text search query |
+| `query search peer alice text "draft" limit 2` | `Bob -> Server : SearchQuery(scope=peer:alice, text="draft", limit=2)` | Bounded peer-scoped text search query |
+| `query search continue` | `Bob -> Server : SearchQuery(continue)` | Search continuation in current query context |
+| `query search peer alice field body like "draft"` | `Bob -> Server : SearchQuery(scope=peer:alice, field=body, criteria=like, value="draft")` | Peer-scoped field search |
+| `query search peer alice field tag equal "release"` | `Bob -> Server : SearchQuery(scope=peer:alice, field=tag, criteria=equal, value="release")` | Peer-scoped exact field search |
+| `query search group room1 field tag equal "release"` | `Bob -> Server : SearchQuery(scope=group:room1, field=tag, criteria=equal, value="release")` | Group-scoped exact field search |
+| `query search peer alice field body like "draft" return body tag` | `Bob -> Server : SearchQuery(scope=peer:alice, field=body, criteria=like, value="draft", fields=[body, tag])` | Search projection query |
 | `query inbox peer alice` | `Bob -> Server : InboxQuery(peer=alice)` | History/view query |
 | `query inbox feed private:alice` | `Bob -> Server : InboxQuery(feed=private:alice)` | Feed-scoped inbox query |
 | `query inbox group room1` | `Bob -> Server : InboxQuery(group=room1)` | Group inbox / group feed view query |
@@ -131,6 +140,8 @@
 | `expect message m1 hidden` | `condition Hidden(m1);` | View/policy-level hidden state |
 | `expect message m1 field body visible` | `condition FieldVisible(m1, body);` | Field-level visibility |
 | `expect message m1 field attachment hidden` | `condition FieldHidden(m1, attachment);` | Field-level hidden state |
+| `expect search shows message m1` | `condition SearchShows(m1);` | Search result contains the item |
+| `expect search hides message m1` | `condition SearchHides(m1);` | Search result does not expose the item |
 | `expect message deleted` | `condition FinalState(Message(...), deleted);` | Message lifecycle state from current delete context |
 | `expect events` | `condition ResultNotEmpty;` | Result-level check, не observation |
 | `expect events non-empty` | `condition ResultNotEmpty;` | Те саме |
