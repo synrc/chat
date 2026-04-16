@@ -38,8 +38,13 @@
 | `remove bob from roster` | `Alice -> Server : RemoveFromRoster(Bob)` | Roster relation mutation |
 | `query roster` | `Alice -> Server : RosterQuery()` | Roster view query |
 | `query inbox peer alice` | `Bob -> Server : InboxQuery(peer=alice)` | History/view query |
+| `query inbox peer alice limit 10` | `Bob -> Server : InboxQuery(peer=alice, limit=10)` | Bounded inbox page |
+| `query inbox continue` | `Bob -> Server : InboxQuery(continue)` | Continuation in current inbox query context |
 | `query events peer alice after cursor` | `Bob -> Server : EventQuery(peer=alice, after=cursor)` | Канонічний replay query |
 | `query events peer alice after cursor limit 2` | `Bob -> Server : EventQuery(peer=alice, after=cursor, limit=2)` | Bounded replay |
+| `query events peer alice after next` | `Bob -> Server : EventQuery(peer=alice, after=next)` | Replay continuation by returned cursor |
+| `bootstrap home limit 10 preview 1` | `Bob -> Server : HomeQuery(limit=10, preview=1)` | Home bootstrap query |
+| `query home continue` | `Bob -> Server : HomeQuery(continue)` | Continuation in current home query context |
 | `query cursor read feed private:alice up to 2` | `Bob -> Server : UpdateReadCursor(feed=private:alice, up_to=2)` | Read cursor treated as command/update |
 | `send read for last` | `Bob -> Server : UpdateReadCursor(feed=..., up_to=last_observed)` | Конкретне `up_to` виводиться з локально observed boundary |
 | `send read group room1 for last` | `Bob -> Server : UpdateReadCursor(feed=group:room1, up_to=last_observed)` | Feed-scoped read update |
@@ -52,13 +57,22 @@
 | `expect events` | `condition ResultNotEmpty;` | Result-level check, не observation |
 | `expect events non-empty` | `condition ResultNotEmpty;` | Те саме |
 | `expect events count <= N` | `condition ResultCount <= N;` | Для bounded replay/page results |
+| `expect result items` | `condition ResultNotEmpty;` | Result-level check for paged item set |
+| `expect result items <= N` | `condition ResultCount <= N;` | Bounded page result |
+| `expect result items = 0` | `condition ResultCount = 0;` | Empty page result |
 | `expect messages` | `condition ResultNotEmpty;` | Result-level перевірка для view/history result, не observation-level check |
+| `expect feeds` | `condition ResultNotEmpty;` | Result-level check for home feed page |
+| `expect feeds count <= N` | `condition ResultCount <= N;` | Bounded home feed page |
+| `expect feeds count = 0` | `condition ResultCount = 0;` | Empty home feed page |
 | `expect more` | `condition HasMore;` | Pagination / replay continuation |
+| `expect next` | `condition HasNext;` | Continuation cursor is present |
 | `expect not more` | `condition HasMore = false;` | Негативна форма без нового predicate |
+| `expect shared snapshot` | `condition HasSnapshot;` | Shared snapshot anchor is present |
 | `expect empty replay` | `condition ReplayEmpty;` | Replay result is empty |
 | `expect error badRequest` | `condition Error(badRequest);` | Result error |
 | `expect no gaps` | `condition NoGaps;` | Replay continuity |
 | `expect no duplicates` | `condition NoDuplicates;` | Replay overlap check |
+| `expect not duplicate feeds` | `condition NoDuplicates;` | No repeated feed entries across paged home result |
 
 ## 2. Канонічні rules
 
@@ -107,12 +121,13 @@
 ### Result / Replay
 
 - `ResultNotEmpty`
-- `ResultCount <= N`
+- `ResultCount relation`
 - `HasMore`
 - `ReplayEmpty`
 - `Error(code)`
 - `NoGaps`
 - `NoDuplicates`
+- `HasSnapshot`
 
 ### Final-state / Consistency
 
@@ -124,7 +139,6 @@
 - `Authenticated(actor)`
 - `SessionCreated(x)`
 - `AccessTokenIssued(actor)`
-- `HasNext`
 - `Visible(x)`
 - `Hidden(x)`
 - `FieldVisible(x, field)`
@@ -294,5 +308,24 @@ msc ReplayPage;
   condition ResultCount <= 1;
   condition ResultNotEmpty;
   condition HasMore;
+endmsc;
+```
+
+### 4.6. Continue Query
+
+**DSL**
+
+```text
+query inbox continue
+```
+
+**MSC**
+
+```text
+msc InboxContinue;
+  instance Bob;
+  instance Server;
+
+  Bob -> Server : InboxQuery(continue);
 endmsc;
 ```
