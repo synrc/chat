@@ -58,6 +58,12 @@
 | `when alice queries inbox` | `Alice -> Server : InboxQuery()` | Shorthand for inbox view query in policy/view scenarios |
 | `when alice sends message` | `Alice -> Server : SendMessage(...)` | Shorthand for command evaluation context in policy scenarios |
 | `when alice queries events for group room1` | `Alice -> Server : EventQuery(group=room1)` | Shorthand for group query evaluation context in policy scenarios |
+| `query discover server` | `Alice -> Server : DiscoverQuery(scope=server)` | Server capability discovery |
+| `query discover auth` | `Alice -> Server : DiscoverQuery(scope=auth)` | Auth capability discovery |
+| `query discover extension` | `Alice -> Server : DiscoverQuery(scope=extension)` | Extension capability discovery |
+| `query discover group chat1` | `Alice -> Server : DiscoverQuery(scope=feed, target=group:chat1)` | Group discovery sugar over explicit feed target |
+| `query discover scope feed target group:chat1` | `Alice -> Server : DiscoverQuery(scope=feed, target=group:chat1)` | Explicit discovery form with target |
+| `query discover scope policy` | `Alice -> Server : DiscoverQuery(scope=policy)` | Explicit discovery form with scope only |
 | `query search text "draft"` | `Alice -> Server : SearchQuery(scope=all, text="draft")` | Global text search query |
 | `query search peer alice text "draft"` | `Bob -> Server : SearchQuery(scope=peer:alice, text="draft")` | Peer-scoped text search query |
 | `query search group room1 text "draft"` | `Bob -> Server : SearchQuery(scope=group:room1, text="draft")` | Group-scoped text search query |
@@ -140,6 +146,7 @@
 | `expect message m1 hidden` | `condition Hidden(m1);` | View/policy-level hidden state |
 | `expect message m1 field body visible` | `condition FieldVisible(m1, body);` | Field-level visibility |
 | `expect message m1 field attachment hidden` | `condition FieldHidden(m1, attachment);` | Field-level hidden state |
+| `expect feature protocol.version` | `condition HasFeature(protocol.version);` | Discovery feature inclusion check |
 | `expect search shows message m1` | `condition SearchShows(m1);` | Search result contains the item |
 | `expect search hides message m1` | `condition SearchHides(m1);` | Search result does not expose the item |
 | `expect message deleted` | `condition FinalState(Message(...), deleted);` | Message lifecycle state from current delete context |
