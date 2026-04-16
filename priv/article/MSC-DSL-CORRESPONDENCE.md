@@ -46,6 +46,7 @@
 | `query subscriptions` | `Alice -> Server : SubscriptionQuery()` | Subscription view query |
 | `query moderation` | `Alice -> Server : ModerationListQuery()` | Global moderation view query |
 | `query moderation group room1` | `Alice -> Server : ModerationListQuery(group=room1)` | Group-scoped moderation view query |
+| `when alice queries inbox` | `Alice -> Server : InboxQuery()` | Shorthand for inbox view query in policy/view scenarios |
 | `query inbox peer alice` | `Bob -> Server : InboxQuery(peer=alice)` | History/view query |
 | `query inbox group room1` | `Bob -> Server : InboxQuery(group=room1)` | Group inbox / group feed view query |
 | `query inbox peer alice limit 10` | `Bob -> Server : InboxQuery(peer=alice, limit=10)` | Bounded inbox page |
@@ -63,6 +64,7 @@
 | `query home continue` | `Bob -> Server : HomeQuery(continue)` | Continuation in current home query context |
 | `query cursor read feed private:alice up to 2` | `Bob -> Server : UpdateReadCursor(feed=private:alice, up_to=2)` | Read cursor treated as command/update |
 | `send read for last` | `Bob -> Server : UpdateReadCursor(feed=..., up_to=last_observed)` | Конкретне `up_to` виводиться з локально observed boundary |
+| `send read peer alice for last` | `Bob -> Server : UpdateReadCursor(feed=private:alice, up_to=last_observed)` | Peer-scoped read update |
 | `send read group room1 for last` | `Bob -> Server : UpdateReadCursor(feed=group:room1, up_to=last_observed)` | Feed-scoped read update |
 | `query cursor read group room1 up to 1` | `Bob -> Server : UpdateReadCursor(feed=group:room1, up_to=1)` | Group-scoped read cursor update |
 | `expect message from alice body "hi"` | `condition Seen(Message(from=Alice, body="hi"));` | Observation-level check in the receiving instance scope |
@@ -83,6 +85,13 @@
 | `expect bob in moderation` | `condition FinalState(Moderation(...), contains(Bob));` | Moderation list membership in current query scope |
 | `expect subscriptions` | `condition ResultNotEmpty;` | Result-level check for subscription list view |
 | `expect bob in subscriptions` | `condition FinalState(Subscriptions(actor=Alice), contains(Bob));` | Actor-local subscriptions view |
+| `expect access allowed` | `condition Permitted(action);` | Policy allows the current query/action |
+| `expect access denied` | `condition Forbidden(action);` | Policy denies the current query/action |
+| `expect message m1 visible` | `condition Visible(m1);` | View/policy-level visibility |
+| `expect message m1 hidden` | `condition Hidden(m1);` | View/policy-level hidden state |
+| `expect message m1 field body visible` | `condition FieldVisible(m1, body);` | Field-level visibility |
+| `expect message m1 field attachment hidden` | `condition FieldHidden(m1, attachment);` | Field-level hidden state |
+| `expect message deleted` | `condition FinalState(Message(...), deleted);` | Message lifecycle state from current delete context |
 | `expect events` | `condition ResultNotEmpty;` | Result-level check, не observation |
 | `expect events non-empty` | `condition ResultNotEmpty;` | Те саме |
 | `expect events count <= N` | `condition ResultCount <= N;` | Для bounded replay/page results |
@@ -164,6 +173,7 @@
 - `NoDuplicates`
 - `HasSnapshot`
 - `Permitted(action)`
+- `Forbidden(action)`
 
 ### Final-state / Consistency
 
@@ -179,8 +189,6 @@
 - `Hidden(x)`
 - `FieldVisible(x, field)`
 - `FieldHidden(x, field)`
-- `Permitted(action)`
-- `Forbidden(action)`
 - `HasFeature(id)`
 - `SearchShows(x)`
 - `SearchHides(x)`
