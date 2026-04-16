@@ -188,8 +188,10 @@
 
 - Result-level перевірки оформлюються через `condition ResultNotEmpty`, `HasMore`, `ReplayEmpty`, `Error(...)`, `FinalState(...)`.
 - Observation-level перевірки оформлюються тільки через `condition Seen(...)`.
+- У search scenarios `expect message ...` може оформлюватися як `condition SearchShows(Message(...));`, а не як `Seen(...)`, якщо перевіряється inclusion у search result.
 - `Seen(...)` трактується у scope receiving / observing instance; якщо receiving side неявна, цей scope вважається implicit from scenario context.
 - Не використовувати `Seen(...)` для позначення просто факту наявності result.
+- Search-level `expect result items` у MSC нормалізується до `condition ResultNotEmpty;`.
 
 ### 2.3. Read cursor
 
