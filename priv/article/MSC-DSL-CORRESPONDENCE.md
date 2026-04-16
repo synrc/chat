@@ -22,6 +22,7 @@
 | `session alice` | `instance Alice;` | Session alias стає instance |
 | `session bob1 as bob` | `instance Bob1;` | User-scoped semantics лишається в Notes, якщо це важливо |
 | `given ...` | `Preconditions:` block | Не перетворювати у message flow |
+| `given message m1 was visible to bob before ban` | `Preconditions: - message m1 was visible to bob before ban` | Historical visibility assumption, not derived from message flow |
 | `connect` | `Alice -> Server : Connect()` | Якщо є explicit server boundary |
 | `connect brokerA` | `Alice -> BrokerA : Connect()` | Federation-aware connect to explicit broker instance |
 | `connect alice@example.com` | `Alice -> Server : Connect(alice@example.com)` | Конкретний transport/login payload лишається в label |
@@ -55,6 +56,8 @@
 | `query moderation` | `Alice -> Server : ModerationListQuery()` | Global moderation view query |
 | `query moderation group room1` | `Alice -> Server : ModerationListQuery(group=room1)` | Group-scoped moderation view query |
 | `when alice queries inbox` | `Alice -> Server : InboxQuery()` | Shorthand for inbox view query in policy/view scenarios |
+| `when alice sends message` | `Alice -> Server : SendMessage(...)` | Shorthand for command evaluation context in policy scenarios |
+| `when alice queries events for group room1` | `Alice -> Server : EventQuery(group=room1)` | Shorthand for group query evaluation context in policy scenarios |
 | `query inbox peer alice` | `Bob -> Server : InboxQuery(peer=alice)` | History/view query |
 | `query inbox feed private:alice` | `Bob -> Server : InboxQuery(feed=private:alice)` | Feed-scoped inbox query |
 | `query inbox group room1` | `Bob -> Server : InboxQuery(group=room1)` | Group inbox / group feed view query |
