@@ -34,16 +34,21 @@
 | `send message to group:room1 "g1"` | `Alice -> Server : SendGroupMessage(room1, "g1")` + delivery fanout | Для group feed |
 | `create group room1` | `Alice -> Server : CreateGroup(room1)` | Resource mutation |
 | `add bob to group room1` | `Alice -> Server : AddMember(room1, Bob)` | Membership mutation |
+| `add bob to roster` | `Alice -> Server : AddToRoster(Bob)` | Roster relation mutation |
+| `remove bob from roster` | `Alice -> Server : RemoveFromRoster(Bob)` | Roster relation mutation |
+| `query roster` | `Alice -> Server : RosterQuery()` | Roster view query |
 | `query inbox peer alice` | `Bob -> Server : InboxQuery(peer=alice)` | History/view query |
 | `query events peer alice after cursor` | `Bob -> Server : EventQuery(peer=alice, after=cursor)` | Канонічний replay query |
 | `query events peer alice after cursor limit 2` | `Bob -> Server : EventQuery(peer=alice, after=cursor, limit=2)` | Bounded replay |
 | `query cursor read feed private:alice up to 2` | `Bob -> Server : UpdateReadCursor(feed=private:alice, up_to=2)` | Read cursor treated as command/update |
 | `send read for last` | `Bob -> Server : UpdateReadCursor(feed=..., up_to=last_observed)` | Конкретне `up_to` виводиться з локально observed boundary |
 | `send read group room1 for last` | `Bob -> Server : UpdateReadCursor(feed=group:room1, up_to=last_observed)` | Feed-scoped read update |
-| `expect message from alice body "hi"` | `condition Seen(Message(from=Alice, body="hi"));` | Observation-level check |
-| `expect message marked as read` | `condition Seen(MessageEvent(read, actor=Bob, seq=N));` | Конкретна read observation, не final-state check |
+| `expect message from alice body "hi"` | `condition Seen(Message(from=Alice, body="hi"));` | Observation-level check in the receiving instance scope |
+| `expect message marked as read` | `condition Seen(MessageEvent(read, actor=Bob, seq=N));` | Конкретна read observation у receiving / observing instance scope, не final-state check |
 | `expect read cursor updated` | `condition FinalState(ReadCursor(...), up_to=N);` | Єдина форма для read cursor result semantics |
 | `expect read cursor unchanged in private:alice` | `condition NotChanged(ReadCursor(actor=Bob, feed=private:alice));` | Для isolation / no side effect |
+| `expect bob in roster` | `condition FinalState(Roster(actor=Alice), contains(Bob));` | Roster membership as actor-local final view state |
+| `expect bob not in roster` | `condition FinalState(Roster(actor=Alice), excludes(Bob));` | Negative roster membership as actor-local final view state |
 | `expect events` | `condition ResultNotEmpty;` | Result-level check, не observation |
 | `expect events non-empty` | `condition ResultNotEmpty;` | Те саме |
 | `expect events count <= N` | `condition ResultCount <= N;` | Для bounded replay/page results |
@@ -68,6 +73,7 @@
 
 - Result-level перевірки оформлюються через `condition ResultNotEmpty`, `HasMore`, `ReplayEmpty`, `Error(...)`, `FinalState(...)`.
 - Observation-level перевірки оформлюються тільки через `condition Seen(...)`.
+- `Seen(...)` трактується у scope receiving / observing instance; якщо receiving side неявна, цей scope вважається implicit from scenario context.
 - Не використовувати `Seen(...)` для позначення просто факту наявності result.
 
 ### 2.3. Read cursor
@@ -88,6 +94,7 @@
 
 - Назви predicates мають бути однаковими по всьому корпусу.
 - `FinalState(...)` має використовуватись в одній формі без варіантів на кшталт cursor-updated event predicates.
+- `Roster(actor=X)` завжди означає actor-local roster view користувача `X`, а не global/shared relation object.
 - `Extensions used` містить тільки реально використані predicates без дублювання.
 
 ## 3. Predicates in Use
@@ -225,7 +232,43 @@ endmsc;
 Примітка:
 - `MessageEvent(...)` тут показано як read-oriented replay example; для інших domain scenarios конкретний event type може відрізнятись.
 
-### 4.4. Pagination / Bounded Replay
+### 4.4. Roster Membership
+
+**DSL**
+
+```text
+session alice
+connect
+auth
+
+add bob to roster
+
+query roster
+
+expect bob in roster
+```
+
+**MSC**
+
+```text
+msc AddToRoster;
+  instance Alice;
+  instance Server;
+
+  Alice -> Server : Connect();
+  Alice -> Server : Authenticate(...);
+
+  Alice -> Server : AddToRoster(Bob);
+  Alice -> Server : RosterQuery();
+
+  condition FinalState(Roster(actor=Alice), contains(Bob));
+endmsc;
+```
+
+Примітка:
+- `Roster(actor=Alice)` означає локальний roster view Alice.
+
+### 4.5. Pagination / Bounded Replay
 
 **DSL**
 
