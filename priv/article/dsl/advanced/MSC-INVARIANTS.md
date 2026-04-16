@@ -140,14 +140,14 @@ msc DeleteOverridesVisibilityAndReplay;
 
   condition FinalState(Message(id=m1), deleted);
   condition Hidden(m1);
-  condition Seen(Message(from=Bob, body="m1")) = false;
+  condition Seen(Message(id=m1)) = false;
 endmsc;
 ```
 
 Extensions used:
 - FinalState(target, state)
 - Hidden
-- Seen(Message(...))
+- Seen(Message(...)) = false
 
 ## Group-scoped moderation overrides replay access
 
