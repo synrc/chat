@@ -31,6 +31,7 @@
 | `reconnect` | `Alice -> Server : Connect()` | Окреме повторне підключення |
 | `send message to bob "hi"` | `Alice -> Server : SendMessage("hi")` + `Server -> Bob : DeliverMessage("hi")` | Канонічна server-mediated delivery |
 | `send message to bob { ... }` | `Alice -> Server : SendMessage({...})` + `Server -> Bob : DeliverMessage({...})` | Structured payload is still message-level state |
+| `send message to bob { body: "hi" mention: bob }` | `Alice -> Server : SendMessage({body="hi", mentions=[Bob]})` + `Server -> Bob : DeliverMessage({body="hi", mentions=[Bob]})` | DSL short form `mention: bob` is sugar over canonical payload mentions |
 | `send message to bob { ... } capture id as doc1` | `Alice -> Server : SendMessage({...})` | Captured id alias is recorded in Notes / local binding, not a new MSC core construct |
 | `send typing to bob` | `Alice -> Server : SendTyping(Bob)` | Transient presence action |
 | `send message to group:room1 "g1"` | `Alice -> Server : SendGroupMessage(room1, "g1")` + delivery fanout | Для group feed |
@@ -99,6 +100,8 @@
 | `expect bob in moderation` | `condition FinalState(Moderation(...), contains(Bob));` | Moderation list membership in current query scope |
 | `expect subscriptions` | `condition ResultNotEmpty;` | Result-level check for subscription list view |
 | `expect bob in subscriptions` | `condition FinalState(Subscriptions(actor=Alice), contains(Bob));` | Actor-local subscriptions view |
+| `expect mentions` | `condition FinalState(Mentions(actor=Bob), present);` | Mention-derived home/feed state is present for the actor |
+| `expect not mentions` | `condition FinalState(Mentions(actor=Bob), absent);` | Mention-derived home/feed state is absent for the actor |
 | `expect access allowed` | `condition Permitted(action);` | Policy allows the current query/action |
 | `expect access denied` | `condition Forbidden(action);` | Policy denies the current query/action |
 | `expect message m1 visible` | `condition Visible(m1);` | View/policy-level visibility |
@@ -167,6 +170,7 @@
 - `GroupList(actor=X)` завжди означає actor-local groups view користувача `X`.
 - `Subscriptions(actor=X)` завжди означає actor-local subscriptions view користувача `X`.
 - `Moderation(scope=global)` і `Moderation(scope=group:<name>)` означають policy state у відповідному scope.
+- `Mentions(actor=X)` означає actor-local mention-derived view state, а не окремий protocol object.
 - `Extensions used` містить тільки реально використані predicates без дублювання.
 
 ## 3. Predicates in Use
