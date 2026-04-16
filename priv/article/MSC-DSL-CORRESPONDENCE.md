@@ -79,7 +79,7 @@
 | `send read for last` | `Bob -> Server : UpdateReadCursor(feed=..., up_to=last_observed)` | Конкретне `up_to` виводиться з локально observed boundary |
 | `send read peer alice for last` | `Bob -> Server : UpdateReadCursor(feed=private:alice, up_to=last_observed)` | Peer-scoped read update |
 | `send read group room1 for last` | `Bob -> Server : UpdateReadCursor(feed=group:room1, up_to=last_observed)` | Feed-scoped read update |
-| `query cursor read group room1 up to 1` | `Bob -> Server : UpdateReadCursor(feed=group:room1, up_to=1)` | Group-scoped read cursor update |
+| `query cursor read group room1 up to 1` | `Bob -> Server : ReadCursorQuery(feed=group:room1, up_to=1)` | Group-scoped read cursor query form |
 | `edit message "doc" field subject "Draft v2"` | `Alice -> Server : EditMessage(ref="doc", field=subject, value="Draft v2")` | Field-level edit by local ref |
 | `edit message ref "doc" field subject "Draft v2"` | `Alice -> Server : EditMessage(ref="doc", field=subject, value="Draft v2")` | Field-level edit by explicit ref |
 | `edit message id doc1 field subject "Draft v2"` | `Alice -> Server : EditMessage(id=doc1, field=subject, value="Draft v2")` | Field-level edit by protocol identity |
