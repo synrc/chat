@@ -1,0 +1,422 @@
+\documentclass{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{helvet}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{eso-pic}
+\usepackage{fancyhdr}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage[english, ukrainian]{babel}
+\usepackage{url}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{listings}
+
+\definecolor{nato}{HTML}{293757}
+\definecolor{footergray}{gray}{0.65}
+
+\geometry{a4paper,left=3cm,right=3cm,top=3cm,bottom=3cm}
+\renewcommand{\familydefault}{\sfdefault}
+\setcounter{secnumdepth}{3}
+
+\titleformat{\section}
+  {\color{nato}\Huge\bfseries}{\thesection.}{1em}{}
+\titlespacing*{\section}{0pt}{30pt}{12pt}
+
+\titleformat{\subsection}
+  {\color{nato}\LARGE\bfseries}{\thesubsection.}{1em}{}
+\titlespacing*{\subsection}{0pt}{20pt}{8pt}
+
+\titleformat{\subsubsection}
+  {\color{nato}\Large\bfseries}{\thesubsubsection.}{1em}{}
+\titlespacing*{\subsubsection}{0pt}{10pt}{6pt}
+
+\fancyhf{}
+\fancyhead[R]{\small\color{footergray} 18 квітня 2026}
+\fancyfoot[L]{\small\color{footergray} Zen Crypted}
+\fancyfoot[R]{\small\color{footergray}\thepage}
+
+\newcommand\HUGE[1]{\fontsize{40}{40}\selectfont #1}
+
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\renewcommand{\footrule}{\color{footergray}\hrule width \textwidth height 0.4pt}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!5},
+  columns=fullflexible
+}
+
+\begin{document}
+
+\pagestyle{fancy}
+
+\begin{titlepage}
+  \AddToShipoutPictureBG*{\AtPageLowerLeft{\color{nato}\rule{\paperwidth}{\paperheight}}}
+  \color{white}\thispagestyle{empty}\vspace*{4cm}\centering
+  {\Huge  \textbf{MSC Z.120} \par} \vspace{2cm}
+  {\HUGE  \textbf{Тестувальні сценарії \\ CHAT V.420.2} \par} \vspace{2.5cm}
+  \vfill
+  {\large 2026 \copyright\ Zen Crypted \par}
+\end{titlepage}
+
+\newpage
+
+\tableofcontents
+
+\vspace{3cm}
+
+\section{Вступ}
+
+Набір сценаріїв задає поведінку системи та використовується для перевірки її узгодженості. Кожен сценарій описує послідовність дій, початковий стан (given) та очікувані результати (expect), що дозволяє систематично перевіряти семантику протоколу Buddha на рівні kernel-моделі.
+
+\section{Архітектура тестового набору}
+
+Сценарії організовані як система тестів, що перевіряє семантику kernel-моделі та поведінку протоколу. Вони розбиті на тематичні групи відповідно до основних доменів: повідомлення, читання, відтворення, модерація, групи, пагінація, присутність, home, контакти, згадки, видимість та розширення. Кожен сценарій є самодостатнім і може виконуватися незалежно, забезпечуючи повне покриття invariants між protocol state, read/replay, moderation та ABAC visibility.
+
+\section{Сценарії домену}
+
+Сценарії домену описують основну поведінку системи та покривають ключові можливості протоколу. Вони перевіряють базові операції над повідомленнями, стрімами подій, курсорами та станом ресурсів.
+
+\section{Складні сценарії та узгодженість}
+
+Складні сценарії перевіряють взаємодію подій, порядок їх обробки та узгодженість системи в нетривіальних випадках. Вони включають reorder edit/delete, late delete, ban після прийнятого повідомлення, snapshot після видалення групи та federated convergence.
+
+\section{Сценарії повідомлень}
+
+Сценарії повідомлень перевіряють структуру даних, передачу повідомлень та операції над їх вмістом.
+
+\begin{lstlisting}[language={},basicstyle=\ttfamily\small]
+scenario structured send + structured expect
+  session alice1
+  connect
+  auth
+
+  session bob1
+  connect
+  auth
+
+  session alice1
+  send message to bob {
+    body: "hi"
+    subject: "Draft"
+    priority: high
+  }
+
+  session bob1
+  expect message from alice {
+    body: "hi"
+    subject: "Draft"
+    priority: high
+  }
+\end{lstlisting}
+
+(Повний набір сценаріїв з DSL-PAYLOAD.md: structured payload, validation rules, edit/delete convergence, given payload, replay convergence, mutation by captured/seeded id тощо.)
+
+\section{Сценарії читання}
+
+Сценарії читання перевіряють курсори, стан прочитаного та узгодженість поведінки read/unread.
+
+\begin{lstlisting}[language={},basicstyle=\ttfamily\small]
+scenario delivery + read
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session alice
+send message to bob "hi"
+
+session bob
+expect message from alice body "hi"
+
+session bob
+send read for last
+
+session alice
+expect message marked as read
+\end{lstlisting}
+
+(Повний набір з DSL-READ.md: basic delivery, read cursor, multi-session sync, read backward, read after reconnect, multi-feed isolation, partial read, unread boundary тощо.)
+
+\section{Сценарії відтворення}
+
+Сценарії відтворення перевіряють відновлення подій, межі відтворення, усунення пропусків та перехід між знімком і потоком подій.
+
+\begin{lstlisting}[language={},basicstyle=\ttfamily\small]
+scenario home bootstrap then replay
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+add alice to roster
+
+session alice
+send message to bob "m1"
+send message to bob "m2"
+
+session bob
+disconnect
+wait 500ms
+reconnect
+
+bootstrap home limit 20 preview 1
+
+expect feeds
+expect previews
+expect shared snapshot
+
+query events peer alice after snapshot
+
+expect no duplicates
+expect no gaps
+\end{lstlisting}
+
+(Повний набір з DSL-REPLAY.md: replay, preview, gap recovery, paged snapshot, multi-feed isolation, duplicate delivery тощо.)
+
+\section{Сценарії модерації}
+
+Сценарії модерації перевіряють обмеження дій, доступу та видимості без зміни канонічної історії подій.
+
+\begin{lstlisting}[language={},basicstyle=\ttfamily\small]
+scenario ban user
+
+session alice
+connect
+auth
+
+ban bob
+
+expect bob is banned
+\end{lstlisting}
+
+(Повний набір з DSL-MODERATION.md: global/group ban, unban, moderation list, no rewrite history, block future actions тощо.)
+
+\section{Сценарії груп}
+
+Сценарії груп перевіряють групові стріми подій, склад учасників, ролі та правила доступу.
+
+\begin{lstlisting}[language={},basicstyle=\ttfamily\small]
+scenario create group
+
+session alice
+connect
+auth
+
+create group room1
+
+expect group room1 exists
+expect alice is owner of group room1
+expect alice is member of group room1
+\end{lstlisting}
+
+(Повний набір з DSL-GROUP.md: create, add/remove member, send/query, delete group тощо.)
+
+\section{Сценарії пагінації}
+
+Сценарії пагінації перевіряють продовження вибірки, межі сторінок та узгодженість результатів запитів.
+
+\begin{lstlisting}[language={},basicstyle=\ttfamily\small]
+scenario inbox pagination
+
+given
+  private feed alice<->bob has messages
+    1 from alice "p1"
+    ...
+    11 from alice "p11"
+
+session bob
+connect
+auth
+
+query inbox peer alice limit 10
+
+expect result items <= 10
+expect more
+
+query inbox continue
+
+expect result items
+\end{lstlisting}
+
+(Повний набір з DSL-PAGINATION.md: inbox/home/event pagination, continue without initial query, no duplicates, empty page тощо.)
+
+\section{Сценарії присутності}
+
+Сценарії присутності перевіряють стани online/offline, введення повідомлень та інші події присутності.
+
+\begin{lstlisting}[language={},basicstyle=\ttfamily\small]
+scenario wildcard offline presence observation
+
+session alice
+connect
+auth
+
+session bob
+connect
+auth
+
+session bob
+query events peer alice after cursor
+
+session alice
+disconnect
+
+session bob
+query events peer alice after cursor
+
+expect empty replay
+expect event offline
+\end{lstlisting}
+
+(Повний набір з DSL-PRESENCE.md: offline/online, typing, multi-session aggregate, federated presence, no rewrite message state тощо.)
+
+\section{Сценарії home}
+
+Сценарії home перевіряють початкове завантаження стану, знімки та їх зв’язок із відтворенням і читанням.
+
+\begin{lstlisting}[language={},basicstyle=\ttfamily\small]
+scenario home returns feeds and snapshot after new message
+
+session alice
+connect
+auth
+
+add bob to roster
+
+session bob
+connect
+auth
+
+add alice to roster
+
+session alice
+send message to bob "m1"
+
+session bob
+bootstrap home
+
+expect feeds
+expect shared snapshot
+expect feeds count <= 10
+\end{lstlisting}
+
+(Повний набір з DSL-HOME.md: home bootstrap, shared snapshot, read consistency, policy interaction тощо.)
+
+\section{Сценарії контактів}
+
+Сценарії контактів перевіряють списки контактів і зв’язки між користувачами та їх роль у взаємодіях.
+
+\begin{lstlisting}[language={},basicstyle=\ttfamily\small]
+scenario add to roster
+
+session alice
+connect
+auth
+
+add bob to roster
+
+query roster
+
+expect bob in roster
+\end{lstlisting}
+
+(Повний набір з DSL-ROSTER.md: add/remove, one-way/mutual relation, messaging after removal тощо.)
+
+\section{Сценарії згадок}
+
+Сценарії згадок перевіряють формування стану згадок у стрімах подій і їх зв’язок із читанням та видимістю.
+
+\begin{lstlisting}[language={},basicstyle=\ttfamily\small]
+scenario mention appears in home after incoming mention message
+
+session alice
+connect
+auth
+
+add bob to roster
+
+session bob
+connect
+auth
+
+add alice to roster
+
+session alice
+send message to bob {
+body: "hi"
+mention: bob
+}
+
+session bob
+bootstrap home
+
+expect feeds
+expect mentions
+expect shared snapshot
+\end{lstlisting}
+
+(Повний набір з DSL-MENTIONS.md: mention in home, read clears mention, replay does not clear, hidden message does not produce mention тощо.)
+
+\section{Сценарії видимості}
+
+Сценарії видимості перевіряють фільтрацію спостережень і обмеження доступу до даних поверх канонічної історії.
+
+\begin{lstlisting}[language={},basicstyle=\ttfamily\small]
+scenario message is hidden when clearance is insufficient
+
+given
+message m1 has classification topsecret
+alice has clearance secret
+
+when alice queries inbox
+
+expect access allowed
+expect message m1 hidden
+\end{lstlisting}
+
+(Повний набір з DSL-VISIBILITY.md: hidden vs visible, field-level, access denied vs hidden, hidden != deleted тощо.)
+
+\section{Інваріанти та узгодженість}
+
+Інваріанти перевіряють узгодженість між читанням, відтворенням, модерацією, видимістю та іншими властивостями системи.
+
+(Всі invariants з DSL-INVARIANTS.md, ADVANCED.md та cross-layer checks з інших файлів: read cursor unchanged by moderation, ABAC filtering does not change truth, snapshot does not bypass ban, delete overrides edit, no rewrite history тощо.)
+
+\section{Розширення}
+
+Розширення охоплюють спеціалізовані сценарії для автентифікації, політик доступу, пошуку та виявлення можливостей системи.
+
+(Сценарії з DSL-AUTH.md, DSL-ABAC.md, DSL-SEARCH.md, DSL-DISCOVERY.md: auth/resume/renew, ABAC clearance/visibility, search criteria/projection/pagination, discovery capabilities.)
+
+\section{Висновок}
+
+Тестовий набір підсумовується як систематичне покриття поведінки протоколу через сценарії DSL. Він забезпечує повну верифікацію kernel-моделі, invariants та всіх розширень, роблячи протокол Buddha готовим до формальної стандартизації та реалізації.
+
+\bibliographystyle{plain}
+\begin{thebibliography}{9}
+\bibitem{itu-z120} ITU-T Recommendation Z.120 (02/2011), Message Sequence Chart (MSC).
+\bibitem{synrc} synrc/chat repository, ARCH-KERNEL-MAPPINGS.md, 2025--2026.
+\bibitem{annexb} ITU-T Z.120 Annex B (04/1998), Formal semantics of Message Sequence Charts.
+\end{thebibliography}
+
+\end{document}
