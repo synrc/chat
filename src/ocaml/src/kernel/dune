@@ -1,0 +1,3 @@
+(library
+ (name z180_kernel)
+ (libraries qcheck))
